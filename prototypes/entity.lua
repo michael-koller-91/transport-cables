@@ -51,20 +51,19 @@ entity.minable = {
     mining_time = 0.01,
     result = entity_name
 }
-entity.picture =
-{
+entity.picture = {
     layers =
     {
         {
-            filename = "__base__/graphics/entity/iron-chest/iron-chest.png",
+            filename = "__transport-cables__/sprites/provider-t1.png",
             priority = "extra-high",
-            width = 34,
-            height = 38,
+            width = 64,
+            height = 64,
             tint = tint,
             shift = util.by_pixel(0, -0.5),
             hr_version =
             {
-                filename = "__transport-cables__/sprites/provider-t1.png",
+                filename = "__transport-cables__/sprites/hr-provider-t1.png",
                 priority = "extra-high",
                 width = 64,
                 height = 64,
@@ -73,16 +72,16 @@ entity.picture =
             }
         },
         {
-            filename = "__base__/graphics/entity/iron-chest/iron-chest-shadow.png",
+            filename = "__transport-cables__/sprites/provider-t1-shadow.png",
             priority = "extra-high",
-            width = 56,
-            height = 26,
+            width = 70,
+            height = 70,
             tint = tint,
-            shift = util.by_pixel(10, 6.5),
+            shift = util.by_pixel(0, 0),
             draw_as_shadow = true,
             hr_version =
             {
-                filename = "__transport-cables__/sprites/provider-t1-shadow.png",
+                filename = "__transport-cables__/sprites/hr-provider-t1-shadow.png",
                 priority = "extra-high",
                 width = 70,
                 height = 70,
@@ -110,34 +109,34 @@ entity.sprites = make_4way_animation_from_spritesheet({
     layers =
     {
         {
-            filename = "__base__/graphics/entity/combinator/constant-combinator.png",
-            width = 58,
-            height = 52,
+            filename = "__transport-cables__/sprites/requester-t1.png",
+            width = 128,
+            height = 128,
             frame_count = 1,
             shift = util.by_pixel(0, 0),
             hr_version =
             {
                 scale = 0.5,
-                filename = "__transport-cables__/sprites/requester-t1.png",
-                width = 64,
-                height = 64,
+                filename = "__transport-cables__/sprites/hr-requester-t1.png",
+                width = 128,
+                height = 128,
                 frame_count = 1,
                 shift = util.by_pixel(0, 0)
             }
         },
         {
-            filename = "__base__/graphics/entity/combinator/constant-combinator-shadow.png",
-            width = 50,
-            height = 34,
+            filename = "__transport-cables__/sprites/requester-t1-shadow.png",
+            width = 140,
+            height = 140,
             frame_count = 1,
-            shift = util.by_pixel(9, 6),
+            shift = util.by_pixel(0, 0),
             draw_as_shadow = true,
             hr_version =
             {
                 scale = 0.5,
-                filename = "__transport-cables__/sprites/requester-t1-shadow.png",
-                width = 70,
-                height = 70,
+                filename = "__transport-cables__/sprites/hr-requester-t1-shadow.png",
+                width = 140,
+                height = 140,
                 frame_count = 1,
                 shift = util.by_pixel(0, 0),
                 draw_as_shadow = true
@@ -156,6 +155,45 @@ local entity = table.deepcopy(data.raw["container"]["iron-chest"])
 entity.name = entity_name
 entity.minable = nil
 entity.destructible = false
+entity.picture = {
+    layers =
+    {
+        {
+            filename = "__transport-cables__/sprites/requester-t1.png",
+            priority = "extra-high",
+            width = 64,
+            height = 64,
+            shift = util.by_pixel(0, 0),
+            hr_version =
+            {
+                filename = "__transport-cables__/sprites/hr-requester-t1.png",
+                priority = "extra-high",
+                width = 64,
+                height = 64,
+                shift = util.by_pixel(0, 0),
+                scale = 0.5
+            }
+        },
+        {
+            filename = "__transport-cables__/sprites/requester-t1-shadow.png",
+            priority = "extra-high",
+            width = 70,
+            height = 70,
+            shift = util.by_pixel(0, 0),
+            draw_as_shadow = true,
+            hr_version =
+            {
+                filename = "__transport-cables__/sprites/hr-requester-t1-shadow.png",
+                priority = "extra-high",
+                width = 70,
+                height = 70,
+                shift = util.by_pixel(0, 0),
+                draw_as_shadow = true,
+                scale = 0.5
+            }
+        }
+    }
+}
 
 data:extend({ entity })
 

@@ -18,13 +18,22 @@ sprites = Path("sprites")
 n_tiers = 2
 pixels = 64
 pixels_shadow = 70
-pixels_space = 20
 thickness = 10
 
 images = {
     "array": list(),
     "filename": list(),
 }
+
+
+def surround_by_transparent(arr, space_left, space_top):
+    super_arr = np.zeros(
+        (arr.shape[0] + 2 * space_top, arr.shape[1] + 2 * space_left, 4),
+        dtype=arr.dtype,
+    )
+    super_arr[space_top:-space_top, space_left:-space_left, :-1] = arr
+    super_arr[space_top:-space_top, space_left:-space_left, -1] = 255
+    return super_arr
 
 
 #
@@ -34,24 +43,6 @@ if parargs.clean and sprites.exists():
     shutil.rmtree(str(sprites))
 if not sprites.exists():
     os.mkdir(str(sprites))
-
-
-#
-# placeholder
-#
-arr = np.zeros((32, 32, 3), dtype=np.uint8)
-arr[10:-10, 10:-10, 0] = 255
-arr[10:-10, 10:-10, 2] = 255
-
-images["array"].append(arr)
-images["filename"].append("low-res-placeholder.png")
-
-arr = np.ones((48, 48, 3), dtype=np.uint8) * 255
-arr[:, :, 1] = 0
-arr[3:-3, 3:-3, :] = 0
-
-images["array"].append(arr)
-images["filename"].append("low-res-placeholder-shadow.png")
 
 
 #
@@ -78,12 +69,16 @@ for t in range(1, n_tiers + 1):
 
     images["array"].append(arr)
     images["filename"].append(f"provider-t{t}.png")
+    images["array"].append(arr)
+    images["filename"].append(f"hr-provider-t{t}.png")
 
     #
     arr = np.zeros((pixels_shadow, pixels_shadow, 3), dtype=np.uint8)
 
     images["array"].append(arr)
     images["filename"].append(f"provider-t{t}-shadow.png")
+    images["array"].append(arr)
+    images["filename"].append(f"hr-provider-t{t}-shadow.png")
 
 
 #
@@ -91,10 +86,8 @@ for t in range(1, n_tiers + 1):
 #
 for t in range(1, n_tiers + 1):
     thin_border = 2
-    super_arr = np.zeros((pixels, 4 * pixels + 3 * pixels_space, 4), dtype=np.uint8)
     for i in range(4):
-        arr = np.zeros((pixels, pixels, 4), dtype=np.uint8)
-        arr[:, :, -1] = 255
+        arr = np.zeros((pixels, pixels, 3), dtype=np.uint8)
         arr[:, :, 1] = 255
         for k in range(1, 2 * t):
             arr[
@@ -112,26 +105,35 @@ for t in range(1, n_tiers + 1):
         ] = 255
         arr = np.rot90(arr, k=i * 3)
 
-        super_arr[
-            :, i * pixels + i * pixels_space : (i + 1) * pixels + i * pixels_space, :
-        ] = arr
+        arr = surround_by_transparent(arr, pixels // 2, pixels // 2)
+        if i == 0:
+            super_arr = arr
+        else:
+            super_arr = np.concatenate(
+                [super_arr, arr],
+                axis=1,
+            )
 
     images["array"].append(super_arr)
     images["filename"].append(f"requester-t{t}.png")
+    images["array"].append(super_arr)
+    images["filename"].append(f"hr-requester-t{t}.png")
 
-    #
-    super_arr = np.zeros((pixels_shadow, 4 * pixels_shadow + 3 * pixels_space, 4), dtype=np.uint8)
     for i in range(4):
-        arr = np.zeros((pixels_shadow, pixels_shadow, 4), dtype=np.uint8)
-        arr[:, :, -1] = 255
-
-        super_arr[
-            :, i * pixels_shadow + i * pixels_space : (i + 1) * pixels_shadow + i * pixels_space, :
-        ] = arr
-    arr = np.zeros((pixels_shadow, pixels_shadow, 3), dtype=np.uint8)
+        arr = np.zeros((pixels_shadow, pixels_shadow, 3), dtype=np.uint8)
+        arr = surround_by_transparent(arr, pixels_shadow // 2, pixels_shadow // 2)
+        if i == 0:
+            super_arr = arr
+        else:
+            super_arr = np.concatenate(
+                [super_arr, arr],
+                axis=1,
+            )
 
     images["array"].append(super_arr)
     images["filename"].append(f"requester-t{t}-shadow.png")
+    images["array"].append(super_arr)
+    images["filename"].append(f"hr-requester-t{t}-shadow.png")
 
 
 #
@@ -159,12 +161,16 @@ for t in range(1, n_tiers + 1):
 
     images["array"].append(arr)
     images["filename"].append(f"requester-container-t{t}.png")
+    images["array"].append(arr)
+    images["filename"].append(f"hr-requester-container-t{t}.png")
 
     #
     arr = np.zeros((pixels_shadow, pixels_shadow, 3), dtype=np.uint8)
 
     images["array"].append(arr)
     images["filename"].append(f"requester-container-t{t}-shadow.png")
+    images["array"].append(arr)
+    images["filename"].append(f"hr-requester-container-t{t}-shadow.png")
 
 
 #
