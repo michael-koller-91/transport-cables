@@ -1,6 +1,6 @@
 local prefix = "transport-cables:"
-local speed = 1e-10
-local animation_speed_coefficient = 1e10
+local speed = 0.03125
+local animation_speed_coefficient = 32
 local tint = {
     r = 1,
     g = 0,
@@ -159,14 +159,14 @@ entity.picture = {
     layers =
     {
         {
-            filename = "__transport-cables__/sprites/requester-t1.png",
+            filename = "__transport-cables__/sprites/requester-container-t1.png",
             priority = "extra-high",
             width = 64,
             height = 64,
             shift = util.by_pixel(0, 0),
             hr_version =
             {
-                filename = "__transport-cables__/sprites/hr-requester-t1.png",
+                filename = "__transport-cables__/sprites/hr-requester-container-t1.png",
                 priority = "extra-high",
                 width = 64,
                 height = 64,
@@ -175,7 +175,7 @@ entity.picture = {
             }
         },
         {
-            filename = "__transport-cables__/sprites/requester-t1-shadow.png",
+            filename = "__transport-cables__/sprites/requester-container-t1-shadow.png",
             priority = "extra-high",
             width = 70,
             height = 70,
@@ -183,7 +183,7 @@ entity.picture = {
             draw_as_shadow = true,
             hr_version =
             {
-                filename = "__transport-cables__/sprites/hr-requester-t1-shadow.png",
+                filename = "__transport-cables__/sprites/hr-requester-container-t1-shadow.png",
                 priority = "extra-high",
                 width = 70,
                 height = 70,

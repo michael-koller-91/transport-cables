@@ -279,6 +279,8 @@ local on_built_entity = function(event)
                         wire = wire,
                         target_entity = neighbor
                     }
+                    entity.get_control_behavior().enable_disable = false
+                    neighbor.get_control_behavior().enable_disable = false
                 end
             end
         end
