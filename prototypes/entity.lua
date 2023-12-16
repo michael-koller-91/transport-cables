@@ -64,11 +64,11 @@ entity.picture =
             shift = util.by_pixel(0, -0.5),
             hr_version =
             {
-                filename = "__transport-cables__/sprites/box.png",
+                filename = "__transport-cables__/sprites/provider-t1.png",
                 priority = "extra-high",
                 width = 64,
                 height = 64,
-                shift = util.by_pixel(-0.5, -0.5),
+                shift = util.by_pixel(0, 0),
                 scale = 0.5
             }
         },
@@ -82,41 +82,17 @@ entity.picture =
             draw_as_shadow = true,
             hr_version =
             {
-                filename = "__transport-cables__/sprites/box-shadow.png",
+                filename = "__transport-cables__/sprites/provider-t1-shadow.png",
                 priority = "extra-high",
-                width = 128,
-                height = 69,
-                shift = util.by_pixel(10.5, 6),
+                width = 70,
+                height = 70,
+                shift = util.by_pixel(0, 0),
                 draw_as_shadow = true,
                 scale = 0.5
             }
         }
     }
 }
---entity.picture =
---{
---    layers =
---    {
---        {
---            filename = "__base__/graphics/entity/iron-chest/iron-chest.png",
---            priority = "extra-high",
---            width = 34,
---            height = 38,
---            tint = tint,
---            shift = util.by_pixel(0, -0.5)
---        },
---        {
---            filename = "__base__/graphics/entity/iron-chest/iron-chest.png",
---            priority = "extra-high",
---            width = 10,
---            height = 33,
---            x = 18,
---            tint = tint,
---            shift = util.by_pixel(0, -0.5),
---            apply_runtime_tint = true
---        }
---    }
---}
 
 data:extend({ entity })
 
@@ -130,6 +106,47 @@ entity.minable = {
 }
 entity.circuit_wire_max_distance = 1
 entity.item_slot_count = 1
+entity.sprites = make_4way_animation_from_spritesheet({
+    layers =
+    {
+        {
+            filename = "__base__/graphics/entity/combinator/constant-combinator.png",
+            width = 58,
+            height = 52,
+            frame_count = 1,
+            shift = util.by_pixel(0, 0),
+            hr_version =
+            {
+                scale = 0.5,
+                filename = "__transport-cables__/sprites/requester-t1.png",
+                width = 64,
+                height = 64,
+                frame_count = 1,
+                shift = util.by_pixel(0, 0)
+            }
+        },
+        {
+            filename = "__base__/graphics/entity/combinator/constant-combinator-shadow.png",
+            width = 50,
+            height = 34,
+            frame_count = 1,
+            shift = util.by_pixel(9, 6),
+            draw_as_shadow = true,
+            hr_version =
+            {
+                scale = 0.5,
+                filename = "__transport-cables__/sprites/requester-t1-shadow.png",
+                width = 70,
+                height = 70,
+                frame_count = 1,
+                shift = util.by_pixel(0, 0),
+                draw_as_shadow = true
+            }
+        }
+    }
+})
+
+
 
 data:extend({ entity })
 
@@ -349,3 +366,75 @@ entity.structure = {
 }
 
 data:extend({ entity })
+
+
+---------------------------------------------------------------------------
+--
+-- this function is from __base__/prototypes/entity/entities.lua
+--
+function make_4way_animation_from_spritesheet(animation)
+    local function make_animation_layer(idx, anim)
+        local start_frame = (anim.frame_count or 1) * idx
+        local x = 0
+        local y = 0
+        if anim.line_length then
+            y = anim.height * math.floor(start_frame / (anim.line_length or 1))
+        else
+            x = idx * anim.width
+        end
+        return
+        {
+            filename = anim.filename,
+            priority = anim.priority or "high",
+            flags = anim.flags,
+            x = x,
+            y = y,
+            width = anim.width,
+            height = anim.height,
+            frame_count = anim.frame_count or 1,
+            line_length = anim.line_length,
+            repeat_count = anim.repeat_count,
+            shift = anim.shift,
+            draw_as_shadow = anim.draw_as_shadow,
+            draw_as_glow = anim.draw_as_glow,
+            draw_as_light = anim.draw_as_light,
+            force_hr_shadow = anim.force_hr_shadow,
+            apply_runtime_tint = anim.apply_runtime_tint,
+            animation_speed = anim.animation_speed,
+            scale = anim.scale or 1,
+            tint = anim.tint,
+            blend_mode = anim.blend_mode,
+            load_in_minimal_mode = anim.load_in_minimal_mode,
+            premul_alpha = anim.premul_alpha,
+            generate_sdf = anim.generate_sdf
+        }
+    end
+
+    local function make_animation_layer_with_hr_version(idx, anim)
+        local anim_parameters = make_animation_layer(idx, anim)
+        if anim.hr_version and anim.hr_version.filename then
+            anim_parameters.hr_version = make_animation_layer(idx, anim.hr_version)
+        end
+        return anim_parameters
+    end
+
+    local function make_animation(idx)
+        if animation.layers then
+            local tab = { layers = {} }
+            for k, v in ipairs(animation.layers) do
+                table.insert(tab.layers, make_animation_layer_with_hr_version(idx, v))
+            end
+            return tab
+        else
+            return make_animation_layer_with_hr_version(idx, animation)
+        end
+    end
+
+    return
+    {
+        north = make_animation(0),
+        east = make_animation(1),
+        south = make_animation(2),
+        west = make_animation(3)
+    }
+end
