@@ -38,13 +38,23 @@ def rotate_counterclockwise(arr):
     return np.rot90(arr, 1, axes=(0, 1))
 
 
-def surround_by_transparent(arr, space_left, space_top):
+def rotate_180(arr):
+    return rotate_clockwise(rotate_clockwise(arr))
+
+
+def surround_by_transparent(arr, left, top, right=None, bottom=None):
+    right = right or left
+    bottom = bottom or top
     super_arr = np.zeros(
-        (arr.shape[0] + 2 * space_top, arr.shape[1] + 2 * space_left, 4),
+        (
+            arr.shape[0] + top + bottom,
+            arr.shape[1] + left + right,
+            4,
+        ),
         dtype=arr.dtype,
     )
-    super_arr[space_top:-space_top, space_left:-space_left, :-1] = arr
-    super_arr[space_top:-space_top, space_left:-space_left, -1] = 255
+    super_arr[top:-bottom, left:-right, :-1] = arr
+    super_arr[top:-bottom, left:-right, -1] = 255
     return super_arr
 
 
@@ -62,6 +72,20 @@ def make_tier_frame(pixels, n_frames):
     return arr
 
 
+def make_tier_frame_top_bottom(pixels_x, pixels_y, n_frames):
+    arr = np.zeros((pixels_x, pixels_y, 3), dtype=np.uint8)
+    for k in range(0, n_frames + 1, 2):
+        # top
+        arr[k * TIER_FRAME_THICKNESS : (k + 1) * TIER_FRAME_THICKNESS, :, 1] = 255
+        # bottom
+        arr[
+            -(k + 1) * TIER_FRAME_THICKNESS : arr.shape[0] - k * TIER_FRAME_THICKNESS,
+            :,
+            1,
+        ] = 255
+    return arr
+
+
 def make_base_cable(pixels_x, pixels_y, shift):
     arr = np.zeros((pixels_y, pixels_x, 3), dtype=np.uint8)
     arr[:, :, :] = 100
@@ -73,14 +97,20 @@ def make_base_cable(pixels_x, pixels_y, shift):
     return arr
 
 
-def shifted_base_cable(
-    tier,
-    shift,
-):
+def shifted_base_cable(tier, shift):
     arr = make_tier_frame(PIXELS, tier)
     base_cable = make_base_cable(PIXELS + OFFSET_CABLE, THICKNESS, shift)
     arr[PIXELS // 2 - THICKNESS // 2 : PIXELS // 2 + THICKNESS // 2, :, :] = base_cable[
         :, OFFSET_CABLE:, :
+    ]
+    return arr
+
+
+def shifted_base_cable_connector(tier, shift):
+    arr = make_tier_frame_top_bottom(PIXELS, OFFSET_CABLE, tier)
+    base_cable = make_base_cable(PIXELS + OFFSET_CABLE, THICKNESS, shift)
+    arr[PIXELS // 2 - THICKNESS // 2 : PIXELS // 2 + THICKNESS // 2, :, :] = base_cable[
+        :, :OFFSET_CABLE, :
     ]
     return arr
 
@@ -136,14 +166,12 @@ if not sprites.exists():
 base_cable = make_base_cable(PIXELS + OFFSET_CABLE, PIXELS, 0)
 images["array"].append(base_cable)
 images["filename"].append("base_straight.png")
+
 for tier in range(1, TIERS + 1):
     # straight cables
     for i in range(4):
         for j in range(16):
-            arr = shifted_base_cable(
-                tier,
-                2 * j,
-            )
+            arr = shifted_base_cable(tier, 2 * j)
             if i // 2:
                 arr = np.rot90(arr, k=i * 2 + 1)
             else:
@@ -158,6 +186,7 @@ for tier in range(1, TIERS + 1):
             straight_cables = super_arr
         else:
             straight_cables = np.concatenate([straight_cables, super_arr], axis=0)
+
     # curved cables
     for j in range(16):
         arr_left_right = shifted_base_cable(tier, 2 * j)
@@ -169,15 +198,11 @@ for tier in range(1, TIERS + 1):
         arr = surround_by_transparent(arr, PIXELS // 2, PIXELS // 2)
         arr_rotated = rotate_clockwise(arr)
         if j == 0:
-            super_arr_right_to_top = arr
-            super_arr_bottom_to_right = arr_rotated
+            super_arr_r_to_t = arr
+            super_arr_b_to_r = arr_rotated
         else:
-            super_arr_right_to_top = np.concatenate(
-                [super_arr_right_to_top, arr], axis=1
-            )
-            super_arr_bottom_to_right = np.concatenate(
-                [super_arr_bottom_to_right, arr_rotated], axis=1
-            )
+            super_arr_r_to_t = np.concatenate([super_arr_r_to_t, arr], axis=1)
+            super_arr_b_to_r = np.concatenate([super_arr_b_to_r, arr_rotated], axis=1)
     for j in range(16):
         arr_left_right = shifted_base_cable(tier, 2 * j)
         arr_top_bottom = np.rot90(arr_left_right, 3, axes=(0, 1))
@@ -186,15 +211,11 @@ for tier in range(1, TIERS + 1):
         arr = surround_by_transparent(arr, PIXELS // 2, PIXELS // 2)
         arr_rotated = rotate_clockwise(arr)
         if j == 0:
-            super_arr_top_to_right = arr
-            super_arr_right_to_bottom = arr_rotated
+            super_arr_t_to_r = arr
+            super_arr_r_to_b = arr_rotated
         else:
-            super_arr_top_to_right = np.concatenate(
-                [super_arr_top_to_right, arr], axis=1
-            )
-            super_arr_right_to_bottom = np.concatenate(
-                [super_arr_right_to_bottom, arr_rotated], axis=1
-            )
+            super_arr_t_to_r = np.concatenate([super_arr_t_to_r, arr], axis=1)
+            super_arr_r_to_b = np.concatenate([super_arr_r_to_b, arr_rotated], axis=1)
     for j in range(16):
         arr_left_right = shifted_base_cable(tier, 2 * j)
         arr_bottom_top = np.rot90(arr_left_right, 1, axes=(0, 1))
@@ -204,15 +225,11 @@ for tier in range(1, TIERS + 1):
         arr = surround_by_transparent(arr, PIXELS // 2, PIXELS // 2)
         arr_rotated = rotate_counterclockwise(arr)
         if j == 0:
-            super_arr_left_to_top = arr
-            super_arr_bottom_to_left = arr_rotated
+            super_arr_l_to_t = arr
+            super_arr_b_to_l = arr_rotated
         else:
-            super_arr_left_to_top = np.concatenate(
-                [super_arr_left_to_top, arr], axis=1
-            )
-            super_arr_bottom_to_left = np.concatenate(
-                [super_arr_bottom_to_left, arr_rotated], axis=1
-            )
+            super_arr_l_to_t = np.concatenate([super_arr_l_to_t, arr], axis=1)
+            super_arr_b_to_l = np.concatenate([super_arr_b_to_l, arr_rotated], axis=1)
     for j in range(16):
         arr_left_right = shifted_base_cable(tier, 2 * j)
         arr_right_left = np.rot90(arr_left_right, 2, axes=(0, 1))
@@ -223,35 +240,132 @@ for tier in range(1, TIERS + 1):
         arr = surround_by_transparent(arr, PIXELS // 2, PIXELS // 2)
         arr_rotated = rotate_counterclockwise(arr)
         if j == 0:
-            super_arr_top_to_left = arr
-            super_arr_left_to_bottom = arr_rotated
+            super_arr_t_to_l = arr
+            super_arr_l_to_b = arr_rotated
         else:
-            super_arr_top_to_left = np.concatenate(
-                [super_arr_top_to_left, arr], axis=1
-            )
-            super_arr_left_to_bottom = np.concatenate(
-                [super_arr_left_to_bottom, arr_rotated], axis=1
-            )
+            super_arr_t_to_l = np.concatenate([super_arr_t_to_l, arr], axis=1)
+            super_arr_l_to_b = np.concatenate([super_arr_l_to_b, arr_rotated], axis=1)
 
     curved_cables = np.concatenate(
         [
-            super_arr_right_to_top,
-            super_arr_top_to_right,
-            super_arr_left_to_top,
-            super_arr_top_to_left,
-            super_arr_bottom_to_right,
-            super_arr_right_to_bottom,
-            super_arr_bottom_to_left,
-            super_arr_left_to_bottom,
+            super_arr_r_to_t,
+            super_arr_t_to_r,
+            super_arr_l_to_t,
+            super_arr_t_to_l,
+            super_arr_b_to_r,
+            super_arr_r_to_b,
+            super_arr_b_to_l,
+            super_arr_l_to_b,
         ],
         axis=0,
     )
 
-    transport_cable = np.concatenate([straight_cables, curved_cables], axis=0)
+    # cable connectors
+    for j in range(16):
+        arr = shifted_base_cable_connector(tier, 2 * j)
+        arr = rotate_counterclockwise(arr)
+
+        arr = surround_by_transparent(
+            arr,
+            PIXELS // 2,
+            PIXELS // 2,
+            PIXELS // 2,
+            PIXELS // 2 + PIXELS - OFFSET_CABLE,
+        )
+        arr_rotated = rotate_180(arr)
+        if j == 0:
+            super_arr_b_to_t_top = arr
+            super_arr_b_to_t_bottom = arr_rotated
+        else:
+            super_arr_b_to_t_top = np.concatenate([super_arr_b_to_t_top, arr], axis=1)
+            super_arr_b_to_t_bottom = np.concatenate(
+                [super_arr_b_to_t_bottom, arr_rotated], axis=1
+            )
+    for j in range(16):
+        arr = shifted_base_cable_connector(tier, 2 * j)
+        arr = rotate_clockwise(arr)
+
+        arr = surround_by_transparent(
+            arr,
+            PIXELS // 2,
+            PIXELS // 2,
+            PIXELS // 2,
+            PIXELS // 2 + PIXELS - OFFSET_CABLE,
+        )
+        arr_rotated = rotate_180(arr)
+        if j == 0:
+            super_arr_t_to_b_top = arr
+            super_arr_t_to_b_bottom = arr_rotated
+        else:
+            super_arr_t_to_b_top = np.concatenate([super_arr_t_to_b_top, arr], axis=1)
+            super_arr_t_to_b_bottom = np.concatenate(
+                [super_arr_t_to_b_bottom, arr_rotated], axis=1
+            )
+    for j in range(16):
+        arr = shifted_base_cable_connector(tier, 2 * j)
+
+        arr = surround_by_transparent(
+            arr,
+            PIXELS // 2 + PIXELS - OFFSET_CABLE,
+            PIXELS // 2,
+            PIXELS // 2,
+            PIXELS // 2,
+        )
+        arr_rotated = rotate_180(arr)
+        if j == 0:
+            super_arr_l_to_r_right = arr
+            super_arr_l_to_r_left = arr_rotated
+        else:
+            super_arr_l_to_r_right = np.concatenate(
+                [super_arr_l_to_r_right, arr], axis=1
+            )
+            super_arr_l_to_r_left = np.concatenate(
+                [super_arr_l_to_r_left, arr_rotated], axis=1
+            )
+    for j in range(16):
+        arr = shifted_base_cable_connector(tier, 2 * j)
+        arr = rotate_180(arr)
+
+        arr = surround_by_transparent(
+            arr,
+            PIXELS // 2 + PIXELS - OFFSET_CABLE,
+            PIXELS // 2,
+            PIXELS // 2,
+            PIXELS // 2,
+        )
+        arr_rotated = rotate_180(arr)
+        if j == 0:
+            super_arr_r_to_l_right = arr
+            super_arr_r_to_l_left = arr_rotated
+        else:
+            super_arr_r_to_l_right = np.concatenate(
+                [super_arr_r_to_l_right, arr], axis=1
+            )
+            super_arr_r_to_l_left = np.concatenate(
+                [super_arr_r_to_l_left, arr_rotated], axis=1
+            )
+
+    cable_connectors = np.concatenate(
+        [
+            super_arr_b_to_t_top,
+            super_arr_t_to_b_top,
+            super_arr_l_to_r_right,
+            super_arr_r_to_l_right,
+            super_arr_b_to_t_bottom,
+            super_arr_t_to_b_bottom,
+            super_arr_l_to_r_left,
+            super_arr_r_to_l_left,
+        ],
+        axis=0,
+    )
+
+    transport_cable = np.concatenate(
+        [straight_cables, curved_cables, cable_connectors], axis=0
+    )
 
     images["array"].append(transport_cable)
     images["filename"].append(f"cable-t{tier}.png")
-    images["array"].append(super_arr)
+    images["array"].append(transport_cable)
     images["filename"].append(f"hr-cable-t{tier}.png")
 
 #
@@ -298,10 +412,7 @@ for tier in range(1, TIERS + 1):
         if i == 0:
             super_arr = arr
         else:
-            super_arr = np.concatenate(
-                [super_arr, arr],
-                axis=1,
-            )
+            super_arr = np.concatenate([super_arr, arr], axis=1)
 
     images["array"].append(super_arr)
     images["filename"].append(f"requester-t{tier}.png")
@@ -314,10 +425,7 @@ for tier in range(1, TIERS + 1):
         if i == 0:
             super_arr = arr
         else:
-            super_arr = np.concatenate(
-                [super_arr, arr],
-                axis=1,
-            )
+            super_arr = np.concatenate([super_arr, arr], axis=1)
 
     images["array"].append(super_arr)
     images["filename"].append(f"requester-t{tier}-shadow.png")
