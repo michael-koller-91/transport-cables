@@ -22,7 +22,7 @@ PIXELS = 64
 PIXELS_SHADOW = 70
 THICKNESS = 16
 TIER_FRAME_THICKNESS = 2
-YELLOW_LINE_OFFSET = 39
+YELLOW_LINE_OFFSET = 16
 
 images = {
     "array": list(),
@@ -86,32 +86,54 @@ def make_tier_frame_top_bottom(pixels_x, pixels_y, n_frames):
     return arr
 
 
-def make_base_cable(pixels_x, pixels_y, shift):
-    arr = np.zeros((pixels_y, pixels_x, 3), dtype=np.uint8)
+def make_base_cable(pixels_x, pixels_y):
+    arr = np.zeros((pixels_y, 3 * pixels_x, 3), dtype=np.uint8)
     arr[:, :, :] = 100
     arr[:, ::YELLOW_LINE_OFFSET, 0] = 255
     arr[:, ::YELLOW_LINE_OFFSET, 1] = 255
     arr[pixels_y // 4 : -pixels_y // 4, 2::YELLOW_LINE_OFFSET, 0] = 255
     arr[pixels_y // 4 : -pixels_y // 4, 2::YELLOW_LINE_OFFSET, 1] = 255
-    arr = np.roll(arr, shift, axis=1)
     return arr
+
+
+def center_of_base_cable(pixels_x, pixels_y, shift):
+    base_cable = make_base_cable(pixels_x, pixels_y)
+    return base_cable[:, pixels_x - shift : 2 * pixels_x - shift, :]
+
+
+def beginning_of_base_cable(pixels_x, pixels_y, offset, shift):
+    base_cable = make_base_cable(pixels_x, pixels_y)
+    base_cable *= 2
+    return base_cable[:, pixels_x - shift - offset : pixels_x - shift, :]
+
+
+def end_of_base_cable(pixels_x, pixels_y, offset, shift):
+    base_cable = make_base_cable(pixels_x, pixels_y)
+    base_cable *= 4
+    return base_cable[:, pixels_x - shift - offset - 2 : pixels_x - shift - 2, :]
 
 
 def shifted_base_cable(tier, shift):
     arr = make_tier_frame(PIXELS, tier)
-    base_cable = make_base_cable(PIXELS + OFFSET_CABLE, THICKNESS, shift)
-    arr[PIXELS // 2 - THICKNESS // 2 : PIXELS // 2 + THICKNESS // 2, :, :] = base_cable[
-        :, OFFSET_CABLE:, :
-    ]
+    base_cable_center = center_of_base_cable(PIXELS, THICKNESS, shift)
+    arr[
+        PIXELS // 2 - THICKNESS // 2 : PIXELS // 2 + THICKNESS // 2, :, :
+    ] = base_cable_center
     return arr
 
 
-def shifted_base_cable_connector(tier, shift):
+def shifted_base_cable_connector(tier, shift, beginning=False, end=False):
     arr = make_tier_frame_top_bottom(PIXELS, OFFSET_CABLE, tier)
-    base_cable = make_base_cable(PIXELS + OFFSET_CABLE, THICKNESS, shift)
-    arr[PIXELS // 2 - THICKNESS // 2 : PIXELS // 2 + THICKNESS // 2, :, :] = base_cable[
-        :, :OFFSET_CABLE, :
-    ]
+    if beginning:
+        base_cable = beginning_of_base_cable(PIXELS, THICKNESS, OFFSET_CABLE, shift)
+    if end:
+        base_cable = end_of_base_cable(PIXELS, THICKNESS, OFFSET_CABLE, shift)
+    if not (beginning or end):
+        raise ValueError("need beginning or end")
+    if beginning and end:
+        raise ValueError("cannot have beginning and end")
+    base_cable *= 2
+    arr[PIXELS // 2 - THICKNESS // 2 : PIXELS // 2 + THICKNESS // 2, :, :] = base_cable
     return arr
 
 
@@ -163,7 +185,7 @@ if not sprites.exists():
 #
 # cable
 #
-base_cable = make_base_cable(PIXELS + OFFSET_CABLE, PIXELS, 0)
+base_cable = make_base_cable(PIXELS, PIXELS)
 images["array"].append(base_cable)
 images["filename"].append("base_straight.png")
 
@@ -260,11 +282,28 @@ for tier in range(1, TIERS + 1):
         axis=0,
     )
 
+    #
     # cable connectors
-    for j in range(16):
-        arr = shifted_base_cable_connector(tier, 2 * j)
-        arr = rotate_counterclockwise(arr)
+    #
+    # If we were standing on a belt and facing in the direction in which it is
+    # traveling, the beginning of the belt is behind us and the end of the belt
+    # is ahead of us. With this nomenclature, we have the following layout of
+    # the 8 rows of connectors:
+    # * row 1: The beginning of a south-north running belt.
+    # * row 2: The end of a north-south running belt.
+    # * row 3: The beginning of a west-east running belt.
+    # * row 4: The end of a east-west running belt.
+    # * row 5: The beginning of a north-south running belt.
+    # * row 6: The end of a south-north running belt.
+    # * row 7: The beginning of a east-west running belt.
+    # * row 8: The end of a west-east running belt.
+    #
+    # Lastly, the base_cable_connector is a west-east running belt.
 
+    # * row 1: The beginning of a south-north running belt.
+    for j in range(16):
+        arr = shifted_base_cable_connector(tier, 2 * j, beginning=True)
+        arr = rotate_counterclockwise(arr)  # rotate south-north
         arr = surround_by_transparent(
             arr,
             PIXELS // 2,
@@ -272,19 +311,15 @@ for tier in range(1, TIERS + 1):
             PIXELS // 2,
             PIXELS // 2 + PIXELS - OFFSET_CABLE,
         )
-        arr_rotated = rotate_180(arr)
         if j == 0:
-            super_arr_b_to_t_top = arr
-            super_arr_b_to_t_bottom = arr_rotated
+            row_1 = arr
         else:
-            super_arr_b_to_t_top = np.concatenate([super_arr_b_to_t_top, arr], axis=1)
-            super_arr_b_to_t_bottom = np.concatenate(
-                [super_arr_b_to_t_bottom, arr_rotated], axis=1
-            )
-    for j in range(16):
-        arr = shifted_base_cable_connector(tier, 2 * j)
-        arr = rotate_clockwise(arr)
+            row_1 = np.concatenate([row_1, arr], axis=1)
 
+    # * row 2: The end of a north-south running belt.
+    for j in range(16):
+        arr = shifted_base_cable_connector(tier, 2 * j, end=True)
+        arr = rotate_clockwise(arr)  # rotate north-south
         arr = surround_by_transparent(
             arr,
             PIXELS // 2,
@@ -292,18 +327,14 @@ for tier in range(1, TIERS + 1):
             PIXELS // 2,
             PIXELS // 2 + PIXELS - OFFSET_CABLE,
         )
-        arr_rotated = rotate_180(arr)
         if j == 0:
-            super_arr_t_to_b_top = arr
-            super_arr_t_to_b_bottom = arr_rotated
+            row_2 = arr
         else:
-            super_arr_t_to_b_top = np.concatenate([super_arr_t_to_b_top, arr], axis=1)
-            super_arr_t_to_b_bottom = np.concatenate(
-                [super_arr_t_to_b_bottom, arr_rotated], axis=1
-            )
-    for j in range(16):
-        arr = shifted_base_cable_connector(tier, 2 * j)
+            row_2 = np.concatenate([row_2, arr], axis=1)
 
+    # * row 3: The beginning of a west-east running belt.
+    for j in range(16):
+        arr = shifted_base_cable_connector(tier, 2 * j, beginning=True)
         arr = surround_by_transparent(
             arr,
             PIXELS // 2 + PIXELS - OFFSET_CABLE,
@@ -311,21 +342,15 @@ for tier in range(1, TIERS + 1):
             PIXELS // 2,
             PIXELS // 2,
         )
-        arr_rotated = rotate_180(arr)
         if j == 0:
-            super_arr_l_to_r_right = arr
-            super_arr_l_to_r_left = arr_rotated
+            row_3 = arr
         else:
-            super_arr_l_to_r_right = np.concatenate(
-                [super_arr_l_to_r_right, arr], axis=1
-            )
-            super_arr_l_to_r_left = np.concatenate(
-                [super_arr_l_to_r_left, arr_rotated], axis=1
-            )
-    for j in range(16):
-        arr = shifted_base_cable_connector(tier, 2 * j)
-        arr = rotate_180(arr)
+            row_3 = np.concatenate([row_3, arr], axis=1)
 
+    # * row 4: The end of a east-west running belt.
+    for j in range(16):
+        arr = shifted_base_cable_connector(tier, 2 * j, end=True)
+        arr = rotate_180(arr)  # rotate east-west
         arr = surround_by_transparent(
             arr,
             PIXELS // 2 + PIXELS - OFFSET_CABLE,
@@ -333,29 +358,76 @@ for tier in range(1, TIERS + 1):
             PIXELS // 2,
             PIXELS // 2,
         )
-        arr_rotated = rotate_180(arr)
         if j == 0:
-            super_arr_r_to_l_right = arr
-            super_arr_r_to_l_left = arr_rotated
+            row_4 = arr
         else:
-            super_arr_r_to_l_right = np.concatenate(
-                [super_arr_r_to_l_right, arr], axis=1
-            )
-            super_arr_r_to_l_left = np.concatenate(
-                [super_arr_r_to_l_left, arr_rotated], axis=1
-            )
+            row_4 = np.concatenate([row_4, arr], axis=1)
+
+    # * row 5: The beginning of a north-south running belt.
+    for j in range(16):
+        arr = shifted_base_cable_connector(tier, 2 * j, beginning=True)
+        arr = rotate_clockwise(arr)  # rotate north-south
+        arr = surround_by_transparent(
+            arr,
+            PIXELS // 2,
+            PIXELS // 2 + PIXELS - OFFSET_CABLE,
+            PIXELS // 2,
+            PIXELS // 2,
+        )
+        if j == 0:
+            row_5 = arr
+        else:
+            row_5 = np.concatenate([row_5, arr], axis=1)
+
+    # * row 6: The end of a south-north running belt.
+    for j in range(16):
+        arr = shifted_base_cable_connector(tier, 2 * j, end=True)
+        arr = rotate_counterclockwise(arr)  # rotate south-north
+        arr = surround_by_transparent(
+            arr,
+            PIXELS // 2,
+            PIXELS // 2 + PIXELS - OFFSET_CABLE,
+            PIXELS // 2,
+            PIXELS // 2,
+        )
+        if j == 0:
+            row_6 = arr
+        else:
+            row_6 = np.concatenate([row_6, arr], axis=1)
+
+    # * row 7: The beginning of a east-west running belt.
+    for j in range(16):
+        arr = shifted_base_cable_connector(tier, 2 * j, beginning=True)
+        arr = rotate_180(arr)  # rotate east-west
+        arr = surround_by_transparent(
+            arr,
+            PIXELS // 2,
+            PIXELS // 2,
+            PIXELS // 2 + PIXELS - OFFSET_CABLE,
+            PIXELS // 2,
+        )
+        if j == 0:
+            row_7 = arr
+        else:
+            row_7 = np.concatenate([row_7, arr], axis=1)
+
+    # * row 8: The end of a west-east running belt.
+    for j in range(16):
+        arr = shifted_base_cable_connector(tier, 2 * j, end=True)
+        arr = surround_by_transparent(
+            arr,
+            PIXELS // 2,
+            PIXELS // 2,
+            PIXELS // 2 + PIXELS - OFFSET_CABLE,
+            PIXELS // 2,
+        )
+        if j == 0:
+            row_8 = arr
+        else:
+            row_8 = np.concatenate([row_8, arr], axis=1)
 
     cable_connectors = np.concatenate(
-        [
-            super_arr_b_to_t_top,
-            super_arr_t_to_b_top,
-            super_arr_l_to_r_right,
-            super_arr_r_to_l_right,
-            super_arr_b_to_t_bottom,
-            super_arr_t_to_b_bottom,
-            super_arr_l_to_r_left,
-            super_arr_r_to_l_left,
-        ],
+        [row_1, row_2, row_3, row_4, row_5, row_6, row_7, row_8],
         axis=0,
     )
 
@@ -365,8 +437,6 @@ for tier in range(1, TIERS + 1):
 
     images["array"].append(transport_cable)
     images["filename"].append(f"cable-t{tier}.png")
-    images["array"].append(transport_cable)
-    images["filename"].append(f"hr-cable-t{tier}.png")
 
 #
 # provider
@@ -390,8 +460,6 @@ for tier in range(1, TIERS + 1):
 
     images["array"].append(arr)
     images["filename"].append(f"provider-t{tier}-shadow.png")
-    images["array"].append(arr)
-    images["filename"].append(f"hr-provider-t{tier}-shadow.png")
 
 
 #
@@ -429,8 +497,6 @@ for tier in range(1, TIERS + 1):
 
     images["array"].append(super_arr)
     images["filename"].append(f"requester-t{tier}-shadow.png")
-    images["array"].append(super_arr)
-    images["filename"].append(f"hr-requester-t{tier}-shadow.png")
 
 
 #
@@ -456,17 +522,19 @@ for tier in range(1, TIERS + 1):
 
     images["array"].append(arr)
     images["filename"].append(f"requester-container-t{tier}-shadow.png")
-    images["array"].append(arr)
-    images["filename"].append(f"hr-requester-container-t{tier}-shadow.png")
 
 
 #
 # save all images
 #
 for array, filename in zip(images["array"], images["filename"]):
+    filename_lr = "lr-" + filename
+    filename_hr = "hr-" + filename
     if array.shape[-1] == 3:
-        Image.fromarray(array, mode="RGB").save(sprites / filename)
+        Image.fromarray(array, mode="RGB").save(sprites / filename_lr)
+        Image.fromarray(array, mode="RGB").save(sprites / filename_hr)
     elif array.shape[-1] == 4:
-        Image.fromarray(array, mode="RGBA").save(sprites / filename)
+        Image.fromarray(array, mode="RGBA").save(sprites / filename_lr)
+        Image.fromarray(array, mode="RGBA").save(sprites / filename_hr)
     else:
         raise ValueError("Unknown: array.shape[-1] =", array.ndim)

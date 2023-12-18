@@ -1,6 +1,6 @@
 local prefix = "transport-cables:"
 local speed = 0.03125
-local animation_speed_coefficient = 32
+local animation_speed_coefficient = 2
 local tint = {
     r = 1,
     g = 0,
@@ -9,7 +9,7 @@ local tint = {
 }
 local belt_animation_set = {
     animation_set = {
-        filename = "__transport-cables__/sprites/hr-cable-t1.png",
+        filename = "__transport-cables__/sprites/lr-cable-t1.png",
         priority = "extra-high",
         width = 64,
         height = 64,
@@ -53,7 +53,7 @@ entity.picture = {
     layers =
     {
         {
-            filename = "__transport-cables__/sprites/provider-t1.png",
+            filename = "__transport-cables__/sprites/lr-provider-t1.png",
             priority = "extra-high",
             width = 64,
             height = 64,
@@ -70,7 +70,7 @@ entity.picture = {
             }
         },
         {
-            filename = "__transport-cables__/sprites/provider-t1-shadow.png",
+            filename = "__transport-cables__/sprites/lr-provider-t1-shadow.png",
             priority = "extra-high",
             width = 70,
             height = 70,
@@ -107,7 +107,7 @@ entity.sprites = make_4way_animation_from_spritesheet({
     layers =
     {
         {
-            filename = "__transport-cables__/sprites/requester-t1.png",
+            filename = "__transport-cables__/sprites/lr-requester-t1.png",
             width = 128,
             height = 128,
             frame_count = 1,
@@ -123,7 +123,7 @@ entity.sprites = make_4way_animation_from_spritesheet({
             }
         },
         {
-            filename = "__transport-cables__/sprites/requester-t1-shadow.png",
+            filename = "__transport-cables__/sprites/lr-requester-t1-shadow.png",
             width = 140,
             height = 140,
             frame_count = 1,
@@ -157,7 +157,7 @@ entity.picture = {
     layers =
     {
         {
-            filename = "__transport-cables__/sprites/requester-container-t1.png",
+            filename = "__transport-cables__/sprites/lr-requester-container-t1.png",
             priority = "extra-high",
             width = 64,
             height = 64,
@@ -173,7 +173,7 @@ entity.picture = {
             }
         },
         {
-            filename = "__transport-cables__/sprites/requester-container-t1-shadow.png",
+            filename = "__transport-cables__/sprites/lr-requester-container-t1-shadow.png",
             priority = "extra-high",
             width = 70,
             height = 70,
