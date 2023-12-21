@@ -14,7 +14,8 @@ parargs = parser.parse_args()
 
 rng = np.random.default_rng(123456789)
 
-sprites = Path("sprites")
+folder_sprites = Path("sprites")
+folder_entities = folder_sprites / "entities"
 
 TIERS = 1
 OFFSET_CABLE = 14
@@ -28,6 +29,12 @@ images = {
     "array": list(),
     "filename": list(),
 }
+
+
+def make_transparent(pixels_x, pixels_y):
+    arr = np.zeros((pixels_x, pixels_y, 4), dtype=np.uint8)
+    arr[:, :, -1] = 0
+    return arr
 
 
 def rotate_clockwise(arr):
@@ -178,10 +185,12 @@ def merge_upper_right(array_horizontal, array_vertical):
 #
 # create the sprites directory if it does not exist
 #
-if parargs.clean and sprites.exists():
-    shutil.rmtree(str(sprites))
-if not sprites.exists():
-    os.mkdir(str(sprites))
+if parargs.clean and folder_sprites.exists():
+    shutil.rmtree(str(folder_sprites))
+    # shutil.rmtree(str(folder_entities))
+if not folder_sprites.exists():
+    os.mkdir(str(folder_sprites))
+    os.mkdir(str(folder_entities))
 
 
 #
@@ -441,6 +450,26 @@ for tier in range(1, TIERS + 1):
     images["filename"].append(f"cable-t{tier}.png")
 
 #
+# cable scanner
+#
+for tier in range(1, TIERS + 1):
+    images["array"].append(make_transparent(658, 320))
+    images["filename"].append(f"ccm-belt-04a-sequence-{tier}.png")
+
+
+#
+# lamp
+#
+for tier in range(1, TIERS + 1):
+    images["array"].append(make_transparent(32, 32))
+    images["filename"].append(f"lamp.png")
+    images["array"].append(make_transparent(32, 32))
+    images["filename"].append(f"lamp-shadow.png")
+    images["array"].append(make_transparent(32, 32))
+    images["filename"].append(f"lamp-light.png")
+
+
+#
 # provider
 #
 for tier in range(1, TIERS + 1):
@@ -533,10 +562,10 @@ for array, filename in zip(images["array"], images["filename"]):
     filename_lr = "lr-" + filename
     filename_hr = "hr-" + filename
     if array.shape[-1] == 3:
-        Image.fromarray(array, mode="RGB").save(sprites / filename_lr)
-        Image.fromarray(array, mode="RGB").save(sprites / filename_hr)
+        Image.fromarray(array, mode="RGB").save(folder_entities / filename_lr)
+        Image.fromarray(array, mode="RGB").save(folder_entities / filename_hr)
     elif array.shape[-1] == 4:
-        Image.fromarray(array, mode="RGBA").save(sprites / filename_lr)
-        Image.fromarray(array, mode="RGBA").save(sprites / filename_hr)
+        Image.fromarray(array, mode="RGBA").save(folder_entities / filename_lr)
+        Image.fromarray(array, mode="RGBA").save(folder_entities / filename_hr)
     else:
         raise ValueError("Unknown: array.shape[-1] =", array.ndim)
