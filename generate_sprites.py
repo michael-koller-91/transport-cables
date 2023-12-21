@@ -91,8 +91,12 @@ def make_base_cable(pixels_x, pixels_y):
     arr[:, :, :] = 100
     arr[:, ::YELLOW_LINE_OFFSET, 0] = 255
     arr[:, ::YELLOW_LINE_OFFSET, 1] = 255
+    arr[:, 1::YELLOW_LINE_OFFSET, 0] = 255
+    arr[:, 1::YELLOW_LINE_OFFSET, 1] = 255
     arr[pixels_y // 4 : -pixels_y // 4, 2::YELLOW_LINE_OFFSET, 0] = 255
     arr[pixels_y // 4 : -pixels_y // 4, 2::YELLOW_LINE_OFFSET, 1] = 255
+    arr[pixels_y // 4 : -pixels_y // 4, 3::YELLOW_LINE_OFFSET, 0] = 255
+    arr[pixels_y // 4 : -pixels_y // 4, 3::YELLOW_LINE_OFFSET, 1] = 255
     return arr
 
 
@@ -103,13 +107,11 @@ def center_of_base_cable(pixels_x, pixels_y, shift):
 
 def beginning_of_base_cable(pixels_x, pixels_y, offset, shift):
     base_cable = make_base_cable(pixels_x, pixels_y)
-    base_cable *= 2
     return base_cable[:, pixels_x - shift - offset : pixels_x - shift, :]
 
 
 def end_of_base_cable(pixels_x, pixels_y, offset, shift):
     base_cable = make_base_cable(pixels_x, pixels_y)
-    base_cable *= 4
     return base_cable[:, pixels_x - shift - offset - 2 : pixels_x - shift - 2, :]
 
 

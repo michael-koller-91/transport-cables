@@ -1,6 +1,6 @@
 local prefix = "transport-cables:"
 local speed = 0.03125
-local animation_speed_coefficient = 2
+local animation_speed_coefficient = 10
 local tint = {
     r = 1,
     g = 0,
