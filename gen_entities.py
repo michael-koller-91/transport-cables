@@ -517,40 +517,10 @@ def gen(folder):
     # provider
     #
     for tier in range(1, TIERS + 1):
-        arr = gu.zeros_rgb(PIXELS, PIXELS)
-        arr[
-            PIXELS // 2 - THICKNESS_OVER_2 : PIXELS // 2 + THICKNESS_OVER_2,
-            PIXELS // 2 - THICKNESS_OVER_2 : PIXELS // 2 + THICKNESS_OVER_2,
-            0,
-        ] = 255
-        arr[
-            PIXELS // 2 - THICKNESS_OVER_2 : PIXELS // 2 + THICKNESS_OVER_2,
-            : PIXELS // 2 - THICKNESS_OVER_2,
-            :,
-        ] = 100
-        arr[
-            : PIXELS // 2 - THICKNESS_OVER_2,
-            PIXELS // 2 - THICKNESS_OVER_2 : PIXELS // 2 + THICKNESS_OVER_2,
-            :,
-        ] = 100
-        arr[
-            PIXELS // 2 - THICKNESS_OVER_2 : PIXELS // 2 + THICKNESS_OVER_2,
-            PIXELS // 2 + THICKNESS_OVER_2 :,
-            :,
-        ] = 100
-        arr[
-            PIXELS // 2 + THICKNESS_OVER_2 :,
-            PIXELS // 2 - THICKNESS_OVER_2 : PIXELS // 2 + THICKNESS_OVER_2,
-            :,
-        ] = 100
-        arr = gu.make_tier_edges(
-            arr, 1, TIER_FRAME_THICKNESS, tl=True, tr=True, br=True, bl=True
-        )
+        arr = gu.gen_provider(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
 
         images["array"].append(arr)
         images["filename"].append(f"provider-t{tier}.png")
-        images["array"].append(arr)
-        images["filename"].append(f"hr-provider-t{tier}.png")
 
         #
         arr = np.zeros((PIXELS_SHADOW, PIXELS_SHADOW, 3), dtype=np.uint8)

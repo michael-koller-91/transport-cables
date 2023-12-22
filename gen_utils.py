@@ -13,6 +13,39 @@ def compress_rgb(arr, shape):
     return arr_avrg
 
 
+def gen_provider(pixels, thickness, tier_frame_thickness, tier):
+    arr = zeros_rgb(pixels, pixels)
+    arr[
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        0,
+    ] = 255
+    arr[
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        : pixels // 2 - thickness,
+        :,
+    ] = 100
+    arr[
+        : pixels // 2 - thickness,
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        :,
+    ] = 100
+    arr[
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        pixels // 2 + thickness :,
+        :,
+    ] = 100
+    arr[
+        pixels // 2 + thickness :,
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        :,
+    ] = 100
+    arr = make_tier_edges(
+        arr, tier, tier_frame_thickness, tl=True, tr=True, br=True, bl=True
+    )
+    return arr
+
+
 def make_base_cable(pixels_x, pixels_y, yellow_line_offset):
     arr = np.zeros((pixels_y, 3 * pixels_x, 3), dtype=np.uint8)
     arr[:, :, :] = 100
@@ -44,6 +77,30 @@ def make_center_of_base_cable(pixels_x, pixels_y, shift, yellow_line_offset):
 def make_end_of_base_cable(pixels_x, pixels_y, offset, shift, yellow_line_offset):
     base_cable = make_base_cable(pixels_x, pixels_y, yellow_line_offset)
     return base_cable[:, pixels_x - shift - offset + 14 : pixels_x - shift + 14, :]
+
+
+def make_mipmaps_rgb(arr, mipmaps):
+    assert arr.ndim == 3
+    assert arr.shape[-1] == 3
+
+    target_shapes = np.zeros((mipmaps, 2), dtype=np.int32)
+    for m in range(mipmaps):
+        target_shapes[m, 0] = arr.shape[0] // 2**m
+        target_shapes[m, 1] = arr.shape[1] // 2**m
+
+    super_arr = zeros_rgba(arr.shape[0], np.sum(target_shapes[:, 1]))
+    for m in range(mipmaps):
+        if m > 0:
+            arr = compress_rgb(arr, target_shapes[m, :])
+
+        rows = target_shapes[m, 0]
+        columns_l = target_shapes[m, 1]
+        columns_offset = np.sum(target_shapes[:m, 1])
+
+        super_arr[:rows, columns_offset : columns_offset + columns_l, :-1] = arr
+        super_arr[:rows, columns_offset : columns_offset + columns_l, -1] = 255
+
+    return super_arr
 
 
 def make_tier_edges(

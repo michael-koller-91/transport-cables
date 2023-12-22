@@ -21,10 +21,10 @@ images = {
 
 
 def gen(folder):
-    for tier in range(TIERS + 1):
-        super_arr = gu.zeros_rgba_wh(
-            PIXELS + PIXELS // 2 + PIXELS // 4 + PIXELS // 8, PIXELS
-        )
+    #
+    # cable
+    #
+    for tier in range(1, TIERS + 1):
         arr = gu.shifted_base_cable(0, PIXELS, THICKNESS, YELLOW_LINE_OFFSET)
         arr = gu.make_tier_lines(
             arr,
@@ -35,47 +35,20 @@ def gen(folder):
             right=False,
             bottom=True,
         )
-        super_arr[:, :PIXELS, :-1] = arr
-        super_arr[:, :PIXELS, -1] = 255
+        super_arr = gu.make_mipmaps_rgb(arr, 4)
 
-        arr = gu.compress_rgb(arr, (PIXELS // 2, PIXELS // 2))
-        super_arr[: PIXELS // 2, PIXELS : PIXELS + PIXELS // 2, :-1] = arr
-        super_arr[: PIXELS // 2, PIXELS : PIXELS + PIXELS // 2, -1] = 255
+        images["array"].append(super_arr)
+        images["filename"].append(f"cable-t{tier}.png")
 
-        arr = gu.compress_rgb(arr, (PIXELS // 4, PIXELS // 4))
-        super_arr[
-            : PIXELS // 4,
-            PIXELS + PIXELS // 2 : PIXELS + PIXELS // 2 + PIXELS // 4,
-            :-1,
-        ] = arr
-        super_arr[
-            : PIXELS // 4, PIXELS + PIXELS // 2 : PIXELS + PIXELS // 2 + PIXELS // 4, -1
-        ] = 255
+    #
+    # provider
+    #
+    for tier in range(1, TIERS + 1):
+        arr = gu.gen_provider(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
+        super_arr = gu.make_mipmaps_rgb(arr, 4)
 
-        arr = gu.compress_rgb(arr, (PIXELS // 8, PIXELS // 8))
-        super_arr[
-            : PIXELS // 8,
-            PIXELS
-            + PIXELS // 2
-            + PIXELS // 4 : PIXELS
-            + PIXELS // 2
-            + PIXELS // 4
-            + PIXELS // 8,
-            :-1,
-        ] = arr
-        super_arr[
-            : PIXELS // 8,
-            PIXELS
-            + PIXELS // 2
-            + PIXELS // 4 : PIXELS
-            + PIXELS // 2
-            + PIXELS // 4
-            + PIXELS // 8,
-            -1,
-        ] = 255
-
-    images["array"].append(super_arr)
-    images["filename"].append(f"cable-t{tier}.png")
+        images["array"].append(super_arr)
+        images["filename"].append(f"provider-t{tier}.png")
 
     #
     # save all images

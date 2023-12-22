@@ -1,10 +1,10 @@
 import os
 import shutil
 import argparse
+import gen_icons
+import gen_entities
 from icecream import ic
 from pathlib import Path
-import gen_entities
-import gen_icons
 
 
 parser = argparse.ArgumentParser()
