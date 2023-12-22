@@ -23,7 +23,7 @@ PIXELS = 64
 PIXELS_SHADOW = 70
 THICKNESS = 16
 TIER_FRAME_THICKNESS = 2
-YELLOW_LINE_OFFSET = 16
+YELLOW_LINE_OFFSET = 32
 
 images = {
     "array": list(),
@@ -32,7 +32,7 @@ images = {
 
 
 def make_transparent(pixels_x, pixels_y):
-    arr = np.zeros((pixels_x, pixels_y, 4), dtype=np.uint8)
+    arr = np.zeros((pixels_y, pixels_x, 4), dtype=np.uint8)
     arr[:, :, -1] = 0
     return arr
 
@@ -96,14 +96,18 @@ def make_tier_frame_top_bottom(pixels_x, pixels_y, n_frames):
 def make_base_cable(pixels_x, pixels_y):
     arr = np.zeros((pixels_y, 3 * pixels_x, 3), dtype=np.uint8)
     arr[:, :, :] = 100
-    arr[:, ::YELLOW_LINE_OFFSET, 0] = 255
-    arr[:, ::YELLOW_LINE_OFFSET, 1] = 255
-    arr[:, 1::YELLOW_LINE_OFFSET, 0] = 255
-    arr[:, 1::YELLOW_LINE_OFFSET, 1] = 255
-    arr[pixels_y // 4 : -pixels_y // 4, 2::YELLOW_LINE_OFFSET, 0] = 255
-    arr[pixels_y // 4 : -pixels_y // 4, 2::YELLOW_LINE_OFFSET, 1] = 255
-    arr[pixels_y // 4 : -pixels_y // 4, 3::YELLOW_LINE_OFFSET, 0] = 255
-    arr[pixels_y // 4 : -pixels_y // 4, 3::YELLOW_LINE_OFFSET, 1] = 255
+    arr[pixels_y // 3 : -pixels_y // 3, ::YELLOW_LINE_OFFSET, 0] = 255
+    arr[pixels_y // 3 : -pixels_y // 3, ::YELLOW_LINE_OFFSET, 1] = 255
+    arr[pixels_y // 3 : -pixels_y // 3, 1::YELLOW_LINE_OFFSET, 0] = 255
+    arr[pixels_y // 3 : -pixels_y // 3, 1::YELLOW_LINE_OFFSET, 1] = 255
+    arr[pixels_y // 8 : -pixels_y // 8, 4::YELLOW_LINE_OFFSET, 0] = 255
+    arr[pixels_y // 8 : -pixels_y // 8, 4::YELLOW_LINE_OFFSET, 1] = 255
+    arr[pixels_y // 8 : -pixels_y // 8, 5::YELLOW_LINE_OFFSET, 0] = 255
+    arr[pixels_y // 8 : -pixels_y // 8, 5::YELLOW_LINE_OFFSET, 1] = 255
+    arr[pixels_y // 3 : -pixels_y // 3, 8::YELLOW_LINE_OFFSET, 0] = 255
+    arr[pixels_y // 3 : -pixels_y // 3, 8::YELLOW_LINE_OFFSET, 1] = 255
+    arr[pixels_y // 3 : -pixels_y // 3, 9::YELLOW_LINE_OFFSET, 0] = 255
+    arr[pixels_y // 3 : -pixels_y // 3, 9::YELLOW_LINE_OFFSET, 1] = 255
     return arr
 
 
@@ -119,7 +123,7 @@ def beginning_of_base_cable(pixels_x, pixels_y, offset, shift):
 
 def end_of_base_cable(pixels_x, pixels_y, offset, shift):
     base_cable = make_base_cable(pixels_x, pixels_y)
-    return base_cable[:, pixels_x - shift - offset - 2 : pixels_x - shift - 2, :]
+    return base_cable[:, pixels_x - shift - offset + 14 : pixels_x - shift + 14, :]
 
 
 def shifted_base_cable(tier, shift):
@@ -137,11 +141,11 @@ def shifted_base_cable_connector(tier, shift, beginning=False, end=False):
         base_cable = beginning_of_base_cable(PIXELS, THICKNESS, OFFSET_CABLE, shift)
     if end:
         base_cable = end_of_base_cable(PIXELS, THICKNESS, OFFSET_CABLE, shift)
+        base_cable *= 2
     if not (beginning or end):
         raise ValueError("need beginning or end")
     if beginning and end:
         raise ValueError("cannot have beginning and end")
-    base_cable *= 2
     arr[PIXELS // 2 - THICKNESS // 2 : PIXELS // 2 + THICKNESS // 2, :, :] = base_cable
     return arr
 
@@ -187,7 +191,6 @@ def merge_upper_right(array_horizontal, array_vertical):
 #
 if parargs.clean and folder_sprites.exists():
     shutil.rmtree(str(folder_sprites))
-    # shutil.rmtree(str(folder_entities))
 if not folder_sprites.exists():
     os.mkdir(str(folder_sprites))
     os.mkdir(str(folder_entities))
@@ -196,9 +199,27 @@ if not folder_sprites.exists():
 #
 # cable
 #
+# two helper images for pixel alignment
 base_cable = make_base_cable(PIXELS, PIXELS)
 images["array"].append(base_cable)
 images["filename"].append("base_straight.png")
+
+for shift in range(30):
+    base_cable_shifted = shifted_base_cable(1, shift)
+    base_cable_connector_beginning = (
+        shifted_base_cable_connector(1, shift, True, False) * 2
+    )
+    base_cable_connector_end = shifted_base_cable_connector(1, shift, False, True) * 2
+    arr = np.concatenate(
+        [base_cable_connector_beginning, base_cable_shifted, base_cable_connector_end],
+        axis=1,
+    )
+    if shift == 0:
+        base_cable_alignment = arr
+    else:
+        base_cable_alignment = np.concatenate([base_cable_alignment, arr], axis=0)
+images["array"].append(base_cable_alignment)
+images["filename"].append("base_cable_alignment.png")
 
 for tier in range(1, TIERS + 1):
     # straight cables
@@ -453,7 +474,7 @@ for tier in range(1, TIERS + 1):
 # cable scanner
 #
 for tier in range(1, TIERS + 1):
-    images["array"].append(make_transparent(658, 320))
+    images["array"].append(make_transparent(320, 658))
     images["filename"].append(f"ccm-belt-04a-sequence-{tier}.png")
 
 
@@ -462,11 +483,11 @@ for tier in range(1, TIERS + 1):
 #
 for tier in range(1, TIERS + 1):
     images["array"].append(make_transparent(32, 32))
-    images["filename"].append(f"lamp.png")
+    images["filename"].append("lamp.png")
     images["array"].append(make_transparent(32, 32))
-    images["filename"].append(f"lamp-shadow.png")
+    images["filename"].append("lamp-shadow.png")
     images["array"].append(make_transparent(32, 32))
-    images["filename"].append(f"lamp-light.png")
+    images["filename"].append("lamp-light.png")
 
 
 #

@@ -36,9 +36,7 @@ entity.name = entity_name
 entity.destructible = false
 entity.minable = nil
 entity.operable = false
-entity.energy_source = {
-    type = "void"
-}
+entity.energy_source = { type = "void" }
 entity.selection_box = { { 0.0, 0.0 }, { 0.0, 0.0 } }
 entity.picture_off =
 {
