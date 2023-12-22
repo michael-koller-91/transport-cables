@@ -30,6 +30,135 @@ local belt_animation_set = {
 }
 
 ---------------------------------------------------------------------------
+--
+-- this is from __core__/lualib/circuit-connector-generated-definitions.lua
+--
+local belt_frame_connector_template =
+{
+    frame_main =
+    {
+        sheet =
+        {
+            filename = "__transport-cables__/sprites/entities/hr-cable-circuit-frame-main-t1.png",
+            frame_count = 4,
+            height = 94,
+            line_length = 4,
+            priority = "low",
+            scale = 0.5,
+            shift = util.by_pixel(3.5, -5),
+            variation_count = 7,
+            width = 80
+        }
+    },
+    back_patch =
+    {
+        sheet =
+        {
+            filename = "__transport-cables__/sprites/entities/hr-cable-circuit-patch-back-t1.png",
+            frame_count = 1,
+            height = 72,
+            line_length = 3,
+            priority = "low",
+            scale = 0.5,
+            shift = util.by_pixel(0, -2),
+            variation_count = 3,
+            width = 66
+        }
+    },
+    frame_shadow =
+    {
+        sheet =
+        {
+            draw_as_shadow = true,
+            filename = "__transport-cables__/sprites/entities/hr-cable-circuit-frame-main-t1-shadow.png",
+            frame_count = 4,
+            height = 112,
+            line_length = 4,
+            priority = "low",
+            scale = 0.5,
+            shift = util.by_pixel(2, 3),
+            variation_count = 7,
+            width = 160
+        }
+    },
+    frame_main_scanner = util.draw_as_glow
+        {
+            filename = "__transport-cables__/sprites/entities/hr-cable-circuit-frame-main-scanner-t1.png",
+            frame_count = 8,
+            height = 64,
+            line_length = 8,
+            priority = "low",
+            scale = 0.5,
+            shift = util.by_pixel(0, 0.5),
+            width = 22
+        },
+
+    wire_offset_hotfix = util.by_pixel(-1, 1),
+    wire_shadow_offset_hotfix = util.by_pixel(-1, 1)
+}
+
+local transport_belt_connector_frame_sprites =
+{
+    frame_main = belt_frame_connector_template.frame_main,
+    frame_shadow = belt_frame_connector_template.frame_shadow,
+    frame_back_patch = belt_frame_connector_template.back_patch,
+    frame_main_scanner = belt_frame_connector_template.frame_main_scanner
+}
+
+local belt_ccm = transport_belt_connector_frame_sprites
+
+belt_ccm.frame_main_scanner_movement_speed = 0.032258064516129
+
+belt_ccm.frame_main_scanner_horizontal_start_shift = { -0.25, -0.125 + 1 / 32 }
+belt_ccm.frame_main_scanner_horizontal_end_shift = { 0.25, -0.125 + 1 / 32 }
+belt_ccm.frame_main_scanner_horizontal_y_scale = 0.70
+belt_ccm.frame_main_scanner_horizontal_rotation = 0
+
+belt_ccm.frame_main_scanner_vertical_start_shift = { 0, -0.3125 }
+belt_ccm.frame_main_scanner_vertical_end_shift = { 0, 0.1875 }
+belt_ccm.frame_main_scanner_vertical_y_scale = 0.75
+belt_ccm.frame_main_scanner_vertical_rotation = 0.25
+
+belt_ccm.frame_main_scanner_cross_horizontal_start_shift = { -0.3125, -0.0625 }
+belt_ccm.frame_main_scanner_cross_horizontal_end_shift = { 0.3125, -0.0625 }
+belt_ccm.frame_main_scanner_cross_horizontal_y_scale = 0.60
+belt_ccm.frame_main_scanner_cross_horizontal_rotation = 0
+
+belt_ccm.frame_main_scanner_cross_vertical_start_shift = { 0, -0.3125 }
+belt_ccm.frame_main_scanner_cross_vertical_end_shift = { 0, 0.1875 }
+belt_ccm.frame_main_scanner_cross_vertical_y_scale = 0.75
+belt_ccm.frame_main_scanner_cross_vertical_rotation = 0.25
+
+belt_ccm.frame_main_scanner_nw_ne =
+{
+    filename = "__base__/graphics/entity/transport-belt/connector/transport-belt-connector-frame-main-scanner-nw-ne.png",
+    priority = "low",
+    blend_mode = "additive",
+    draw_as_glow = true,
+    line_length = 8,
+    width = 28,
+    height = 24,
+    frame_count = 32,
+    shift = { -0.03125, -0.0625 }
+}
+
+belt_ccm.frame_main_scanner_sw_se =
+{
+    filename = "__base__/graphics/entity/transport-belt/connector/transport-belt-connector-frame-main-scanner-sw-se.png",
+    priority = "low",
+    blend_mode = "additive",
+    draw_as_glow = true,
+    line_length = 8,
+    width = 29,
+    height = 28,
+    frame_count = 32,
+    shift = { 0.015625, -0.09375 }
+}
+
+
+
+
+---------------------------------------------------------------------------
 local entity_name = prefix .. "lamp"
 local entity = table.deepcopy(data.raw["lamp"]["small-lamp"])
 entity.name = entity_name
@@ -344,6 +473,7 @@ entity.animation_speed_coefficient = animation_speed_coefficient
 entity.related_underground_belt = prefix .. "underground-cable"
 entity.belt_animation_set = belt_animation_set
 entity.connector_frame_sprites = transport_belt_connector_frame_sprites
+entity.operable = false
 
 data:extend({ entity })
 
@@ -476,135 +606,6 @@ entity.structure = {
 }
 
 data:extend({ entity })
-
----------------------------------------------------------------------------
---
--- this is from __core__/lualib/circuit-connector-generated-definitions.lua
---
-belt_frame_connector_template =
-{
-    frame_main =
-    {
-        sheet =
-        {
-            filename = "__transport-cables__/sprites/entities/hr-ccm-belt-04a-sequence.png",
-            frame_count = 4,
-            height = 94,
-            line_length = 4,
-            priority = "low",
-            scale = 0.5,
-            shift = util.by_pixel(3.5, -5),
-            variation_count = 7,
-            width = 80
-        }
-    },
-
-    back_patch =
-    {
-        sheet =
-        {
-            filename = "__base__/graphics/entity/transport-belt/connector/hr-ccm-belt-04a-sequence-back-patch.png",
-            frame_count = 1,
-            height = 72,
-            line_length = 3,
-            priority = "low",
-            scale = 0.5,
-            shift = util.by_pixel(0, -2),
-            variation_count = 3,
-            width = 66
-        }
-    },
-
-    frame_shadow =
-    {
-        sheet =
-        {
-            draw_as_shadow = true,
-            filename = "__base__/graphics/entity/transport-belt/connector/hr-ccm-belt-04b-sequence-shadow.png",
-            frame_count = 4,
-            height = 112,
-            line_length = 4,
-            priority = "low",
-            scale = 0.5,
-            shift = util.by_pixel(2, 3),
-            variation_count = 7,
-            width = 160
-        }
-    },
-
-    frame_main_scanner = util.draw_as_glow
-        {
-            filename = "__base__/graphics/entity/transport-belt/connector/hr-CCM-BELT-SPRITES-SCANNER.png",
-            frame_count = 8,
-            height = 64,
-            line_length = 8,
-            priority = "low",
-            scale = 0.5,
-            shift = util.by_pixel(0, 0.5),
-            width = 22
-        },
-
-    wire_offset_hotfix = util.by_pixel(-1, 1),
-    wire_shadow_offset_hotfix = util.by_pixel(-1, 1)
-}
-
-transport_belt_connector_frame_sprites =
-{
-    frame_main = belt_frame_connector_template.frame_main,
-    frame_shadow = belt_frame_connector_template.frame_shadow,
-    frame_back_patch = belt_frame_connector_template.back_patch,
-    frame_main_scanner = belt_frame_connector_template.frame_main_scanner
-}
-
-local belt_ccm = transport_belt_connector_frame_sprites
-
-belt_ccm.frame_main_scanner_movement_speed = 0.032258064516129
-
-belt_ccm.frame_main_scanner_horizontal_start_shift = { -0.25, -0.125 + 1 / 32 }
-belt_ccm.frame_main_scanner_horizontal_end_shift = { 0.25, -0.125 + 1 / 32 }
-belt_ccm.frame_main_scanner_horizontal_y_scale = 0.70
-belt_ccm.frame_main_scanner_horizontal_rotation = 0
-
-belt_ccm.frame_main_scanner_vertical_start_shift = { 0, -0.3125 }
-belt_ccm.frame_main_scanner_vertical_end_shift = { 0, 0.1875 }
-belt_ccm.frame_main_scanner_vertical_y_scale = 0.75
-belt_ccm.frame_main_scanner_vertical_rotation = 0.25
-
-belt_ccm.frame_main_scanner_cross_horizontal_start_shift = { -0.3125, -0.0625 }
-belt_ccm.frame_main_scanner_cross_horizontal_end_shift = { 0.3125, -0.0625 }
-belt_ccm.frame_main_scanner_cross_horizontal_y_scale = 0.60
-belt_ccm.frame_main_scanner_cross_horizontal_rotation = 0
-
-belt_ccm.frame_main_scanner_cross_vertical_start_shift = { 0, -0.3125 }
-belt_ccm.frame_main_scanner_cross_vertical_end_shift = { 0, 0.1875 }
-belt_ccm.frame_main_scanner_cross_vertical_y_scale = 0.75
-belt_ccm.frame_main_scanner_cross_vertical_rotation = 0.25
-
-belt_ccm.frame_main_scanner_nw_ne =
-{
-    filename = "__base__/graphics/entity/transport-belt/connector/transport-belt-connector-frame-main-scanner-nw-ne.png",
-    priority = "low",
-    blend_mode = "additive",
-    draw_as_glow = true,
-    line_length = 8,
-    width = 28,
-    height = 24,
-    frame_count = 32,
-    shift = { -0.03125, -0.0625 }
-}
-
-belt_ccm.frame_main_scanner_sw_se =
-{
-    filename = "__base__/graphics/entity/transport-belt/connector/transport-belt-connector-frame-main-scanner-sw-se.png",
-    priority = "low",
-    blend_mode = "additive",
-    draw_as_glow = true,
-    line_length = 8,
-    width = 29,
-    height = 28,
-    frame_count = 32,
-    shift = { 0.015625, -0.09375 }
-}
 
 ---------------------------------------------------------------------------
 --
