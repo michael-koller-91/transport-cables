@@ -20,17 +20,6 @@ images = {
 }
 
 
-def shifted_base_cable(shift):
-    arr = gu.zeros_rgb(PIXELS, PIXELS)
-    base_cable_center = gu.make_center_of_base_cable(
-        PIXELS, THICKNESS, shift, YELLOW_LINE_OFFSET
-    )
-    arr[
-        PIXELS // 2 - THICKNESS // 2 : PIXELS // 2 + THICKNESS // 2, :, :
-    ] = base_cable_center
-    return arr
-
-
 def shifted_base_cable_connector(shift, beginning=False, end=False):
     arr = gu.zeros_rgb(PIXELS, OFFSET_CABLE)
     if beginning:
@@ -108,11 +97,13 @@ def gen(folder):
     # auxiliary cable image
     base_cable = gu.make_base_cable(PIXELS, PIXELS, YELLOW_LINE_OFFSET)
     images["array"].append(base_cable)
-    images["filename"].append("base_straight.png")
+    images["filename"].append("base-straight.png")
 
     # helper for aligning straight parts
     for shift in range(30):
-        base_cable_shifted = shifted_base_cable(shift)
+        base_cable_shifted = gu.shifted_base_cable(
+            shift, PIXELS, THICKNESS, YELLOW_LINE_OFFSET
+        )
         base_cable_shifted = gu.make_tier_lines(
             base_cable_shifted,
             1,
@@ -162,7 +153,9 @@ def gen(folder):
 
     # helper for aligning curved parts
     for j in range(16):
-        arr_left_right = shifted_base_cable(2 * j)
+        arr_left_right = gu.shifted_base_cable(
+            2 * j, PIXELS, THICKNESS, YELLOW_LINE_OFFSET
+        )
         arr_right_left = np.rot90(arr_left_right, 2, axes=(0, 1))
         arr_top_bottom = np.rot90(arr_left_right, 3, axes=(0, 1))
 
@@ -183,7 +176,9 @@ def gen(folder):
         #
         for i in range(4):
             for j in range(16):
-                arr = shifted_base_cable(2 * j)
+                arr = gu.shifted_base_cable(
+                    2 * j, PIXELS, THICKNESS, YELLOW_LINE_OFFSET
+                )
                 arr = gu.make_tier_lines(
                     arr, tier, TIER_FRAME_THICKNESS, top=True, bottom=True
                 )
@@ -208,7 +203,9 @@ def gen(folder):
         # * right to top
         # * bottom to right
         for j in range(16):
-            arr_left_right = shifted_base_cable(2 * j)
+            arr_left_right = gu.shifted_base_cable(
+                2 * j, PIXELS, THICKNESS, YELLOW_LINE_OFFSET
+            )
             arr_right_left = np.rot90(arr_left_right, 2, axes=(0, 1))
             arr_bottom_top = np.rot90(arr_left_right, 1, axes=(0, 1))
 
@@ -230,7 +227,9 @@ def gen(folder):
         # * top to right
         # * right to bottom
         for j in range(16):
-            arr_left_right = shifted_base_cable(2 * j)
+            arr_left_right = gu.shifted_base_cable(
+                2 * j, PIXELS, THICKNESS, YELLOW_LINE_OFFSET
+            )
             arr_top_bottom = np.rot90(arr_left_right, 3, axes=(0, 1))
 
             arr = combine_ul_lr(arr_left_right, arr_top_bottom)
@@ -251,7 +250,9 @@ def gen(folder):
         # * left to top
         # * bottom to left
         for j in range(16):
-            arr_left_right = shifted_base_cable(2 * j)
+            arr_left_right = gu.shifted_base_cable(
+                2 * j, PIXELS, THICKNESS, YELLOW_LINE_OFFSET
+            )
             arr_bottom_top = np.rot90(arr_left_right, 1, axes=(0, 1))
 
             arr = combine_ur_ll(arr_left_right, arr_bottom_top)
@@ -272,7 +273,9 @@ def gen(folder):
         # * top to left
         # * left to bottom
         for j in range(16):
-            arr_left_right = shifted_base_cable(2 * j)
+            arr_left_right = gu.shifted_base_cable(
+                2 * j, PIXELS, THICKNESS, YELLOW_LINE_OFFSET
+            )
             arr_right_left = np.rot90(arr_left_right, 2, axes=(0, 1))
             arr_top_bottom = np.rot90(arr_left_right, 3, axes=(0, 1))
 

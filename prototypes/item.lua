@@ -9,7 +9,7 @@ local tint = {
 local entity_name = "transport-cables:cable"
 local item = table.deepcopy(data.raw["item"]["transport-belt"])
 item.name = entity_name
-item.icons = { { icon = "__base__/graphics/icons/transport-belt.png" } }
+item.icons = { { icon = "__transport-cables__/sprites/icons/cable-t1.png" } }
 item.icon_size = 64
 item.icon_mipmaps = 4
 item.place_result = entity_name

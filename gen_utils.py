@@ -1,6 +1,18 @@
 import numpy as np
 
 
+def compress_rgb(arr, shape):
+    """
+    Compress the array `arr` of shape (arr.shape[0], arr.shape[1], 3) into an
+    array of shape (shape[0], shape[1], 3) by averaging appropriate elements.
+    """
+    sh = shape[0], arr.shape[0] // shape[0], shape[1], arr.shape[1] // shape[1]
+    arr_avrg = zeros_rgb(shape[0], shape[1])
+    for c in range(3):
+        arr_avrg[:, :, c] = arr[:, :, c].reshape(sh).mean(-1).mean(1)
+    return arr_avrg
+
+
 def make_base_cable(pixels_x, pixels_y, yellow_line_offset):
     arr = np.zeros((pixels_y, 3 * pixels_x, 3), dtype=np.uint8)
     arr[:, :, :] = 100
@@ -96,6 +108,17 @@ def rotate_counterclockwise(arr):
     return np.rot90(arr, 1, axes=(0, 1))
 
 
+def shifted_base_cable(shift, pixels, thickness, yellow_line_offset):
+    arr = zeros_rgb(pixels, pixels)
+    base_cable_center = make_center_of_base_cable(
+        pixels, thickness, shift, yellow_line_offset
+    )
+    arr[
+        pixels // 2 - thickness // 2 : pixels // 2 + thickness // 2, :, :
+    ] = base_cable_center
+    return arr
+
+
 def surround_by_transparent(arr, left, top, right=None, bottom=None):
     right = right or left
     bottom = bottom or top
@@ -113,5 +136,15 @@ def zeros_rgba(rows, columns):
     return np.zeros((rows, columns, 4), dtype=np.uint8)
 
 
+def zeros_rgba_opaque(rows, columns):
+    arr = np.zeros((rows, columns, 4), dtype=np.uint8)
+    arr[:, :, -1] = 255
+    return arr
+
+
 def zeros_rgba_wh(width, height):
     return zeros_rgba(height, width)
+
+
+def zeros_rgba_wh_opaque(width, height):
+    return zeros_rgba_opaque(height, width)
