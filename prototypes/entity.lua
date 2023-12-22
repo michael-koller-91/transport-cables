@@ -155,9 +155,6 @@ belt_ccm.frame_main_scanner_sw_se =
     shift = { 0.015625, -0.09375 }
 }
 
-
-
-
 ---------------------------------------------------------------------------
 local entity_name = prefix .. "lamp"
 local entity = table.deepcopy(data.raw["lamp"]["small-lamp"])
@@ -276,8 +273,8 @@ entity.picture = {
         {
             filename = "__transport-cables__/sprites/entities/lr-provider-t1-shadow.png",
             priority = "extra-high",
-            width = 70,
-            height = 70,
+            width = 64,
+            height = 64,
             tint = tint,
             shift = util.by_pixel(0, 0),
             draw_as_shadow = true,
@@ -285,8 +282,8 @@ entity.picture = {
             {
                 filename = "__transport-cables__/sprites/entities/hr-provider-t1-shadow.png",
                 priority = "extra-high",
-                width = 70,
-                height = 70,
+                width = 64,
+                height = 64,
                 shift = util.by_pixel(0, 0),
                 draw_as_shadow = true,
                 scale = 0.5
@@ -328,8 +325,8 @@ entity.sprites = make_4way_animation_from_spritesheet({
         },
         {
             filename = "__transport-cables__/sprites/entities/lr-requester-t1-shadow.png",
-            width = 140,
-            height = 140,
+            width = 128,
+            height = 128,
             frame_count = 1,
             shift = util.by_pixel(0, 0),
             draw_as_shadow = true,
@@ -337,8 +334,8 @@ entity.sprites = make_4way_animation_from_spritesheet({
             {
                 scale = 0.5,
                 filename = "__transport-cables__/sprites/entities/hr-requester-t1-shadow.png",
-                width = 140,
-                height = 140,
+                width = 128,
+                height = 128,
                 frame_count = 1,
                 shift = util.by_pixel(0, 0),
                 draw_as_shadow = true
@@ -377,16 +374,16 @@ entity.picture = {
         {
             filename = "__transport-cables__/sprites/entities/lr-requester-container-t1-shadow.png",
             priority = "extra-high",
-            width = 70,
-            height = 70,
+            width = 64,
+            height = 64,
             shift = util.by_pixel(0, 0),
             draw_as_shadow = true,
             hr_version =
             {
                 filename = "__transport-cables__/sprites/entities/hr-requester-container-t1-shadow.png",
                 priority = "extra-high",
-                width = 70,
-                height = 70,
+                width = 64,
+                height = 64,
                 shift = util.by_pixel(0, 0),
                 draw_as_shadow = true,
                 scale = 0.5

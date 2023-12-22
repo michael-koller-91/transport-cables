@@ -214,7 +214,7 @@ local on_built_entity = function(event)
                 b = 1,
                 a = 0.9
             },
-            scale = 2.0
+            scale = 1.0
         }
 
         -- connect to cable east, south, west of requester if it is facing
