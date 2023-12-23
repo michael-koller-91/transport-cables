@@ -46,6 +46,48 @@ def gen_provider(pixels, thickness, tier_frame_thickness, tier):
     return arr
 
 
+def gen_requester(pixels, thickness, tier_frame_thickness, tier):
+    arr = zeros_rgb(pixels, pixels)
+    arr[
+        : pixels // 2 + thickness,
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        2,
+    ] = 255
+    arr[
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        : pixels // 2 - thickness,
+        :,
+    ] = 100
+    arr[
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        pixels // 2 + thickness :,
+        :,
+    ] = 100
+    arr[
+        pixels // 2 + thickness :,
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        :,
+    ] = 100
+
+    arr = make_tier_edges(
+        arr, tier, tier_frame_thickness, tl=True, tr=True, br=True, bl=True
+    )
+    return arr
+
+
+def gen_requester_container(pixels, thickness, tier_frame_thickness, tier):
+    arr = zeros_rgb(pixels, pixels)
+    arr[
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        2,
+    ] = 255
+    arr = make_tier_edges(
+        arr, tier, tier_frame_thickness, tl=True, tr=True, br=True, bl=True
+    )
+    return arr
+
+
 def make_base_cable(pixels_x, pixels_y, yellow_line_offset):
     arr = np.zeros((pixels_y, 3 * pixels_x, 3), dtype=np.uint8)
     arr[:, :, :] = 100

@@ -2,13 +2,7 @@ require("util")
 
 local prefix = "transport-cables:"
 local speed = 0.03125
-local animation_speed_coefficient = 10
-local tint = {
-    r = 1,
-    g = 0,
-    b = 1,
-    a = 0.7
-}
+local animation_speed_coefficient = 5
 local belt_animation_set = {
     animation_set = {
         filename = "__transport-cables__/sprites/entities/lr-cable-t1.png",
@@ -258,7 +252,6 @@ entity.picture = {
             priority = "extra-high",
             width = 64,
             height = 64,
-            tint = tint,
             shift = util.by_pixel(0, -0.5),
             hr_version =
             {
@@ -275,7 +268,6 @@ entity.picture = {
             priority = "extra-high",
             width = 64,
             height = 64,
-            tint = tint,
             shift = util.by_pixel(0, 0),
             draw_as_shadow = true,
             hr_version =
@@ -415,7 +407,6 @@ entity.picture_off = {
         axially_symmetrical = false,
         direction_count = 1,
         shift = util.by_pixel(0, 3),
-        tint = tint,
         hr_version = {
             filename = "__base__/graphics/entity/small-lamp/hr-lamp.png",
             priority = "high",
@@ -425,7 +416,6 @@ entity.picture_off = {
             axially_symmetrical = false,
             direction_count = 1,
             shift = util.by_pixel(0.25, 3),
-            tint = tint,
             scale = 0.5
         }
     }, {
@@ -437,7 +427,6 @@ entity.picture_off = {
         axially_symmetrical = false,
         direction_count = 1,
         shift = util.by_pixel(4, 5),
-        tint = tint,
         draw_as_shadow = true,
         hr_version = {
             filename = "__base__/graphics/entity/small-lamp/hr-lamp-shadow.png",
@@ -448,7 +437,6 @@ entity.picture_off = {
             axially_symmetrical = false,
             direction_count = 1,
             shift = util.by_pixel(4, 4.75),
-            tint = tint,
             draw_as_shadow = true,
             scale = 0.5
         }
@@ -493,14 +481,12 @@ entity.structure = {
             width = 96,
             height = 96,
             y = 96,
-            tint = tint,
             hr_version = {
                 filename = "__base__/graphics/entity/underground-belt/hr-underground-belt-structure.png",
                 priority = "extra-high",
                 width = 192,
                 height = 192,
                 y = 192,
-                tint = tint,
                 scale = 0.5
             }
         }
@@ -511,13 +497,11 @@ entity.structure = {
             priority = "extra-high",
             width = 96,
             height = 96,
-            tint = tint,
             hr_version = {
                 filename = "__base__/graphics/entity/underground-belt/hr-underground-belt-structure.png",
                 priority = "extra-high",
                 width = 192,
                 height = 192,
-                tint = tint,
                 scale = 0.5
             }
 
@@ -531,14 +515,12 @@ entity.structure = {
             width = 96,
             height = 96,
             y = 96 * 3,
-            tint = tint,
             hr_version = {
                 filename = "__base__/graphics/entity/underground-belt/hr-underground-belt-structure.png",
                 priority = "extra-high",
                 width = 192,
                 height = 192,
                 y = 192 * 3,
-                tint = tint,
                 scale = 0.5
             }
         }
@@ -550,14 +532,12 @@ entity.structure = {
             width = 96,
             height = 96,
             y = 96 * 2,
-            tint = tint,
             hr_version = {
                 filename = "__base__/graphics/entity/underground-belt/hr-underground-belt-structure.png",
                 priority = "extra-high",
                 width = 192,
                 height = 192,
                 y = 192 * 2,
-                tint = tint,
                 scale = 0.5
             }
 
@@ -570,13 +550,11 @@ entity.structure = {
             priority = "extra-high",
             width = 96,
             height = 96,
-            tint = tint,
             hr_version = {
                 filename = "__base__/graphics/entity/underground-belt/hr-underground-belt-structure-back-patch.png",
                 priority = "extra-high",
                 width = 192,
                 height = 192,
-                tint = tint,
                 scale = 0.5
             }
 
@@ -588,13 +566,11 @@ entity.structure = {
             priority = "extra-high",
             width = 96,
             height = 96,
-            tint = tint,
             hr_version = {
                 filename = "__base__/graphics/entity/underground-belt/hr-underground-belt-structure-front-patch.png",
                 priority = "extra-high",
                 width = 192,
                 height = 192,
-                tint = tint,
                 scale = 0.5
             }
 

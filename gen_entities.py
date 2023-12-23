@@ -533,31 +533,8 @@ def gen(folder):
     #
     for tier in range(1, TIERS + 1):
         for i in range(4):
-            arr = gu.zeros_rgb(PIXELS, PIXELS)
-            arr[
-                : PIXELS // 2 + THICKNESS_OVER_2,
-                PIXELS // 2 - THICKNESS_OVER_2 : PIXELS // 2 + THICKNESS_OVER_2,
-                2,
-            ] = 255
-            arr[
-                PIXELS // 2 - THICKNESS_OVER_2 : PIXELS // 2 + THICKNESS_OVER_2,
-                : PIXELS // 2 - THICKNESS_OVER_2,
-                :,
-            ] = 100
-            arr[
-                PIXELS // 2 - THICKNESS_OVER_2 : PIXELS // 2 + THICKNESS_OVER_2,
-                PIXELS // 2 + THICKNESS_OVER_2 :,
-                :,
-            ] = 100
-            arr[
-                PIXELS // 2 + THICKNESS_OVER_2 :,
-                PIXELS // 2 - THICKNESS_OVER_2 : PIXELS // 2 + THICKNESS_OVER_2,
-                :,
-            ] = 100
+            arr = gu.gen_requester(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
 
-            arr = gu.make_tier_edges(
-                arr, tier, TIER_FRAME_THICKNESS, tl=True, tr=True, br=True, bl=True
-            )
             arr = np.rot90(arr, k=i * 3)
 
             arr = gu.surround_by_transparent(arr, PIXELS // 2, PIXELS // 2)
@@ -568,8 +545,6 @@ def gen(folder):
 
         images["array"].append(super_arr)
         images["filename"].append(f"requester-t{tier}.png")
-        images["array"].append(super_arr)
-        images["filename"].append(f"hr-requester-t{tier}.png")
 
         for i in range(4):
             arr = np.zeros((PIXELS_SHADOW, PIXELS_SHADOW, 3), dtype=np.uint8)
@@ -588,20 +563,12 @@ def gen(folder):
     # requester-container
     #
     for tier in range(1, TIERS + 1):
-        arr = gu.zeros_rgb(PIXELS, PIXELS)
-        arr[
-            PIXELS // 2 - THICKNESS_OVER_2 : PIXELS // 2 + THICKNESS_OVER_2,
-            PIXELS // 2 - THICKNESS_OVER_2 : PIXELS // 2 + THICKNESS_OVER_2,
-            2,
-        ] = 255
-        arr = gu.make_tier_edges(
-            arr, tier, TIER_FRAME_THICKNESS, tl=True, tr=True, br=True, bl=True
+        arr = gu.gen_requester_container(
+            PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier
         )
 
         images["array"].append(arr)
         images["filename"].append(f"requester-container-t{tier}.png")
-        images["array"].append(arr)
-        images["filename"].append(f"hr-requester-container-t{tier}.png")
 
         #
         arr = gu.zeros_rgb(PIXELS_SHADOW, PIXELS_SHADOW)

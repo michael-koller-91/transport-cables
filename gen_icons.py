@@ -51,6 +51,16 @@ def gen(folder):
         images["filename"].append(f"provider-t{tier}.png")
 
     #
+    # requester
+    #
+    for tier in range(1, TIERS + 1):
+        arr = gu.gen_requester(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
+        super_arr = gu.make_mipmaps_rgb(arr, 4)
+
+        images["array"].append(super_arr)
+        images["filename"].append(f"requester-t{tier}.png")
+
+    #
     # save all images
     #
     for array, filename in zip(images["array"], images["filename"]):
