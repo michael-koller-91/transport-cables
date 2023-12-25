@@ -394,9 +394,7 @@ entity.minable = {
     mining_time = 0.01,
     result = entity_name
 }
-entity.energy_source = {
-    type = "void"
-}
+entity.energy_source = { type = "void" }
 entity.picture_off = {
     layers = { {
         filename = "__transport-cables__/sprites/entities/lr-node-t1.png",

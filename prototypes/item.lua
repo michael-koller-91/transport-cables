@@ -1,10 +1,3 @@
-local tint = {
-    r = 1,
-    g = 0,
-    b = 1,
-    a = 0.5
-}
-
 --
 -- cables
 --
@@ -16,8 +9,9 @@ item.icons = { { icon = "__transport-cables__/sprites/icons/cable-t1.png" } }
 item.icon_size = 64
 item.icon_mipmaps = 4
 item.place_result = entity_name
-item.group = "transport-cables"
-item.order = "z"
+item.group = "logistics"
+item.subgroup ="transport-cables"
+item.order = "a-t1"
 
 data:extend({ item })
 
@@ -32,7 +26,9 @@ item.icons = { { icon = "__transport-cables__/sprites/icons/node-t1.png" } }
 item.icon_size = 64
 item.icon_mipmaps = 4
 item.place_result = entity_name
-item.order = "z-e1"
+item.group = "logistics"
+item.subgroup ="transport-cables"
+item.order = "c-t1"
 
 data:extend({ item })
 
@@ -47,7 +43,9 @@ item.icons = { { icon = "__transport-cables__/sprites/icons/provider-t1.png" } }
 item.icon_size = 64
 item.icon_mipmaps = 4
 item.place_result = entity_name
-item.order = "z-a1"
+item.group = "logistics"
+item.subgroup ="transport-cables"
+item.order = "d-t1"
 
 data:extend({ item })
 
@@ -62,7 +60,9 @@ item.icons = { { icon = "__transport-cables__/sprites/icons/requester-t1.png" } 
 item.icon_size = 64
 item.icon_mipmaps = 4
 item.place_result = entity_name
-item.order = "z-b1"
+item.group = "logistics"
+item.subgroup ="transport-cables"
+item.order = "e-t1"
 
 data:extend({ item })
 
@@ -77,7 +77,8 @@ item.icons = { { icon = "__transport-cables__/sprites/icons/underground-cable-t1
 item.icon_size = 64
 item.icon_mipmaps = 4
 item.place_result = entity_name
-item.group = "transport-cables"
-item.order = "z-d1"
+item.group = "logistics"
+item.subgroup ="transport-cables"
+item.order = "b-t1"
 
 data:extend({ item })
