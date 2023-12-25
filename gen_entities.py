@@ -514,6 +514,18 @@ def gen(folder):
         images["filename"].append("lamp-light.png")
 
     #
+    # node
+    #
+    for tier in range(1, TIERS + 1):
+        arr = gu.gen_node(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
+
+        images["array"].append(arr)
+        images["filename"].append(f"node-t{tier}.png")
+
+        images["array"].append(gu.zeros_rgba_wh(32, 32))
+        images["filename"].append(f"node-t{tier}-shadow.png")
+
+    #
     # provider
     #
     for tier in range(1, TIERS + 1):
@@ -575,6 +587,10 @@ def gen(folder):
 
         images["array"].append(arr)
         images["filename"].append(f"requester-container-t{tier}-shadow.png")
+    
+    #
+    # underground cable
+    #
 
     #
     # save all images

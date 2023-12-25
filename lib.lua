@@ -1,7 +1,7 @@
 require("util")
 
 ---------------------------------------------------------------------------
-local wire = defines.wire_type.green
+local wire = defines.wire_type.red
 local items_per_s = 30
 
 local net_id_update_scheduled = false

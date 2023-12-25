@@ -13,6 +13,44 @@ def compress_rgb(arr, shape):
     return arr_avrg
 
 
+def gen_node(pixels, thickness, tier_frame_thickness, tier):
+    arr = zeros_rgb(pixels, pixels)
+    arr[
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        0,
+    ] = 255
+    arr[
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        1,
+    ] = 255
+    arr[
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        : pixels // 2 - thickness,
+        :,
+    ] = 100
+    arr[
+        : pixels // 2 - thickness,
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        :,
+    ] = 100
+    arr[
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        pixels // 2 + thickness :,
+        :,
+    ] = 100
+    arr[
+        pixels // 2 + thickness :,
+        pixels // 2 - thickness : pixels // 2 + thickness,
+        :,
+    ] = 100
+    arr = make_tier_edges(
+        arr, tier, tier_frame_thickness, tl=True, tr=True, br=True, bl=True
+    )
+    return arr
+
+
 def gen_provider(pixels, thickness, tier_frame_thickness, tier):
     arr = zeros_rgb(pixels, pixels)
     arr[

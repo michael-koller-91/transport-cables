@@ -41,6 +41,16 @@ def gen(folder):
         images["filename"].append(f"cable-t{tier}.png")
 
     #
+    # node
+    #
+    for tier in range(1, TIERS + 1):
+        arr = gu.gen_node(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
+        super_arr = gu.make_mipmaps_rgb(arr, 4)
+
+        images["array"].append(super_arr)
+        images["filename"].append(f"node-t{tier}.png")
+
+    #
     # provider
     #
     for tier in range(1, TIERS + 1):
