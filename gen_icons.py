@@ -71,6 +71,16 @@ def gen(folder):
         images["filename"].append(f"requester-t{tier}.png")
 
     #
+    # underground
+    #
+    for tier in range(1, TIERS + 1):
+        arr = gu.rotate_counterclockwise(gu.gen_underground(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier, down=True, up=False))
+        super_arr = gu.make_mipmaps_rgb(arr, 4)
+
+        images["array"].append(super_arr)
+        images["filename"].append(f"underground-cable-t{tier}.png")
+
+    #
     # save all images
     #
     for array, filename in zip(images["array"], images["filename"]):

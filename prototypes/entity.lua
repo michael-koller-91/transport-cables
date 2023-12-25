@@ -429,7 +429,7 @@ entity.picture_off = {
         shift = util.by_pixel(4, 5),
         draw_as_shadow = true,
         hr_version = {
-        filename = "__transport-cables__/sprites/entities/hr-node-t1-shadow.png",
+            filename = "__transport-cables__/sprites/entities/hr-node-t1-shadow.png",
             priority = "high",
             width = 76,
             height = 47,
@@ -476,13 +476,13 @@ entity.belt_animation_set = belt_animation_set
 entity.structure = {
     direction_in = {
         sheet = {
-            filename = "__base__/graphics/entity/underground-belt/underground-belt-structure.png",
+            filename = "__transport-cables__/sprites/entities/lr-underground-cable-structure-t1.png",
             priority = "extra-high",
             width = 96,
             height = 96,
             y = 96,
             hr_version = {
-                filename = "__base__/graphics/entity/underground-belt/hr-underground-belt-structure.png",
+                filename = "__transport-cables__/sprites/entities/hr-underground-cable-structure-t1.png",
                 priority = "extra-high",
                 width = 192,
                 height = 192,
@@ -493,30 +493,28 @@ entity.structure = {
     },
     direction_out = {
         sheet = {
-            filename = "__base__/graphics/entity/underground-belt/underground-belt-structure.png",
+            filename = "__transport-cables__/sprites/entities/lr-underground-cable-structure-t1.png",
             priority = "extra-high",
             width = 96,
             height = 96,
             hr_version = {
-                filename = "__base__/graphics/entity/underground-belt/hr-underground-belt-structure.png",
+                filename = "__transport-cables__/sprites/entities/hr-underground-cable-structure-t1.png",
                 priority = "extra-high",
                 width = 192,
                 height = 192,
                 scale = 0.5
             }
-
         }
-
     },
     direction_in_side_loading = {
         sheet = {
-            filename = "__base__/graphics/entity/underground-belt/underground-belt-structure.png",
+            filename = "__transport-cables__/sprites/entities/lr-underground-cable-structure-t1.png",
             priority = "extra-high",
             width = 96,
             height = 96,
             y = 96 * 3,
             hr_version = {
-                filename = "__base__/graphics/entity/underground-belt/hr-underground-belt-structure.png",
+                filename = "__transport-cables__/sprites/entities/hr-underground-cable-structure-t1.png",
                 priority = "extra-high",
                 width = 192,
                 height = 192,
@@ -527,53 +525,49 @@ entity.structure = {
     },
     direction_out_side_loading = {
         sheet = {
-            filename = "__base__/graphics/entity/underground-belt/underground-belt-structure.png",
+            filename = "__transport-cables__/sprites/entities/lr-underground-cable-structure-t1.png",
             priority = "extra-high",
             width = 96,
             height = 96,
             y = 96 * 2,
             hr_version = {
-                filename = "__base__/graphics/entity/underground-belt/hr-underground-belt-structure.png",
+                filename = "__transport-cables__/sprites/entities/hr-underground-cable-structure-t1.png",
                 priority = "extra-high",
                 width = 192,
                 height = 192,
                 y = 192 * 2,
                 scale = 0.5
             }
-
         }
-
     },
     back_patch = {
         sheet = {
-            filename = "__base__/graphics/entity/underground-belt/underground-belt-structure-back-patch.png",
+            filename = "__transport-cables__/sprites/entities/lr-underground-cable-back-patch-t1.png",
             priority = "extra-high",
             width = 96,
             height = 96,
             hr_version = {
-                filename = "__base__/graphics/entity/underground-belt/hr-underground-belt-structure-back-patch.png",
+                filename = "__transport-cables__/sprites/entities/hr-underground-cable-back-patch-t1.png",
                 priority = "extra-high",
                 width = 192,
                 height = 192,
                 scale = 0.5
             }
-
         }
     },
     front_patch = {
         sheet = {
-            filename = "__base__/graphics/entity/underground-belt/underground-belt-structure-front-patch.png",
+            filename = "__transport-cables__/sprites/entities/lr-underground-cable-front-patch-t1.png",
             priority = "extra-high",
             width = 96,
             height = 96,
             hr_version = {
-                filename = "__base__/graphics/entity/underground-belt/hr-underground-belt-structure-front-patch.png",
+                filename = "__transport-cables__/sprites/entities/hr-underground-cable-front-patch-t1.png",
                 priority = "extra-high",
                 width = 192,
                 height = 192,
                 scale = 0.5
             }
-
         }
     }
 }

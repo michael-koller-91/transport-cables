@@ -126,6 +126,43 @@ def gen_requester_container(pixels, thickness, tier_frame_thickness, tier):
     return arr
 
 
+def gen_underground(pixels, thickness, tier_frame_thickness, tier, down=True, up=False):
+    if not (down or up):
+        raise ValueError("need down or up")
+    if down and up:
+        raise ValueError("cannot have down and up")
+
+    arr = zeros_rgb(pixels, pixels)
+    p_2 = pixels // 2
+    t_2 = thickness // 2
+    offset = thickness
+    for k in range(4):
+        r_left = k * pixels // 4
+        r_right = (k + 1) * pixels // 4
+        arr[r_left:r_right, pixels // 2 - thickness : pixels // 2 + thickness, :] = (
+            100 - k * 20
+        )
+        for l in range(4):
+            col = 255 - k * 60
+            if down:
+                r = (1 + k * 2) * offset - 2 + l
+                arr[r, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = col
+                arr[r, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = col
+                arr[r, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = col
+                arr[r, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = col
+            if up:
+                r = (1 + k * 2) * offset - 2 + (3 - l)
+                arr[r, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = col
+                arr[r, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = col
+                arr[r, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = col
+                arr[r, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = col
+
+    arr = make_tier_edges(
+        arr, tier, tier_frame_thickness, tl=True, tr=True, br=True, bl=True
+    )
+    return arr
+
+
 def make_base_cable(pixels_x, pixels_y, yellow_line_offset):
     arr = np.zeros((pixels_y, 3 * pixels_x, 3), dtype=np.uint8)
     arr[:, :, :] = 100
@@ -261,7 +298,7 @@ def surround_by_transparent(arr, left, top, right=None, bottom=None):
     bottom = bottom or top
     super_arr = zeros_rgba(arr.shape[0] + top + bottom, arr.shape[1] + left + right)
     super_arr[top:-bottom, left:-right, :-1] = arr
-    super_arr[top:-bottom, left:-right, -1] = 255
+    super_arr[top:-bottom, left:-right, -1] = 255  # not transparent where `arr` is
     return super_arr
 
 

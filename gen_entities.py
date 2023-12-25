@@ -21,6 +21,11 @@ images = {
 
 
 def shifted_base_cable_connector(shift, beginning=False, end=False):
+    if not (beginning or end):
+        raise ValueError("need beginning or end")
+    if beginning and end:
+        raise ValueError("cannot have beginning and end")
+
     arr = gu.zeros_rgb(PIXELS, OFFSET_CABLE)
     if beginning:
         base_cable = gu.make_beginning_of_base_cable(
@@ -30,10 +35,6 @@ def shifted_base_cable_connector(shift, beginning=False, end=False):
         base_cable = gu.make_end_of_base_cable(
             PIXELS, THICKNESS, OFFSET_CABLE, shift, YELLOW_LINE_OFFSET
         )
-    if not (beginning or end):
-        raise ValueError("need beginning or end")
-    if beginning and end:
-        raise ValueError("cannot have beginning and end")
     arr[PIXELS // 2 - THICKNESS // 2 : PIXELS // 2 + THICKNESS // 2, :, :] = base_cable
     return arr
 
@@ -587,10 +588,87 @@ def gen(folder):
 
         images["array"].append(arr)
         images["filename"].append(f"requester-container-t{tier}-shadow.png")
-    
+
     #
-    # underground cable
+    # underground
     #
+    # We use the position of the "hole" or "tunnel entry" and the direction
+    # into which the arrows point in the sprite sheet. Here, we do not imagine
+    # to be standing on a belt, we merely look at the sprite sheet
+    # __base__/graphics/entity/underground-belt/underground-belt-structure.png
+    # * row 1:
+    #   * hole bottom, arrow down
+    #   * hole left,   arrow left
+    #   * hole top,    arrow up
+    #   * hole right,  arrow right
+    #
+    # Lastly, gen_underground produces "hole top, arrow down/up".
+    for tier in range(1, TIERS + 1):
+        arr_down = gu.gen_underground(
+            PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier, down=True, up=False
+        )
+        arr_up = gu.gen_underground(
+            PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier, down=False, up=True
+        )
+        empty = gu.zeros_rgba(3 * PIXELS, 3 * PIXELS)
+        # * row 1:
+        arr = gu.rotate_180(arr_up)
+        arr = gu.surround_by_transparent(arr, PIXELS, PIXELS, PIXELS, PIXELS)
+        row_1 = arr
+        for i in range(3):
+            arr = gu.rotate_clockwise(arr)
+            row_1 = np.concatenate([row_1, arr], axis=1)
+
+        # * row 2:
+        arr = gu.rotate_180(arr_down)
+        arr = gu.surround_by_transparent(arr, PIXELS, PIXELS, PIXELS, PIXELS)
+        row_2 = arr
+        for i in range(3):
+            arr = gu.rotate_clockwise(arr)
+            row_2 = np.concatenate([row_2, arr], axis=1)
+
+        # * row 3:
+        row_3 = np.concatenate(
+            [
+                empty,
+                gu.surround_by_transparent(
+                    gu.rotate_counterclockwise(arr_up), PIXELS, PIXELS, PIXELS, PIXELS
+                ),
+                empty,
+                gu.surround_by_transparent(
+                    gu.rotate_clockwise(arr_up), PIXELS, PIXELS, PIXELS, PIXELS
+                ),
+            ], axis=1
+        )
+
+        # * row 4:
+        row_4 = np.concatenate(
+            [
+                empty,
+                gu.surround_by_transparent(
+                    gu.rotate_counterclockwise(arr_down), PIXELS, PIXELS, PIXELS, PIXELS
+                ),
+                empty,
+                gu.surround_by_transparent(
+                    gu.rotate_clockwise(arr_down), PIXELS, PIXELS, PIXELS, PIXELS
+                ),
+            ], axis=1
+        )
+
+        super_arr = np.concatenate([row_1, row_2, row_3, row_4], axis=0)
+
+        images["array"].append(super_arr)
+        images["filename"].append(f"underground-cable-structure-t{tier}.png")
+
+        arr = gu.zeros_rgba_wh(768, 192)
+
+        images["array"].append(arr)
+        images["filename"].append(f"underground-cable-back-patch-t{tier}.png")
+
+        arr = gu.zeros_rgba_wh(768, 192)
+
+        images["array"].append(arr)
+        images["filename"].append(f"underground-cable-front-patch-t{tier}.png")
 
     #
     # save all images

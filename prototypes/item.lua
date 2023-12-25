@@ -73,10 +73,7 @@ data:extend({ item })
 local entity_name = "transport-cables:underground-cable"
 local item = table.deepcopy(data.raw["item"]["underground-belt"])
 item.name = entity_name
-item.icons = { {
-    icon = "__base__/graphics/icons/underground-belt.png",
-    tint = tint
-} }
+item.icons = { { icon = "__transport-cables__/sprites/icons/underground-cable-t1.png" } }
 item.icon_size = 64
 item.icon_mipmaps = 4
 item.place_result = entity_name
