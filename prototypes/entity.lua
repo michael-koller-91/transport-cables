@@ -237,7 +237,7 @@ entity.picture_on =
 data:extend({ entity })
 
 ---------------------------------------------------------------------------
-local entity_name = prefix .. "provider"
+local entity_name = prefix .. "provider-t1"
 local entity = table.deepcopy(data.raw["container"]["iron-chest"])
 entity.name = entity_name
 entity.minable = {
@@ -287,7 +287,7 @@ entity.picture = {
 data:extend({ entity })
 
 ---------------------------------------------------------------------------
-local entity_name = prefix .. "requester"
+local entity_name = prefix .. "requester-t1"
 local entity = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"])
 entity.name = entity_name
 entity.minable = {
@@ -339,7 +339,7 @@ entity.sprites = make_4way_animation_from_spritesheet({
 data:extend({ entity })
 
 ---------------------------------------------------------------------------
-local entity_name = prefix .. "requester-container"
+local entity_name = prefix .. "requester-container-t1"
 local entity = table.deepcopy(data.raw["container"]["iron-chest"])
 entity.name = entity_name
 entity.minable = nil
@@ -387,7 +387,7 @@ entity.picture = {
 data:extend({ entity })
 
 ---------------------------------------------------------------------------
-local entity_name = prefix .. "node"
+local entity_name = prefix .. "node-t1"
 local entity = table.deepcopy(data.raw["lamp"]["small-lamp"])
 entity.name = entity_name
 entity.minable = {
@@ -444,7 +444,7 @@ entity.picture_off = {
 data:extend({ entity })
 
 ---------------------------------------------------------------------------
-local entity_name = prefix .. "cable"
+local entity_name = prefix .. "cable-t1"
 local entity = table.deepcopy(data.raw["transport-belt"]["transport-belt"])
 entity.name = entity_name
 entity.minable = {
@@ -453,7 +453,7 @@ entity.minable = {
 }
 entity.speed = speed
 entity.animation_speed_coefficient = animation_speed_coefficient
-entity.related_underground_belt = prefix .. "underground-cable"
+entity.related_underground_belt = prefix .. "underground-cable-t1"
 entity.belt_animation_set = belt_animation_set
 entity.connector_frame_sprites = transport_belt_connector_frame_sprites
 entity.operable = false
@@ -461,7 +461,7 @@ entity.operable = false
 data:extend({ entity })
 
 ---------------------------------------------------------------------------
-local entity_name = prefix .. "underground-cable"
+local entity_name = prefix .. "underground-cable-t1"
 local entity = table.deepcopy(data.raw["underground-belt"]["underground-belt"])
 entity.name = entity_name
 entity.minable = {
