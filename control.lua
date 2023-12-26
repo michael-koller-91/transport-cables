@@ -24,6 +24,9 @@ script.on_event(defines.events.script_raised_destroy, lib.on_mined_entity)
 script.on_event(defines.events.on_player_rotated_entity, lib.on_rotated_entity)
 
 ---------------------------------------------------------------------------
+script.on_event(defines.events.on_research_finished, lib.on_research_finished)
+
+---------------------------------------------------------------------------
 script.on_event(defines.events.on_tick, lib.on_tick)
 
 ---------------------------------------------------------------------------

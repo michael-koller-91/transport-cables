@@ -2,7 +2,7 @@ require("util")
 
 ---------------------------------------------------------------------------
 local wire = defines.wire_type.red
-local items_per_s = 30
+local t1_speed = 15
 
 local net_id_update_scheduled = false
 local item_transport_active = false
@@ -494,8 +494,18 @@ local on_mined_filter = {
 
 local on_player_created = function(event)
     local player = game.players[event.player_index]
+    player.gui.top.add { type = "label", name = "t1", caption = "Tier 1: " .. tostring(t1_speed) .. " items / s." }
+end
 
-    player.gui.top.add { type = "label", name = "t1", caption = "Tier 1: " .. tostring(items_per_s) .. " items / s." }
+local on_research_finished = function(event)
+    local research = event.research
+    if research.name == prefix .. "t1-speed1" or research.name == prefix .. "t1-speed2" then
+        t1_speed = t1_speed + 15
+    end
+
+    for _, player in pairs(game.players) do
+        player.gui.top["t1"].caption = "Tier 1: " .. tostring(t1_speed) .. " items / s."
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -604,7 +614,7 @@ local on_nth_tick = function(event)
             end
             keys_requ = keys_sorted_by_value(inve_requ)
 
-            n_item_to_move = math.min(items_per_s, n_inve_prov, n_empty_inve_requ)
+            n_item_to_move = math.min(t1_speed, n_inve_prov, n_empty_inve_requ)
             if n_item_to_move > 0 then
                 n_items_per_prov = math.floor(n_item_to_move / n_prov)
                 n_items_per_requ = math.floor(n_item_to_move / n_requ)
@@ -737,6 +747,7 @@ lib = {
     on_mined_filter = on_mined_filter,
     on_nth_tick = on_nth_tick,
     on_player_created = on_player_created,
+    on_research_finished = on_research_finished,
     on_rotated_entity = on_rotated_entity,
     on_tick = on_tick
 }

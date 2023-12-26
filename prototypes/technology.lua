@@ -40,7 +40,7 @@ data:extend({
             ingredients = { { "automation-science-pack", 1 } },
             time = 15
         },
-        order = "a-f-a"
+        order = "a-a-a"
     },
     {
         type = "technology",
@@ -65,6 +65,31 @@ data:extend({
             time = 30
         },
         upgrade = true,
-        order = "c-m-b"
+        order = "a-a-a"
+    },
+    {
+        type = "technology",
+        name = prefix .. "t1-speed2",
+        icons = util.technology_icon_constant_movement_speed("__transport-cables__/sprites/technologies/t1.png"),
+        effects =
+        {
+            {
+                type = "nothing",
+                effect_description = "+ 15 items / s"
+            }
+        },
+        prerequisites = { prefix .. "t1-speed1" },
+        unit =
+        {
+            count = 500,
+            ingredients =
+            {
+                { "automation-science-pack", 1 },
+                { "logistic-science-pack",   1 }
+            },
+            time = 45
+        },
+        upgrade = true,
+        order = "a-a-a"
     }
 })
