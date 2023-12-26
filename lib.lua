@@ -14,12 +14,12 @@ local same_net_id = {}
 local prefix = "transport-cables:"
 local names = {
     lamp = prefix .. "lamp",
-    node = prefix .. "node",
-    provider = prefix .. "provider",
-    requester_container = prefix .. "requester-container",
-    requester = prefix .. "requester",
-    cable = prefix .. "cable",
-    underground_cable = prefix .. "underground-cable",
+    node = prefix .. "node-t1",
+    provider = prefix .. "provider-t1",
+    requester_container = prefix .. "requester-container-t1",
+    requester = prefix .. "requester-t1",
+    cable = prefix .. "cable-t1",
+    underground_cable = prefix .. "underground-cable-t1",
 }
 
 ---------------------------------------------------------------------------
@@ -140,7 +140,8 @@ end
 ---------------------------------------------------------------------------
 local on_built_entity = function(event)
     local entity = event.created_entity
-    if not entity.valid then
+
+    if not entity or not entity.valid then
         return
     end
 
@@ -159,8 +160,8 @@ local on_built_entity = function(event)
             target_offset = { -0.75, 0.25 },
             color = {
                 r = 1,
-                g = 0,
-                b = 0,
+                g = 1,
+                b = 1,
                 a = 0.9
             },
             scale = 1.0
@@ -209,8 +210,8 @@ local on_built_entity = function(event)
             target = entity,
             target_offset = { -0.75, 0 },
             color = {
-                r = 0,
-                g = 0,
+                r = 1,
+                g = 1,
                 b = 1,
                 a = 0.9
             },
@@ -490,9 +491,16 @@ local on_mined_filter = {
     }
 }
 
+local on_player_created = function(event)
+    local player = game.players[event.player_index]
+
+    player.gui.top.add { type = "label", name = "t1", caption = "Tier 1: " .. tostring(items_per_s) .. " items / s." }
+end
+
 ---------------------------------------------------------------------------
 local on_rotated_entity = function(event)
     local entity = event.entity
+
     if entity.name == names.requester then
         -- move the container in front of the requester again
         local e_cont = requs.container[entity.unit_number]
@@ -723,6 +731,7 @@ lib = {
     on_mined_entity = on_mined_entity,
     on_mined_filter = on_mined_filter,
     on_nth_tick = on_nth_tick,
+    on_player_created = on_player_created,
     on_rotated_entity = on_rotated_entity,
     on_tick = on_tick
 }

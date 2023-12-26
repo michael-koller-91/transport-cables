@@ -13,6 +13,9 @@ script.on_event(defines.events.on_entity_settings_pasted, lib.on_entity_settings
 script.on_event(defines.events.on_gui_closed, lib.on_gui_closed)
 
 ---------------------------------------------------------------------------
+script.on_event(defines.events.on_player_created, lib.on_player_created)
+
+---------------------------------------------------------------------------
 script.on_event(defines.events.on_player_mined_entity, lib.on_mined_entity, lib.on_mined_filter)
 script.on_event(defines.events.on_robot_mined_entity, lib.on_mined_entity, lib.on_mined_filter)
 script.on_event(defines.events.script_raised_destroy, lib.on_mined_entity)
