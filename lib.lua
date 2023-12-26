@@ -415,7 +415,8 @@ end
 ---------------------------------------------------------------------------
 local on_mined_entity = function(event)
     local entity = event.entity
-    if not entity.valid then
+
+    if not entity or not entity.valid then
         return
     end
 
@@ -500,6 +501,10 @@ end
 ---------------------------------------------------------------------------
 local on_rotated_entity = function(event)
     local entity = event.entity
+
+    if not entity or not entity.valid then
+        return
+    end
 
     if entity.name == names.requester then
         -- move the container in front of the requester again
