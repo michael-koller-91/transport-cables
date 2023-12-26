@@ -3,7 +3,7 @@ import shutil
 import argparse
 import gen_icons
 import gen_entities
-from icecream import ic
+import gen_technologies
 from pathlib import Path
 
 
@@ -16,6 +16,7 @@ parargs = parser.parse_args()
 folder_sprites = Path("sprites")
 folder_entities = folder_sprites / "entities"
 folder_icons = folder_sprites / "icons"
+folder_technologies = folder_sprites / "technologies"
 
 #
 # create the sprites directory if it does not exist
@@ -26,7 +27,9 @@ if not folder_sprites.exists():
     os.mkdir(str(folder_sprites))
     os.mkdir(str(folder_entities))
     os.mkdir(str(folder_icons))
+    os.mkdir(str(folder_technologies))
 
 
 gen_entities.gen(folder_entities)
 gen_icons.gen(folder_icons)
+gen_technologies.gen(folder_technologies)

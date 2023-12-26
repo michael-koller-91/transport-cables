@@ -1,17 +1,14 @@
-import numpy as np
 from PIL import Image
 import gen_utils as gu
-from icecream import ic
-from pathlib import Path
 
 
-TIERS = 1
 OFFSET_CABLE = 14
 PIXELS = 64
 PIXELS_SHADOW = 64
 THICKNESS = 16
 THICKNESS_OVER_2 = THICKNESS // 2
 TIER_FRAME_THICKNESS = 2
+TIERS = 1
 YELLOW_LINE_OFFSET = 32
 
 images = {
