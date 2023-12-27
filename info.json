@@ -4,5 +4,6 @@
     "title": "Transport Cables",
     "author": "Dr. Michael Koller",
     "factorio_version": "1.1",
-    "dependencies": []
+    "dependencies": [],
+    "git": "https://github.com/michael-koller-91/transport-cables"
 }

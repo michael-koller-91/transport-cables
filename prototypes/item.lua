@@ -1,8 +1,8 @@
-local tiers = 1
+local tiers = 3
 
 for tier = 1, tiers do
     --
-    -- cables
+    -- cable
     --
     ---------------------------------------------------------------------------
     local entity_name = "transport-cables:cable-t" .. tostring(tier)
@@ -19,7 +19,7 @@ for tier = 1, tiers do
     data:extend({ item })
 
     --
-    -- nodes
+    -- node
     --
     ---------------------------------------------------------------------------
     local entity_name = "transport-cables:node-t" .. tostring(tier)
@@ -36,7 +36,7 @@ for tier = 1, tiers do
     data:extend({ item })
 
     --
-    -- providers
+    -- provider
     --
     ---------------------------------------------------------------------------
     local entity_name = "transport-cables:provider-t" .. tostring(tier)
@@ -53,7 +53,7 @@ for tier = 1, tiers do
     data:extend({ item })
 
     --
-    -- requesters
+    -- requester
     --
     ---------------------------------------------------------------------------
     local entity_name = "transport-cables:requester-t" .. tostring(tier)
@@ -70,7 +70,7 @@ for tier = 1, tiers do
     data:extend({ item })
 
     --
-    -- underground cables
+    -- underground cable
     --
     ---------------------------------------------------------------------------
     local entity_name = "transport-cables:underground-cable-t" .. tostring(tier)

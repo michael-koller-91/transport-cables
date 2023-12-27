@@ -49,10 +49,10 @@ script.on_init(function()
     }
     global.same_net_id = {}
     global.mod_state = {
-        rate = {
-            t1 = 15,
-            t2 = 45,
-            t3 = 90
+        rate = { -- `rate_increment` smaller than what the first research grants
+            t1 = 0,
+            t2 = 30,
+            t3 = 75
         }
     }
 
