@@ -4,6 +4,7 @@ require("util")
 local wire = defines.wire_type.red
 local rate = {}
 local rate_increment = 15
+local rate_increment_factor = 1.1
 
 local net_id_update_scheduled = false
 local item_transport_active = false
@@ -496,45 +497,68 @@ local on_mined_filter = {
 local on_player_created = function(event)
     local player = game.players[event.player_index]
 
-    if rate.t1 == 0 then
-        player.gui.top.add { type = "label", name = "t1", caption = "" }
-    else
+    if rate.t1 > 0 then
         player.gui.top.add { type = "label", name = "t1", caption = "Tier 1: " .. tostring(rate.t1) .. " items / s." }
+    else
+        player.gui.top.add { type = "label", name = "t1", caption = "" }
     end
-    if rate.t2 == 0 then
+    if rate.t2 > 30 then
+        player.gui.top.add { type = "label", name = "t2", caption = "| Tier 2: " .. tostring(rate.t2) .. " items / s." }
+    else
         player.gui.top.add { type = "label", name = "t2", caption = "" }
-    else
-        player.gui.top.add { type = "label", name = "t2", caption = "Tier 2: " .. tostring(rate.t2) .. " items / s." }
     end
-    if rate.t3 == 0 then
-        player.gui.top.add { type = "label", name = "t3", caption = "" }
+    if rate.t3 > 75 then
+        player.gui.top.add { type = "label", name = "t3", caption = "| Tier 3: " .. tostring(rate.t3) .. " items / s." }
     else
-        player.gui.top.add { type = "label", name = "t3", caption = "Tier 3: " .. tostring(rate.t3) .. " items / s." }
+        player.gui.top.add { type = "label", name = "t3", caption = "" }
     end
 end
 
 local on_research_finished = function(event)
     local research = event.research
 
-    if research.name == prefix .. "t1" or research.name == prefix .. "t1-speed" then
+    if research.name == prefix .. "t1"
+        or research.name == prefix .. "t1-speed"
+    then
         rate.t1 = rate.t1 + rate_increment
     end
-    if research.name == prefix .. "t2" or research.name == prefix .. "t2-speed" then
+    if research.name == prefix .. "t2"
+        or research.name == prefix .. "t2-speed1"
+        or research.name == prefix .. "t2-speed2"
+    then
         rate.t2 = rate.t2 + rate_increment
     end
-    if research.name == prefix .. "t3" or research.name == prefix .. "t3-speed" then
+    if research.name == prefix .. "t3"
+        or research.name == prefix .. "t3-speed1"
+        or research.name == prefix .. "t3-speed2"
+        or research.name == prefix .. "t3-speed3"
+    then
         rate.t3 = rate.t3 + rate_increment
+    end
+    if research.name == prefix .. "t3-infinite-speed"
+    then
+        rate.t3 = math.ceil(rate.t3 * rate_increment_factor)
     end
 
     for _, player in pairs(game.players) do
-        if research.name == prefix .. "t1" or research.name == prefix .. "t1-speed" then
+        if research.name == prefix .. "t1"
+            or research.name == prefix .. "t1-speed"
+        then
             player.gui.top["t1"].caption = "Tier 1: " .. tostring(rate.t1) .. " items / s."
         end
-        if research.name == prefix .. "t2" or research.name == prefix .. "t2-speed" then
-            player.gui.top["t2"].caption = "Tier 2: " .. tostring(rate.t2) .. " items / s."
+        if research.name == prefix .. "t2"
+            or research.name == prefix .. "t2-speed1"
+            or research.name == prefix .. "t2-speed2"
+        then
+            player.gui.top["t2"].caption = "| Tier 2: " .. tostring(rate.t2) .. " items / s."
         end
-        if research.name == prefix .. "t3" or research.name == prefix .. "t3-speed" then
-            player.gui.top["t3"].caption = "Tier 3: " .. tostring(rate.t3) .. " items / s."
+        if research.name == prefix .. "t3"
+            or research.name == prefix .. "t3-speed1"
+            or research.name == prefix .. "t3-speed2"
+            or research.name == prefix .. "t3-speed3"
+            or research.name == prefix .. "t3-infinite-speed"
+        then
+            player.gui.top["t3"].caption = "| Tier 3: " .. tostring(rate.t3) .. " items / s."
         end
     end
 end

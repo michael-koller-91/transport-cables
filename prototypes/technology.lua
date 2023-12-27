@@ -302,13 +302,13 @@ data:extend({
     },
     {
         type = "technology",
-        name = prefix .. "t3-speed4",
+        name = prefix .. "t3-infinite-speed",
         icons = util.technology_icon_constant_movement_speed("__transport-cables__/sprites/technologies/t3.png"),
         effects =
         {
             {
                 type = "nothing",
-                effect_description = "+ 15 items / s"
+                effect_description = "+ 10 percent items / s"
             }
         },
         prerequisites = { prefix .. "t3-speed3", "space-science-pack" },
@@ -328,7 +328,6 @@ data:extend({
         },
         upgrade = true,
         order = "a-a-a",
-        level = 4,
         max_level = "infinite"
     }
 })
