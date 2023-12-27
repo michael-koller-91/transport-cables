@@ -200,7 +200,7 @@ data:extend({ {
 } })
 
 -- TODO
-local entity_name = prefix .. "requester-t2"
+local entity_name = prefix .. "requester-t3"
 data:extend({ {
     type = "recipe",
     name = entity_name,
