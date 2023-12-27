@@ -3,10 +3,49 @@ require("util")
 local prefix = "transport-cables:"
 local tiers = 3
 
+local inventory_size = {
+    provider = {
+        t1 = 16,
+        t2 = 32,
+        t3 = 64
+    },
+    requester_container = {
+        t1 = 16,
+        t2 = 32,
+        t3 = 64
+    }
+}
+local mining_time = {
+    cable = {
+        t1 = 0.01,
+        t2 = 0.01,
+        t3 = 0.01
+    },
+    node = {
+        t1 = 0.01,
+        t2 = 0.01,
+        t3 = 0.01
+    },
+    provider = {
+        t1 = 0.01,
+        t2 = 0.01,
+        t3 = 0.01
+    },
+    requester = {
+        t1 = 0.01,
+        t2 = 0.01,
+        t3 = 0.01
+    },
+    underground_cable = {
+        t1 = 0.01,
+        t2 = 0.01,
+        t3 = 0.01
+    }
+}
+
 --
 -- helper functions and parameters
 --
----------------------------------------------------------------------------
 local speed = 1e-8                      -- this makes the belt speed tooltip say 0.0 items / s
 local animation_speed_coefficient = 5e7 -- cable animation speed
 
@@ -231,12 +270,11 @@ for tier = 1, tiers do
     --
     -- cable
     --
-    ---------------------------------------------------------------------------
     local entity_name = prefix .. "cable-t" .. tostring(tier)
     local entity = table.deepcopy(data.raw["transport-belt"]["transport-belt"])
     entity.name = entity_name
     entity.minable = {
-        mining_time = 0.01,
+        mining_time = mining_time.cable["t" .. tostring(tier)],
         result = entity_name
     }
     entity.speed = speed
@@ -251,12 +289,11 @@ for tier = 1, tiers do
     --
     -- node
     --
-    ---------------------------------------------------------------------------
     local entity_name = prefix .. "node-t" .. tostring(tier)
     local entity = table.deepcopy(data.raw["lamp"]["small-lamp"])
     entity.name = entity_name
     entity.minable = {
-        mining_time = 0.01,
+        mining_time = mining_time.node["t" .. tostring(tier)],
         result = entity_name
     }
     entity.energy_source = { type = "void" }
@@ -314,14 +351,14 @@ for tier = 1, tiers do
     --
     -- provider
     --
-    ---------------------------------------------------------------------------
     local entity_name = prefix .. "provider-t" .. tostring(tier)
     local entity = table.deepcopy(data.raw["container"]["iron-chest"])
     entity.name = entity_name
     entity.minable = {
-        mining_time = 0.01,
+        mining_time = mining_time.provider["t" .. tostring(tier)],
         result = entity_name
     }
+    entity.inventory_size = inventory_size.provider["t" .. tostring(tier)]
     entity.picture = {
         layers =
         {
@@ -367,12 +404,11 @@ for tier = 1, tiers do
     --
     -- requester
     --
-    ---------------------------------------------------------------------------
     local entity_name = prefix .. "requester-t" .. tostring(tier)
     local entity = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"])
     entity.name = entity_name
     entity.minable = {
-        mining_time = 0.01,
+        mining_time = mining_time.requester["t" .. tostring(tier)],
         result = entity_name
     }
     entity.circuit_wire_max_distance = 1
@@ -422,11 +458,11 @@ for tier = 1, tiers do
     --
     -- requester container
     --
-    ---------------------------------------------------------------------------
     local entity_name = prefix .. "requester-container-t" .. tostring(tier)
     local entity = table.deepcopy(data.raw["container"]["iron-chest"])
     entity.name = entity_name
     entity.minable = nil
+    entity.inventory_size = inventory_size.requester_container["t" .. tostring(tier)]
     entity.destructible = false
     entity.picture = {
         layers =
@@ -476,12 +512,11 @@ for tier = 1, tiers do
     --
     -- underground cable
     --
-    ---------------------------------------------------------------------------
     local entity_name = prefix .. "underground-cable-t" .. tostring(tier)
     local entity = table.deepcopy(data.raw["underground-belt"]["underground-belt"])
     entity.name = entity_name
     entity.minable = {
-        mining_time = 0.01,
+        mining_time = mining_time.underground_cable["t" .. tostring(tier)],
         result = entity_name
     }
     entity.speed = speed
@@ -601,6 +636,9 @@ for tier = 1, tiers do
     data:extend({ entity })
 end
 
+--
+-- helper entity
+--
 ---------------------------------------------------------------------------
 local entity_name = prefix .. "lamp"
 local entity = table.deepcopy(data.raw["lamp"]["small-lamp"])
