@@ -1,11 +1,9 @@
 import numpy as np
 from PIL import Image
 import gen_utils as gu
-from icecream import ic
-from pathlib import Path
 
 
-TIERS = 1
+TIERS = 3
 OFFSET_CABLE = 14
 PIXELS = 64
 PIXELS_SHADOW = 64

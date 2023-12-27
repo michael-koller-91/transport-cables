@@ -3,6 +3,7 @@ require("util")
 ---------------------------------------------------------------------------
 local wire = defines.wire_type.red
 local t1_speed = 15
+local rate = {}
 
 local net_id_update_scheduled = false
 local item_transport_active = false
@@ -494,7 +495,7 @@ local on_mined_filter = {
 
 local on_player_created = function(event)
     local player = game.players[event.player_index]
-    player.gui.top.add { type = "label", name = "t1", caption = "Tier 1: " .. tostring(t1_speed) .. " items / s." }
+    player.gui.top.add { type = "label", name = "t1", caption = "Tier 1: " .. tostring(rate.t1) .. " items / s." }
 end
 
 local on_research_finished = function(event)
@@ -714,6 +715,7 @@ local initialize = function(global)
     provs = global.provider
     requs = global.requester
     same_net_id = global.same_net_id
+    rate = global.mod_state.rate
 
     -- use a MapPosition as index
     mt_position = {

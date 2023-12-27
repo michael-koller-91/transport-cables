@@ -396,17 +396,9 @@ entity.minable = {
 }
 entity.energy_source = { type = "void" }
 entity.picture_off = {
-    layers = { {
-        filename = "__transport-cables__/sprites/entities/lr-node-t1.png",
-        priority = "high",
-        width = 64,
-        height = 64,
-        frame_count = 1,
-        axially_symmetrical = false,
-        direction_count = 1,
-        shift = util.by_pixel(0, 0),
-        hr_version = {
-            filename = "__transport-cables__/sprites/entities/hr-node-t1.png",
+    layers = {
+        {
+            filename = "__transport-cables__/sprites/entities/lr-node-t1.png",
             priority = "high",
             width = 64,
             height = 64,
@@ -414,31 +406,42 @@ entity.picture_off = {
             axially_symmetrical = false,
             direction_count = 1,
             shift = util.by_pixel(0, 0),
-            scale = 0.5
-        }
-    }, {
-        filename = "__transport-cables__/sprites/entities/lr-node-t1-shadow.png",
-        priority = "high",
-        width = 32,
-        height = 32,
-        frame_count = 1,
-        axially_symmetrical = false,
-        direction_count = 1,
-        shift = util.by_pixel(4, 5),
-        draw_as_shadow = true,
-        hr_version = {
-            filename = "__transport-cables__/sprites/entities/hr-node-t1-shadow.png",
+            hr_version = {
+                filename = "__transport-cables__/sprites/entities/hr-node-t1.png",
+                priority = "high",
+                width = 64,
+                height = 64,
+                frame_count = 1,
+                axially_symmetrical = false,
+                direction_count = 1,
+                shift = util.by_pixel(0, 0),
+                scale = 0.5
+            }
+        },
+        {
+            filename = "__transport-cables__/sprites/entities/lr-node-t1-shadow.png",
             priority = "high",
-            width = 76,
-            height = 47,
+            width = 32,
+            height = 32,
             frame_count = 1,
             axially_symmetrical = false,
             direction_count = 1,
-            shift = util.by_pixel(4, 4.75),
+            shift = util.by_pixel(4, 5),
             draw_as_shadow = true,
-            scale = 0.5
+            hr_version = {
+                filename = "__transport-cables__/sprites/entities/hr-node-t1-shadow.png",
+                priority = "high",
+                width = 76,
+                height = 47,
+                frame_count = 1,
+                axially_symmetrical = false,
+                direction_count = 1,
+                shift = util.by_pixel(4, 4.75),
+                draw_as_shadow = true,
+                scale = 0.5
+            }
         }
-    } }
+    }
 }
 
 data:extend({ entity })

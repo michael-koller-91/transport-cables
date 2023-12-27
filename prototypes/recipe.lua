@@ -5,6 +5,7 @@ local entity_name = prefix .. "cable-t1"
 data:extend({ {
     type = "recipe",
     name = entity_name,
+    enabled = true,
     energy_required = 0.5,
     ingredients =
     {
@@ -21,12 +22,13 @@ local entity_name = prefix .. "node-t1"
 data:extend({ {
     type = "recipe",
     name = entity_name,
+    enabled = false,
     energy_required = 1,
     ingredients =
     {
-        { "electronic-circuit", 5 },
-        { "iron-plate",         5 },
-        { prefix .. "cable-t1", 4 }
+        { "electronic-circuit", 4 },
+        { "iron-plate",         4 },
+        { "splitter",           1 },
     },
     result = entity_name,
     result_count = 1
@@ -37,6 +39,7 @@ local entity_name = prefix .. "provider-t1"
 data:extend({ {
     type = "recipe",
     name = entity_name,
+    enabled = false,
     energy_required = 1,
     ingredients =
     {
@@ -53,13 +56,13 @@ local entity_name = prefix .. "requester-t1"
 data:extend({ {
     type = "recipe",
     name = entity_name,
+    enabled = false,
     energy_required = 1,
     ingredients =
     {
         { "electronic-circuit", 5 },
-        { "iron-plate",         5 },
-        { prefix .. "node-t1",  1 },
-        { "iron-chest",         1 }
+        { "iron-chest",         1 },
+        { prefix .. "node-t1",  1 }
     },
     result = entity_name,
     result_count = 1
@@ -70,10 +73,11 @@ local entity_name = prefix .. "underground-cable-t1"
 data:extend({ {
     type = "recipe",
     name = entity_name,
+    enabled = false,
     energy_required = 1,
     ingredients =
     {
-        { "iron-plate",         10 },
+        { "underground-belt",   1 },
         { prefix .. "cable-t1", 5 }
     },
     result = entity_name,

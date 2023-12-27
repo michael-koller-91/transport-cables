@@ -48,6 +48,13 @@ script.on_init(function()
         un = {}
     }
     global.same_net_id = {}
+    global.mod_state = {
+        rate = {
+            t1 = 15,
+            t2 = 45,
+            t3 = 90
+        }
+    }
 
     lib.initialize(global)
 end)

@@ -34,6 +34,7 @@ data:extend({
                 recipe = prefix .. "underground-cable-t1",
             }
         },
+        prerequisites = { "logistics" },
         unit =
         {
             count = 50,
@@ -44,7 +45,7 @@ data:extend({
     },
     {
         type = "technology",
-        name = prefix .. "t1-speed1",
+        name = prefix .. "t1-speed",
         icons = util.technology_icon_constant_movement_speed("__transport-cables__/sprites/technologies/t1.png"),
         effects =
         {
@@ -59,35 +60,9 @@ data:extend({
             count = 250,
             ingredients =
             {
-                { "automation-science-pack", 1 },
-                { "logistic-science-pack",   1 }
+                { "automation-science-pack", 1 }
             },
             time = 30
-        },
-        upgrade = true,
-        order = "a-a-a"
-    },
-    {
-        type = "technology",
-        name = prefix .. "t1-speed2",
-        icons = util.technology_icon_constant_movement_speed("__transport-cables__/sprites/technologies/t1.png"),
-        effects =
-        {
-            {
-                type = "nothing",
-                effect_description = "+ 15 items / s"
-            }
-        },
-        prerequisites = { prefix .. "t1-speed1" },
-        unit =
-        {
-            count = 500,
-            ingredients =
-            {
-                { "automation-science-pack", 1 },
-                { "logistic-science-pack",   1 }
-            },
-            time = 45
         },
         upgrade = true,
         order = "a-a-a"
