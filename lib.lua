@@ -2,7 +2,6 @@ require("util")
 
 ---------------------------------------------------------------------------
 local wire = defines.wire_type.red
-local t1_speed = 15
 local rate = {}
 
 local net_id_update_scheduled = false
@@ -495,17 +494,35 @@ local on_mined_filter = {
 
 local on_player_created = function(event)
     local player = game.players[event.player_index]
-    player.gui.top.add { type = "label", name = "t1", caption = "Tier 1: " .. tostring(rate.t1) .. " items / s." }
+
+    player.gui.top.add { type = "label", name = "t1", caption = "" }
+    player.gui.top.add { type = "label", name = "t2", caption = "" }
+    player.gui.top.add { type = "label", name = "t3", caption = "" }
 end
 
 local on_research_finished = function(event)
     local research = event.research
-    if research.name == prefix .. "t1-speed1" or research.name == prefix .. "t1-speed2" then
-        t1_speed = t1_speed + 15
+
+    if research.name == prefix .. "t1-speed" then
+        rate.t1 = rate.t1 + 15
+    end
+    if research.name == prefix .. "t2-speed" then
+        rate.t2 = rate.t2 + 15
+    end
+    if research.name == prefix .. "t3-speed" then
+        rate.t3 = rate.t3 + 15
     end
 
     for _, player in pairs(game.players) do
-        player.gui.top["t1"].caption = "Tier 1: " .. tostring(t1_speed) .. " items / s."
+        if research.name == prefix .. "t1-speed" then
+            player.gui.top["t1"].caption = "Tier 1: " .. tostring(rate.t1) .. " items / s."
+        end
+        if research.name == prefix .. "t1-speed" then
+            player.gui.top["t2"].caption = "Tier 2: " .. tostring(rate.t2) .. " items / s."
+        end
+        if research.name == prefix .. "t1-speed" then
+            player.gui.top["t3"].caption = "Tier 3: " .. tostring(rate.t3) .. " items / s."
+        end
     end
 end
 
@@ -615,7 +632,7 @@ local on_nth_tick = function(event)
             end
             keys_requ = keys_sorted_by_value(inve_requ)
 
-            n_item_to_move = math.min(t1_speed, n_inve_prov, n_empty_inve_requ)
+            n_item_to_move = math.min(rate.t1, n_inve_prov, n_empty_inve_requ)
             if n_item_to_move > 0 then
                 n_items_per_prov = math.floor(n_item_to_move / n_prov)
                 n_items_per_requ = math.floor(n_item_to_move / n_requ)
