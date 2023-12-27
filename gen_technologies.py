@@ -1,3 +1,4 @@
+import numpy as np
 from PIL import Image
 import gen_utils as gu
 
@@ -5,7 +6,7 @@ import gen_utils as gu
 PIXELS = 64
 THICKNESS = 16
 TIER_FRAME_THICKNESS = 2
-TIERS = 2
+TIERS = 3
 UPSCALE = 4
 YELLOW_LINE_OFFSET = 32
 
@@ -27,6 +28,14 @@ def gen(folder):
             right=False,
             bottom=True,
         )
+
+        # scale image up
+        img = Image.fromarray(arr, mode="RGB")
+        img = img.resize(
+            (img.size[0] * UPSCALE, img.size[1] * UPSCALE), Image.Resampling.NEAREST
+        )
+
+        arr = np.array(img)
         super_arr = gu.make_mipmaps_rgb(arr, 4)
 
         images["array"].append(super_arr)
@@ -36,14 +45,4 @@ def gen(folder):
     # save all images
     #
     for array, filename in zip(images["array"], images["filename"]):
-        if array.shape[-1] == 3:
-            Image.fromarray(array, mode="RGB").save(folder / filename)
-        elif array.shape[-1] == 4:
-            img = Image.fromarray(array, mode="RGBA")
-            img = img.resize(
-                (img.size[0] * UPSCALE, img.size[1] * UPSCALE), Image.Resampling.NEAREST
-            )
-            img.save(folder / filename)
-
-        else:
-            raise ValueError("Unknown: array.shape[-1] =", array.ndim)
+        Image.fromarray(array, mode="RGBA").save(folder / filename)
