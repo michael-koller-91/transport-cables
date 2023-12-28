@@ -90,6 +90,8 @@ def combine_ul_lr(array_horizontal, array_vertical):
 
 
 def gen(folder):
+    print("generating entities ... ", end="", flush=True)
+
     #
     # cable
     #
@@ -502,6 +504,15 @@ def gen(folder):
         images["filename"].append(f"cable-circuit-frame-main-scanner-t{tier}.png")
 
     #
+    # empty
+    #
+    for tier in range(1, TIERS + 1):
+        images["array"].append(gu.zeros_rgba_wh(8, 8))
+        images["filename"].append(f"empty-t{tier}.png")
+        images["array"].append(gu.zeros_rgba_wh(8, 8))
+        images["filename"].append(f"empty-t{tier}-shadow.png")
+
+    #
     # lamp
     #
     for tier in range(1, TIERS + 1):
@@ -540,52 +551,32 @@ def gen(folder):
         images["filename"].append(f"provider-t{tier}-shadow.png")
 
     #
-    # requester
+    # requester with requester-container
     #
     for tier in range(1, TIERS + 1):
-        for i in range(4):
-            arr = gu.gen_requester(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
-
-            arr = np.rot90(arr, k=i * 3)
-
-            arr = gu.surround_by_transparent(arr, PIXELS // 2, PIXELS // 2)
-            if i == 0:
-                super_arr = arr
-            else:
-                super_arr = np.concatenate([super_arr, arr], axis=1)
-
-        images["array"].append(super_arr)
-        images["filename"].append(f"requester-t{tier}.png")
-
-        for i in range(4):
-            arr = np.zeros((PIXELS_SHADOW, PIXELS_SHADOW, 3), dtype=np.uint8)
-            arr = gu.surround_by_transparent(
-                arr, PIXELS_SHADOW // 2, PIXELS_SHADOW // 2
-            )
-            if i == 0:
-                super_arr = arr
-            else:
-                super_arr = np.concatenate([super_arr, arr], axis=1)
-
-        images["array"].append(super_arr)
-        images["filename"].append(f"requester-t{tier}-shadow.png")
-
-    #
-    # requester-container
-    #
-    for tier in range(1, TIERS + 1):
-        arr = gu.gen_requester_container(
+        requester = gu.gen_requester(
+            PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier
+        )
+        container = gu.gen_requester_container(
             PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier
         )
 
-        images["array"].append(arr)
-        images["filename"].append(f"requester-container-t{tier}.png")
-
-        #
-        arr = gu.zeros_rgb(PIXELS_SHADOW, PIXELS_SHADOW)
+        arr = np.concatenate([container, requester], axis=0)
 
         images["array"].append(arr)
-        images["filename"].append(f"requester-container-t{tier}-shadow.png")
+        images["filename"].append(f"requester-with-container-north-t{tier}.png")
+
+        arr = gu.rotate_clockwise(arr)
+        images["array"].append(arr)
+        images["filename"].append(f"requester-with-container-east-t{tier}.png")
+
+        arr = gu.rotate_clockwise(arr)
+        images["array"].append(arr)
+        images["filename"].append(f"requester-with-container-south-t{tier}.png")
+
+        arr = gu.rotate_clockwise(arr)
+        images["array"].append(arr)
+        images["filename"].append(f"requester-with-container-west-t{tier}.png")
 
     #
     # underground
@@ -636,7 +627,8 @@ def gen(folder):
                 gu.surround_by_transparent(
                     gu.rotate_clockwise(arr_up), PIXELS, PIXELS, PIXELS, PIXELS
                 ),
-            ], axis=1
+            ],
+            axis=1,
         )
 
         # * row 4:
@@ -650,7 +642,8 @@ def gen(folder):
                 gu.surround_by_transparent(
                     gu.rotate_clockwise(arr_down), PIXELS, PIXELS, PIXELS, PIXELS
                 ),
-            ], axis=1
+            ],
+            axis=1,
         )
 
         super_arr = np.concatenate([row_1, row_2, row_3, row_4], axis=0)
@@ -682,3 +675,5 @@ def gen(folder):
             Image.fromarray(array, mode="RGBA").save(folder / filename_hr)
         else:
             raise ValueError("Unknown: array.shape[-1] =", array.ndim)
+
+    print("done", flush=True)

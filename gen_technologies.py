@@ -17,6 +17,8 @@ images = {
 
 
 def gen(folder):
+    print("generating technologies ... ", end="", flush=True)
+
     for tier in range(1, TIERS + 1):
         arr = gu.shifted_base_cable(0, PIXELS, THICKNESS, YELLOW_LINE_OFFSET)
         arr = gu.make_tier_lines(
@@ -46,3 +48,5 @@ def gen(folder):
     #
     for array, filename in zip(images["array"], images["filename"]):
         Image.fromarray(array, mode="RGBA").save(folder / filename)
+
+    print("done", flush=True)

@@ -18,6 +18,8 @@ images = {
 
 
 def gen(folder):
+    print("generating icons ... ", end="", flush=True)
+
     #
     # cable
     #
@@ -71,7 +73,16 @@ def gen(folder):
     # underground
     #
     for tier in range(1, TIERS + 1):
-        arr = gu.rotate_counterclockwise(gu.gen_underground(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier, down=True, up=False))
+        arr = gu.rotate_counterclockwise(
+            gu.gen_underground(
+                PIXELS,
+                THICKNESS_OVER_2,
+                TIER_FRAME_THICKNESS,
+                tier,
+                down=True,
+                up=False,
+            )
+        )
         super_arr = gu.make_mipmaps_rgb(arr, 4)
 
         images["array"].append(super_arr)
@@ -87,3 +98,5 @@ def gen(folder):
             Image.fromarray(array, mode="RGBA").save(folder / filename)
         else:
             raise ValueError("Unknown: array.shape[-1] =", array.ndim)
+
+    print("done", flush=True)

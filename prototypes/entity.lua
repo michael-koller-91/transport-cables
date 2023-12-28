@@ -197,75 +197,6 @@ local get_transport_belt_connector_frame_sprites = function(tier)
     }
 end
 
----------------------------------------------------------------------------
--- this is from __base__/prototypes/entity/entities.lua
-local make_4way_animation_from_spritesheet = function(animation)
-    local function make_animation_layer(idx, anim)
-        local start_frame = (anim.frame_count or 1) * idx
-        local x = 0
-        local y = 0
-        if anim.line_length then
-            y = anim.height * math.floor(start_frame / (anim.line_length or 1))
-        else
-            x = idx * anim.width
-        end
-        return
-        {
-            filename = anim.filename,
-            priority = anim.priority or "high",
-            flags = anim.flags,
-            x = x,
-            y = y,
-            width = anim.width,
-            height = anim.height,
-            frame_count = anim.frame_count or 1,
-            line_length = anim.line_length,
-            repeat_count = anim.repeat_count,
-            shift = anim.shift,
-            draw_as_shadow = anim.draw_as_shadow,
-            draw_as_glow = anim.draw_as_glow,
-            draw_as_light = anim.draw_as_light,
-            force_hr_shadow = anim.force_hr_shadow,
-            apply_runtime_tint = anim.apply_runtime_tint,
-            animation_speed = anim.animation_speed,
-            scale = anim.scale or 1,
-            tint = anim.tint,
-            blend_mode = anim.blend_mode,
-            load_in_minimal_mode = anim.load_in_minimal_mode,
-            premul_alpha = anim.premul_alpha,
-            generate_sdf = anim.generate_sdf
-        }
-    end
-
-    local function make_animation_layer_with_hr_version(idx, anim)
-        local anim_parameters = make_animation_layer(idx, anim)
-        if anim.hr_version and anim.hr_version.filename then
-            anim_parameters.hr_version = make_animation_layer(idx, anim.hr_version)
-        end
-        return anim_parameters
-    end
-
-    local function make_animation(idx)
-        if animation.layers then
-            local tab = { layers = {} }
-            for k, v in ipairs(animation.layers) do
-                table.insert(tab.layers, make_animation_layer_with_hr_version(idx, v))
-            end
-            return tab
-        else
-            return make_animation_layer_with_hr_version(idx, animation)
-        end
-    end
-
-    return
-    {
-        north = make_animation(0),
-        east = make_animation(1),
-        south = make_animation(2),
-        west = make_animation(3)
-    }
-end
-
 for tier = 1, tiers do
     --
     -- cable
@@ -413,45 +344,99 @@ for tier = 1, tiers do
     }
     entity.circuit_wire_max_distance = 1
     entity.item_slot_count = 1
-    entity.sprites = make_4way_animation_from_spritesheet({
+    entity.sprites = { north = {}, east = {}, south = {}, west = {} }
+    entity.sprites.north = {
         layers =
         {
             {
-                filename = "__transport-cables__/sprites/entities/lr-requester-t" .. tostring(tier) .. ".png",
-                width = 128,
+                filename = "__transport-cables__/sprites/entities/lr-requester-with-container-north-t" ..
+                    tostring(tier) .. ".png",
+                width = 64,
                 height = 128,
                 frame_count = 1,
-                shift = util.by_pixel(0, 0),
+                shift = util.by_pixel(0, -16),
                 hr_version =
                 {
                     scale = 0.5,
-                    filename = "__transport-cables__/sprites/entities/hr-requester-t" .. tostring(tier) .. ".png",
-                    width = 128,
+                    filename = "__transport-cables__/sprites/entities/hr-requester-with-container-north-t" ..
+                        tostring(tier) .. ".png",
+                    width = 64,
                     height = 128,
                     frame_count = 1,
-                    shift = util.by_pixel(0, 0)
-                }
-            },
-            {
-                filename = "__transport-cables__/sprites/entities/lr-requester-t" .. tostring(tier) .. "-shadow.png",
-                width = 128,
-                height = 128,
-                frame_count = 1,
-                shift = util.by_pixel(0, 0),
-                draw_as_shadow = true,
-                hr_version =
-                {
-                    scale = 0.5,
-                    filename = "__transport-cables__/sprites/entities/hr-requester-t" .. tostring(tier) .. "-shadow.png",
-                    width = 128,
-                    height = 128,
-                    frame_count = 1,
-                    shift = util.by_pixel(0, 0),
-                    draw_as_shadow = true
+                    shift = util.by_pixel(0, -16)
                 }
             }
         }
-    })
+    }
+    entity.sprites.south = {
+        layers =
+        {
+            {
+                filename = "__transport-cables__/sprites/entities/lr-requester-with-container-south-t" ..
+                    tostring(tier) .. ".png",
+                width = 64,
+                height = 128,
+                frame_count = 1,
+                shift = util.by_pixel(0, 16),
+                hr_version =
+                {
+                    scale = 0.5,
+                    filename = "__transport-cables__/sprites/entities/hr-requester-with-container-south-t" ..
+                        tostring(tier) .. ".png",
+                    width = 64,
+                    height = 128,
+                    frame_count = 1,
+                    shift = util.by_pixel(0, 16)
+                }
+            }
+        }
+    }
+    entity.sprites.east = {
+        layers =
+        {
+            {
+                filename = "__transport-cables__/sprites/entities/lr-requester-with-container-east-t" ..
+                    tostring(tier) .. ".png",
+                width = 128,
+                height = 64,
+                frame_count = 1,
+                shift = util.by_pixel(16, 0),
+                hr_version =
+                {
+                    scale = 0.5,
+                    filename = "__transport-cables__/sprites/entities/hr-requester-with-container-east-t" ..
+                        tostring(tier) .. ".png",
+                    width = 128,
+                    height = 64,
+                    frame_count = 1,
+                    shift = util.by_pixel(16, 0)
+                }
+            }
+        }
+    }
+    entity.sprites.west = {
+        layers =
+        {
+            {
+                filename = "__transport-cables__/sprites/entities/lr-requester-with-container-west-t" ..
+                    tostring(tier) .. ".png",
+                width = 128,
+                height = 64,
+                frame_count = 1,
+                shift = util.by_pixel(-16, 0),
+                hr_version =
+                {
+                    scale = 0.5,
+                    filename = "__transport-cables__/sprites/entities/hr-requester-with-container-west-t" ..
+                        tostring(tier) .. ".png",
+                    width = 128,
+                    height = 64,
+                    frame_count = 1,
+                    shift = util.by_pixel(-16, 0)
+                }
+            }
+        }
+    }
 
     data:extend({ entity })
 
@@ -468,37 +453,35 @@ for tier = 1, tiers do
         layers =
         {
             {
-                filename = "__transport-cables__/sprites/entities/lr-requester-container-t" .. tostring(tier) .. ".png",
+                filename = "__transport-cables__/sprites/entities/lr-empty-t" .. tostring(tier) .. ".png",
                 priority = "extra-high",
-                width = 64,
-                height = 64,
+                width = 8,
+                height = 8,
                 shift = util.by_pixel(0, 0),
                 hr_version =
                 {
-                    filename = "__transport-cables__/sprites/entities/hr-requester-container-t" ..
-                        tostring(tier) .. ".png",
+                    filename = "__transport-cables__/sprites/entities/hr-empty-t" .. tostring(tier) .. ".png",
                     priority = "extra-high",
-                    width = 64,
-                    height = 64,
+                    width = 8,
+                    height = 8,
                     shift = util.by_pixel(0, 0),
                     scale = 0.5
                 }
             },
             {
-                filename = "__transport-cables__/sprites/entities/lr-requester-container-t" ..
+                filename = "__transport-cables__/sprites/entities/lr-empty-t" ..
                     tostring(tier) .. "-shadow.png",
                 priority = "extra-high",
-                width = 64,
-                height = 64,
+                width = 8,
+                height = 8,
                 shift = util.by_pixel(0, 0),
                 draw_as_shadow = true,
                 hr_version =
                 {
-                    filename = "__transport-cables__/sprites/entities/hr-requester-container-t" ..
-                        tostring(tier) .. "-shadow.png",
+                    filename = "__transport-cables__/sprites/entities/hr-empty-t" .. tostring(tier) .. "-shadow.png",
                     priority = "extra-high",
-                    width = 64,
-                    height = 64,
+                    width = 8,
+                    height = 8,
                     shift = util.by_pixel(0, 0),
                     draw_as_shadow = true,
                     scale = 0.5

@@ -494,6 +494,8 @@ local on_mined_filter = {
     }
 }
 
+---------------------------------------------------------------------------
+-- Initialize the GUI elements.
 local on_player_created = function(event)
     local player = game.players[event.player_index]
 
@@ -514,6 +516,9 @@ local on_player_created = function(event)
     end
 end
 
+---------------------------------------------------------------------------
+-- Whenever a technology is researched, increment the item rate and display the
+-- updated value.
 local on_research_finished = function(event)
     local research = event.research
 
@@ -579,6 +584,7 @@ local on_rotated_entity = function(event)
     end
 end
 
+---------------------------------------------------------------------------
 local keys_sorted_by_value = function(t)
     local keys = {}
     for key in pairs(t) do
@@ -590,6 +596,7 @@ local keys_sorted_by_value = function(t)
     return keys
 end
 
+---------------------------------------------------------------------------
 local on_tick = function(event)
     if net_id_update_scheduled then
         net_id_update_scheduled = false
@@ -597,6 +604,7 @@ local on_tick = function(event)
     end
 end
 
+---------------------------------------------------------------------------
 local count
 local e_cont
 local e_prov

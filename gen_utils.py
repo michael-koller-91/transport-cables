@@ -349,8 +349,12 @@ def surround_by_transparent(arr, left, top, right=None, bottom=None):
     right = right or left
     bottom = bottom or top
     super_arr = zeros_rgba(arr.shape[0] + top + bottom, arr.shape[1] + left + right)
-    super_arr[top:-bottom, left:-right, :-1] = arr
-    super_arr[top:-bottom, left:-right, -1] = 255  # not transparent where `arr` is
+    super_arr[
+        top : super_arr.shape[0] - bottom, left : super_arr.shape[1] - right, :-1
+    ] = arr
+    super_arr[
+        top : super_arr.shape[0] - bottom, left : super_arr.shape[1] - right, -1
+    ] = 255  # not transparent where `arr` is
     return super_arr
 
 
