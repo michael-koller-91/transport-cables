@@ -1,28 +1,47 @@
 require("util")
 
+-- TODO: add return statements everywhere
+local debug_print = true
+
 ---------------------------------------------------------------------------
+local tiers = 3
 local wire = defines.wire_type.red
-local rate = {}
+local mod_state = {}
 local rate_increment = 15
 local rate_increment_factor = 1.1
 
 local net_id_update_scheduled = false
-local item_transport_active = false
+local item_transport_active = {}
+for tier = 1, tiers do
+    item_transport_active[tier] = false
+end
 
 local provs = {} -- all providers
 local requs = {} -- all requesters
 local same_net_id = {}
 
 local prefix = "transport-cables:"
-local names = {
-    lamp = prefix .. "lamp",
-    node = prefix .. "node-t1",
-    provider = prefix .. "provider-t1",
-    requester_container = prefix .. "requester-container-t1",
-    requester = prefix .. "requester-t1",
-    cable = prefix .. "cable-t1",
-    underground_cable = prefix .. "underground-cable-t1",
-}
+local names = {}
+for tier = 1, tiers do
+    names[tier] = {
+        lamp = prefix .. "lamp",
+        node = prefix .. "node-t" .. tostring(tier),
+        provider = prefix .. "provider-t" .. tostring(tier),
+        requester_container = prefix .. "requester-container-t" .. tostring(tier),
+        requester = prefix .. "requester-t" .. tostring(tier),
+        cable = prefix .. "cable-t" .. tostring(tier),
+        underground_cable = prefix .. "underground-cable-t" .. tostring(tier),
+    }
+end
+
+---------------------------------------------------------------------------
+local debugprint = function(str, debug_print)
+    if debug_print then
+        for _, player in pairs(game.players) do
+            player.print(str)
+        end
+    end
+end
 
 ---------------------------------------------------------------------------
 -- Move `distance` from `position` in `direction`, yielding a position vector.
@@ -62,8 +81,10 @@ end
 -- Store every requester's signal in order to be able to detect a change
 -- when the on_gui_closed event fires.
 local update_requester_signals = function()
-    for unit_number, entity in pairs(requs.un) do
-        requs.signal[unit_number] = entity.get_control_behavior().get_signal(1)
+    for tier = 1, tiers do
+        for unit_number, entity in pairs(requs[tier].un) do
+            requs[tier].signal[unit_number] = entity.get_control_behavior().get_signal(1)
+        end
     end
 end
 
@@ -71,71 +92,85 @@ end
 -- All requesters with the same network_id as `entity` get the signal of
 -- `entity`.
 local set_requester_signals_in_same_network_as = function(entity)
-    local net_id = requs.net_id[entity.unit_number]
+    local net_id
 
-    if net_id > 0 then
-        local unit_number_array = requs.net_id_and_un[net_id]
-        if unit_number_array then
-            local signal = entity.get_control_behavior().get_signal(1)
-            for _, unit_number in ipairs(requs.net_id_and_un[net_id]) do
-                if signal.signal then
-                    requs.un[unit_number].get_control_behavior().set_signal(1, signal)
-                else
-                    requs.un[unit_number].get_control_behavior().set_signal(1, nil)
+    for tier = 1, tiers do
+        net_id = requs[tier].net_id[entity.unit_number]
+        if net_id and net_id > 0 then
+            local unit_number_array = requs[tier].net_id_and_un[net_id]
+            if unit_number_array then
+                local signal = entity.get_control_behavior().get_signal(1)
+                for _, unit_number in ipairs(requs[tier].net_id_and_un[net_id]) do
+                    if signal.signal then
+                        requs[tier].un[unit_number].get_control_behavior().set_signal(1, signal)
+                    else
+                        requs[tier].un[unit_number].get_control_behavior().set_signal(1, nil)
+                    end
                 end
             end
+            update_requester_signals()
         end
-        update_requester_signals()
     end
 end
 
 ---------------------------------------------------------------------------
--- Store network_id of all providers and requesters. Also, find providers and
--- requesters with the same network_id.
+-- Store the circuit network id of all providers and requesters. Also, find
+-- providers and requesters with the same circuit network id.
 local update_net_id = function()
     local circuit_network
     local net_id
-    same_net_id = {}
-    provs.net_id_and_un = {}
-    requs.net_id_and_un = {}
 
-    -- store network_id of all providers
-    for unit_number, entity in pairs(provs.un) do
-        circuit_network = entity.get_circuit_network(wire)
-        if circuit_network then
-            net_id = circuit_network.network_id
+    for tier = 1, tiers do
+        item_transport_active[tier] = false
+    end
 
-            provs.net_id[unit_number] = net_id
-            rendering.set_text(provs.text_id[unit_number], "ID: " .. tostring(net_id))
+    for tier = 1, tiers do
+        same_net_id[tier] = {}
+        provs[tier].net_id_and_un = {}
+        requs[tier].net_id_and_un = {}
 
-            -- collect all providers with the same network_id
-            provs.net_id_and_un[net_id] = provs.net_id_and_un[net_id] or {}
-            table.insert(provs.net_id_and_un[net_id], unit_number)
+        -- store network_id of all providers
+        for unit_number, entity in pairs(provs[tier].un) do
+            circuit_network = entity.get_circuit_network(wire)
+            if circuit_network then
+                net_id = circuit_network.network_id
+
+                provs[tier].net_id[unit_number] = net_id
+                rendering.set_text(provs[tier].text_id[unit_number], "ID: " .. tostring(net_id))
+
+                -- collect all providers with the same network_id
+                provs[tier].net_id_and_un[net_id] = provs[tier].net_id_and_un[net_id] or {}
+                table.insert(provs[tier].net_id_and_un[net_id], unit_number)
+            end
+        end
+
+        -- store network_id of all requesters
+        for unit_number, entity in pairs(requs[tier].un) do
+            circuit_network = entity.get_circuit_network(wire)
+            if circuit_network then
+                net_id = circuit_network.network_id
+
+                requs[tier].net_id[unit_number] = net_id
+                rendering.set_text(requs[tier].text_id[unit_number], "ID: " .. tostring(net_id))
+
+                -- collect all requesters with the same network_id
+                requs[tier].net_id_and_un[net_id] = requs[tier].net_id_and_un[net_id] or {}
+                table.insert(requs[tier].net_id_and_un[net_id], unit_number)
+            end
+        end
+
+        -- find providers and requesters with the same network_id
+        for net_id, _ in pairs(requs[tier].net_id_and_un) do
+            if provs[tier].net_id_and_un[net_id] then
+                table.insert(same_net_id[tier], net_id)
+                item_transport_active[tier] = true
+            end
         end
     end
 
-    -- store network_id of all requesters
-    for unit_number, entity in pairs(requs.un) do
-        circuit_network = entity.get_circuit_network(wire)
-        if circuit_network then
-            net_id = circuit_network.network_id
-
-            requs.net_id[unit_number] = net_id
-            rendering.set_text(requs.text_id[unit_number], "ID: " .. tostring(net_id))
-
-            -- collect all requesters with the same network_id
-            requs.net_id_and_un[net_id] = requs.net_id_and_un[net_id] or {}
-            table.insert(requs.net_id_and_un[net_id], unit_number)
-        end
-    end
-
-    -- find providers and requesters with the same network_id
-    item_transport_active = false
-    for net_id, _ in pairs(requs.net_id_and_un) do
-        if provs.net_id_and_un[net_id] then
-            table.insert(same_net_id, net_id)
-            item_transport_active = true
-        end
+    for tier = 1, tiers do
+        debugprint("update_net_id(): item_transport_active[" ..
+            tostring(tier) .. "] = " .. tostring(item_transport_active[tier]), debug_print)
     end
 end
 
@@ -147,269 +182,272 @@ local on_built_entity = function(event)
         return
     end
 
-    if entity.name == names.provider then
-        provs.un[entity.unit_number] = entity
-        provs.pos[entity.position] = entity
+    for tier = 1, tiers do
+        if entity.name == names[tier].provider then
+            provs[tier].un[entity.unit_number] = entity
+            provs[tier].pos[entity.position] = entity
 
-        -- default ID
-        provs.net_id[entity.unit_number] = -1
+            -- default ID
+            provs[tier].net_id[entity.unit_number] = -1
 
-        -- display ID
-        provs.text_id[entity.unit_number] = rendering.draw_text {
-            text = "ID: -1",
-            surface = game.surfaces[1],
-            target = entity,
-            target_offset = { -0.75, 0.25 },
-            color = {
-                r = 1,
-                g = 1,
-                b = 1,
-                a = 0.9
-            },
-            scale = 1.0
-        }
+            -- display ID
+            provs[tier].text_id[entity.unit_number] = rendering.draw_text {
+                text = "ID: -1",
+                surface = game.surfaces[1],
+                target = entity,
+                target_offset = { -0.75, 0.25 },
+                color = {
+                    r = 1,
+                    g = 1,
+                    b = 1,
+                    a = 0.9
+                },
+                scale = 1.0
+            }
 
-        -- connect to cable north, east, south, west of provider if it is
-        -- facing away from the provider
-        local position
-        local direction
-        local entity_cable
-        for i = 0, 6, 2 do
-            -- rotate direction by i / 2 * 90°
-            direction = (entity.direction + i) % 8
-            position = moveposition(entity.position, direction, 1)
-            entity_cable = game.surfaces[1].find_entity(names.cable, position)
-            if entity_cable then
-                if entity_cable.direction == direction then
-                    entity.connect_neighbour {
-                        wire = wire,
-                        target_entity = entity_cable
-                    }
-                end
-            end
-        end
-
-        net_id_update_scheduled = true
-    elseif entity.name == names.requester then
-        requs.un[entity.unit_number] = entity
-        requs.pos[entity.position] = entity
-
-        -- in addition, place a container
-        local position = moveposition(entity.position, entity.direction)
-        requs.container[entity.unit_number] = game.surfaces[1].create_entity {
-            name = names.requester_container,
-            position = position,
-            force = "player"
-        }
-
-        -- default ID
-        requs.net_id[entity.unit_number] = -1
-
-        -- display ID
-        requs.text_id[entity.unit_number] = rendering.draw_text {
-            text = "ID: -1",
-            surface = game.surfaces[1],
-            target = entity,
-            target_offset = { -0.75, 0 },
-            color = {
-                r = 1,
-                g = 1,
-                b = 1,
-                a = 0.9
-            },
-            scale = 1.0
-        }
-
-        -- connect to cable east, south, west of requester if it is facing
-        -- towards the requester
-        local direction
-        local entity_cable
-        for i = 2, 6, 2 do
-            -- rotate direction by i / 2 * 90°
-            direction = (entity.direction + i) % 8
-            position = moveposition(entity.position, direction, 1)
-            entity_cable = game.surfaces[1].find_entity(names.cable, position)
-            if entity_cable then
-                if entity_cable.direction == util.oppositedirection(direction) then
-                    entity.connect_neighbour {
-                        wire = wire,
-                        target_entity = entity_cable
-                    }
-                end
-            end
-        end
-
-        update_requester_signals()
-
-        net_id_update_scheduled = true
-    elseif entity.name == names.node then
-        -- connect to neighboring cables if they are facing towards or away
-        -- from the node
-        local position
-        local direction
-        local entity_cable
-        for i = 0, 8, 2 do
-            -- rotate direction by i / 2 * 90°
-            direction = (entity.direction + i) % 8
-            position = moveposition(entity.position, direction, 1)
-            entity_cable = game.surfaces[1].find_entity(names.cable, position)
-            if entity_cable then
-                if (entity_cable.direction == direction) or (entity_cable.direction == util.oppositedirection(direction)) then
-                    entity.connect_neighbour {
-                        wire = wire,
-                        target_entity = entity_cable
-                    }
-                end
-            end
-        end
-
-        net_id_update_scheduled = true
-    elseif entity.name == names.cable then
-        -- connect to neighboring cables
-        for _, val in pairs(entity.belt_neighbours) do
-            for _, neighbor in ipairs(val) do
-                -- if the neighbor is an underground_cable, connect to the corresponding lamp
-                if neighbor.name == names.underground_cable then
-                    local lamp = game.surfaces[1].find_entity(names.lamp, neighbor.position)
-                    if (entity.direction ~= util.oppositedirection(neighbor.direction)) then
+            -- connect to cable north, east, south, west of provider if it is
+            -- facing away from the provider
+            local position
+            local direction
+            local entity_cable
+            for i = 0, 6, 2 do
+                -- rotate direction by i / 2 * 90°
+                direction = (entity.direction + i) % 8
+                position = moveposition(entity.position, direction, 1)
+                entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
+                if entity_cable then
+                    if entity_cable.direction == direction then
                         entity.connect_neighbour {
                             wire = wire,
-                            target_entity = lamp
+                            target_entity = entity_cable
                         }
                     end
-                else
-                    entity.connect_neighbour {
-                        wire = wire,
-                        target_entity = neighbor
-                    }
-                    entity.get_control_behavior().enable_disable = false
-                    neighbor.get_control_behavior().enable_disable = false
                 end
             end
-        end
 
-        -- connect to requester north of cable
-        position = moveposition(entity.position, entity.direction, 1)
-        if requs.pos[position] then
-            entity.connect_neighbour {
-                wire = wire,
-                target_entity = requs.pos[position]
+            net_id_update_scheduled = true
+            -- return
+        elseif entity.name == names[tier].requester then
+            requs[tier].un[entity.unit_number] = entity
+            requs[tier].pos[entity.position] = entity
+
+            -- in addition, place a container
+            local position = moveposition(entity.position, entity.direction)
+            requs[tier].container[entity.unit_number] = game.surfaces[1].create_entity {
+                name = names[tier].requester_container,
+                position = position,
+                force = "player"
             }
-        end
 
-        -- connect to provider south of cable
-        position = moveposition(entity.position, entity.direction, -1)
-        if provs.pos[position] then
-            entity.connect_neighbour {
-                wire = wire,
-                target_entity = provs.pos[position]
+            -- default ID
+            requs[tier].net_id[entity.unit_number] = -1
+
+            -- display ID
+            requs[tier].text_id[entity.unit_number] = rendering.draw_text {
+                text = "ID: -1",
+                surface = game.surfaces[1],
+                target = entity,
+                target_offset = { -0.75, 0 },
+                color = {
+                    r = 1,
+                    g = 1,
+                    b = 1,
+                    a = 0.9
+                },
+                scale = 1.0
             }
-        end
 
-        -- connect to node north of cable
-        position = moveposition(entity.position, entity.direction, 1)
-        local entity_node = game.surfaces[1].find_entity(names.node, position)
-        if entity_node then
-            entity.connect_neighbour {
-                wire = wire,
-                target_entity = entity_node
-            }
-        end
+            -- connect to cable east, south, west of requester if it is facing
+            -- towards the requester
+            local direction
+            local entity_cable
+            for i = 2, 6, 2 do
+                -- rotate direction by i / 2 * 90°
+                direction = (entity.direction + i) % 8
+                position = moveposition(entity.position, direction, 1)
+                entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
+                if entity_cable then
+                    if entity_cable.direction == util.oppositedirection(direction) then
+                        entity.connect_neighbour {
+                            wire = wire,
+                            target_entity = entity_cable
+                        }
+                    end
+                end
+            end
 
-        -- connect to node south of cable
-        position = moveposition(entity.position, entity.direction, -1)
-        entity_node = game.surfaces[1].find_entity(names.node, position)
-        if entity_node then
-            entity.connect_neighbour {
-                wire = wire,
-                target_entity = entity_node
-            }
-        end
+            update_requester_signals()
 
-        net_id_update_scheduled = true
-    elseif entity.name == names.underground_cable then
-        -- also place a lamp
-        local lamp = game.surfaces[1].create_entity {
-            name = names.lamp,
-            position = entity.position,
-            force = 'player'
-        }
+            net_id_update_scheduled = true
+            -- return
+        elseif entity.name == names[tier].node then
+            -- connect to neighboring cables if they are facing towards or away
+            -- from the node
+            local position
+            local direction
+            local entity_cable
+            for i = 0, 8, 2 do
+                -- rotate direction by i / 2 * 90°
+                direction = (entity.direction + i) % 8
+                position = moveposition(entity.position, direction, 1)
+                entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
+                if entity_cable then
+                    if (entity_cable.direction == direction) or (entity_cable.direction == util.oppositedirection(direction)) then
+                        entity.connect_neighbour {
+                            wire = wire,
+                            target_entity = entity_cable
+                        }
+                    end
+                end
+            end
 
-        -- connect to neighboring underground_cable's lamp
-        if entity.neighbours then
-            local lamp_neighbor = game.surfaces[1].find_entity(names.lamp, entity.neighbours.position)
-            lamp.connect_neighbour {
-                wire = wire,
-                target_entity = lamp_neighbor
-            }
-        end
+            net_id_update_scheduled = true
+            -- return
+        elseif entity.name == names[tier].cable then
+            -- connect to neighboring cables
+            for _, val in pairs(entity.belt_neighbours) do
+                for _, neighbor in ipairs(val) do
+                    -- if the neighbor is an underground_cable, connect to the corresponding lamp
+                    if neighbor.name == names[tier].underground_cable then
+                        local lamp = game.surfaces[1].find_entity(names[tier].lamp, neighbor.position)
+                        if (entity.direction ~= util.oppositedirection(neighbor.direction)) then
+                            entity.connect_neighbour {
+                                wire = wire,
+                                target_entity = lamp
+                            }
+                        end
+                    else
+                        entity.connect_neighbour {
+                            wire = wire,
+                            target_entity = neighbor
+                        }
+                        entity.get_control_behavior().enable_disable = false
+                        neighbor.get_control_behavior().enable_disable = false
+                    end
+                end
+            end
 
-        -- connect to cable north of underground_cable if it is not facing towards
-        -- the underground_cable
-        local position = moveposition(entity.position, entity.direction, 1)
-        local entity_cable = game.surfaces[1].find_entity(names.cable, position)
-        if entity_cable then
-            if entity_cable.direction ~= util.oppositedirection(entity.direction) then
-                lamp.connect_neighbour {
+            -- connect to requester north of cable
+            position = moveposition(entity.position, entity.direction, 1)
+            if requs[tier].pos[position] then
+                entity.connect_neighbour {
                     wire = wire,
-                    target_entity = entity_cable
+                    target_entity = requs[tier].pos[position]
                 }
             end
-        end
 
-        -- connect to cable south of underground_cable if it is facing in the
-        -- same direction
-        position = moveposition(entity.position, entity.direction, -1)
-        entity_cable = game.surfaces[1].find_entity(names.cable, position)
-        if entity_cable then
-            if entity_cable.direction == entity.direction then
-                lamp.connect_neighbour {
+            -- connect to provider south of cable
+            position = moveposition(entity.position, entity.direction, -1)
+            if provs[tier].pos[position] then
+                entity.connect_neighbour {
                     wire = wire,
-                    target_entity = entity_cable
+                    target_entity = provs[tier].pos[position]
                 }
             end
-        end
 
-        net_id_update_scheduled = true
+            -- connect to node north of cable
+            position = moveposition(entity.position, entity.direction, 1)
+            local entity_node = game.surfaces[1].find_entity(names[tier].node, position)
+            if entity_node then
+                entity.connect_neighbour {
+                    wire = wire,
+                    target_entity = entity_node
+                }
+            end
+
+            -- connect to node south of cable
+            position = moveposition(entity.position, entity.direction, -1)
+            entity_node = game.surfaces[1].find_entity(names[tier].node, position)
+            if entity_node then
+                entity.connect_neighbour {
+                    wire = wire,
+                    target_entity = entity_node
+                }
+            end
+
+            net_id_update_scheduled = true
+            -- return
+        elseif entity.name == names[tier].underground_cable then
+            -- also place a lamp
+            local lamp = game.surfaces[1].create_entity {
+                name = names[tier].lamp,
+                position = entity.position,
+                force = 'player'
+            }
+
+            -- connect to neighboring underground_cable's lamp
+            if entity.neighbours then
+                local lamp_neighbor = game.surfaces[1].find_entity(names[tier].lamp, entity.neighbours.position)
+                lamp.connect_neighbour {
+                    wire = wire,
+                    target_entity = lamp_neighbor
+                }
+            end
+
+            -- connect to cable north of underground_cable if it is not facing towards
+            -- the underground_cable
+            local position = moveposition(entity.position, entity.direction, 1)
+            local entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
+            if entity_cable then
+                if entity_cable.direction ~= util.oppositedirection(entity.direction) then
+                    lamp.connect_neighbour {
+                        wire = wire,
+                        target_entity = entity_cable
+                    }
+                end
+            end
+
+            -- connect to cable south of underground_cable if it is facing in the
+            -- same direction
+            position = moveposition(entity.position, entity.direction, -1)
+            entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
+            if entity_cable then
+                if entity_cable.direction == entity.direction then
+                    lamp.connect_neighbour {
+                        wire = wire,
+                        target_entity = entity_cable
+                    }
+                end
+            end
+
+            net_id_update_scheduled = true
+            -- return
+        end
     end
 end
 
 ---------------------------------------------------------------------------
-local on_built_filter = {
-    {
-        filter = "name",
-        name = names.node
-    },
-    {
-        filter = "name",
-        name = names.provider
-    },
-    {
-        filter = "name",
-        name = names.requester
-    },
-    {
-        filter = "name",
-        name = names.cable
-    },
-    {
-        filter = "name",
-        name = names.underground_cable
-    }
-}
+local on_built_filter = {}
+for tier = 1, tiers do
+    table.insert(on_built_filter, { filter = "name", name = names[tier].cable })
+    table.insert(on_built_filter, { filter = "name", name = names[tier].node })
+    table.insert(on_built_filter, { filter = "name", name = names[tier].provider })
+    table.insert(on_built_filter, { filter = "name", name = names[tier].requester })
+    table.insert(on_built_filter, { filter = "name", name = names[tier].underground_cable })
+end
+
+---------------------------------------------------------------------------
+local on_console_command = function(command)
+    debug_print = not debug_print
+    game.get_player(command.player_index).print("debug_print = " .. tostring(debug_print))
+end
 
 ---------------------------------------------------------------------------
 local on_entity_settings_pasted = function(event)
-    if event.source.name == names.requester and event.destination.name == names.requester then
-        set_requester_signals_in_same_network_as(event.destination)
+    for tier = 1, tiers do
+        if event.source.name == names[tier].requester and event.destination.name == names[tier].requester then
+            set_requester_signals_in_same_network_as(event.destination)
+        end
     end
 end
 
 ---------------------------------------------------------------------------
 local on_gui_closed = function(event)
-    if event.entity and event.entity.valid then
-        if event.entity.name == names.requester then
-            set_requester_signals_in_same_network_as(event.entity)
+    for tier = 1, tiers do
+        if event.entity and event.entity.valid then
+            if event.entity.name == names[tier].requester then
+                set_requester_signals_in_same_network_as(event.entity)
+            end
         end
     end
 end
@@ -422,46 +460,48 @@ local on_mined_entity = function(event)
         return
     end
 
-    if entity.name == names.provider then
-        provs.un[entity.unit_number] = nil
-        provs.pos[entity.position] = nil
+    for tier = 1, tiers do
+        if entity.name == names[tier].provider then
+            provs[tier].un[entity.unit_number] = nil
+            provs[tier].pos[entity.position] = nil
 
-        -- also destroy the displayed text
-        rendering.destroy(provs.text_id[entity.unit_number])
-        provs.text_id[entity.unit_number] = nil
+            -- also destroy the displayed text
+            rendering.destroy(provs[tier].text_id[entity.unit_number])
+            provs[tier].text_id[entity.unit_number] = nil
 
-        -- and the ID
-        provs.net_id[entity.unit_number] = nil
+            -- and the ID
+            provs[tier].net_id[entity.unit_number] = nil
 
-        net_id_update_scheduled = true
-    elseif entity.name == names.node then
-        net_id_update_scheduled = true
-    elseif entity.name == names.requester then
-        requs.un[entity.unit_number] = nil
-        requs.pos[entity.position] = nil
+            net_id_update_scheduled = true
+        elseif entity.name == names[tier].node then
+            net_id_update_scheduled = true
+        elseif entity.name == names[tier].requester then
+            requs[tier].un[entity.unit_number] = nil
+            requs[tier].pos[entity.position] = nil
 
-        -- also destroy the container
-        requs.container[entity.unit_number].destroy()
-        requs.container[entity.unit_number] = nil
+            -- also destroy the container
+            requs[tier].container[entity.unit_number].destroy()
+            requs[tier].container[entity.unit_number] = nil
 
-        -- and the displayed text
-        rendering.destroy(requs.text_id[entity.unit_number])
-        requs.text_id[entity.unit_number] = nil
+            -- and the displayed text
+            rendering.destroy(requs[tier].text_id[entity.unit_number])
+            requs[tier].text_id[entity.unit_number] = nil
 
-        -- and the ID
-        requs.net_id[entity.unit_number] = nil
+            -- and the ID
+            requs[tier].net_id[entity.unit_number] = nil
 
-        -- and the signal
-        requs.signal[entity.unit_number] = nil
+            -- and the signal
+            requs[tier].signal[entity.unit_number] = nil
 
-        net_id_update_scheduled = true
-    elseif entity.name == names.cable then
-        net_id_update_scheduled = true
-    elseif entity.name == names.underground_cable then
-        -- destroy the associated lamp
-        game.surfaces[1].find_entity(names.lamp, entity.position).destroy()
+            net_id_update_scheduled = true
+        elseif entity.name == names[tier].cable then
+            net_id_update_scheduled = true
+        elseif entity.name == names[tier].underground_cable then
+            -- destroy the associated lamp
+            game.surfaces[1].find_entity(names.lamp, entity.position).destroy()
 
-        net_id_update_scheduled = true
+            net_id_update_scheduled = true
+        end
     end
 
     -- Note:
@@ -471,46 +511,32 @@ local on_mined_entity = function(event)
 end
 
 ---------------------------------------------------------------------------
-local on_mined_filter = {
-    {
-        filter = "name",
-        name = names.node
-    },
-    {
-        filter = "name",
-        name = names.provider
-    },
-    {
-        filter = "name",
-        name = names.requester
-    },
-    {
-        filter = "name",
-        name = names.cable
-    },
-    {
-        filter = "name",
-        name = names.underground_cable
-    }
-}
+local on_mined_filter = {}
+for tier = 1, tiers do
+    table.insert(on_mined_filter, { filter = "name", name = names[tier].cable })
+    table.insert(on_mined_filter, { filter = "name", name = names[tier].node })
+    table.insert(on_mined_filter, { filter = "name", name = names[tier].provider })
+    table.insert(on_mined_filter, { filter = "name", name = names[tier].requester })
+    table.insert(on_mined_filter, { filter = "name", name = names[tier].underground_cable })
+end
 
 ---------------------------------------------------------------------------
 -- Initialize the GUI elements.
 local on_player_created = function(event)
     local player = game.players[event.player_index]
 
-    if rate.t1 > 0 then
-        player.gui.top.add { type = "label", name = "t1", caption = "Tier 1: " .. tostring(rate.t1) .. " items / s." }
+    if mod_state[1].rate > 0 then
+        player.gui.top.add { type = "label", name = "t1", caption = "Tier 1: " .. tostring(mod_state[1].rate) .. " items / s." }
     else
         player.gui.top.add { type = "label", name = "t1", caption = "" }
     end
-    if rate.t2 > 30 then
-        player.gui.top.add { type = "label", name = "t2", caption = "| Tier 2: " .. tostring(rate.t2) .. " items / s." }
+    if mod_state[2].rate > 30 then
+        player.gui.top.add { type = "label", name = "t2", caption = "| Tier 2: " .. tostring(mod_state[2].rate) .. " items / s." }
     else
         player.gui.top.add { type = "label", name = "t2", caption = "" }
     end
-    if rate.t3 > 75 then
-        player.gui.top.add { type = "label", name = "t3", caption = "| Tier 3: " .. tostring(rate.t3) .. " items / s." }
+    if mod_state[3].rate > 75 then
+        player.gui.top.add { type = "label", name = "t3", caption = "| Tier 3: " .. tostring(mod_state[3].rate) .. " items / s." }
     else
         player.gui.top.add { type = "label", name = "t3", caption = "" }
     end
@@ -522,40 +548,42 @@ end
 local on_research_finished = function(event)
     local research = event.research
 
+    debugprint("on_research_finished(): research.name = " .. research.name, debug_print)
+
     if research.name == prefix .. "t1"
         or research.name == prefix .. "t1-speed"
     then
-        rate.t1 = rate.t1 + rate_increment
+        mod_state[1].rate = mod_state[1].rate + rate_increment
     end
     if research.name == prefix .. "t2"
         or research.name == prefix .. "t2-speed1"
         or research.name == prefix .. "t2-speed2"
     then
-        rate.t2 = rate.t2 + rate_increment
+        mod_state[2].rate = mod_state[2].rate + rate_increment
     end
     if research.name == prefix .. "t3"
         or research.name == prefix .. "t3-speed1"
         or research.name == prefix .. "t3-speed2"
         or research.name == prefix .. "t3-speed3"
     then
-        rate.t3 = rate.t3 + rate_increment
+        mod_state[3].rate = mod_state[3].rate + rate_increment
     end
     if research.name == prefix .. "t3-infinite-speed"
     then
-        rate.t3 = math.ceil(rate.t3 * rate_increment_factor)
+        mod_state[3].rate = math.ceil(mod_state[3].rate * rate_increment_factor)
     end
 
     for _, player in pairs(game.players) do
         if research.name == prefix .. "t1"
             or research.name == prefix .. "t1-speed"
         then
-            player.gui.top["t1"].caption = "Tier 1: " .. tostring(rate.t1) .. " items / s."
+            player.gui.top["t1"].caption = "Tier 1: " .. tostring(mod_state[1].rate) .. " items / s."
         end
         if research.name == prefix .. "t2"
             or research.name == prefix .. "t2-speed1"
             or research.name == prefix .. "t2-speed2"
         then
-            player.gui.top["t2"].caption = "| Tier 2: " .. tostring(rate.t2) .. " items / s."
+            player.gui.top["t2"].caption = "| Tier 2: " .. tostring(mod_state[2].rate) .. " items / s."
         end
         if research.name == prefix .. "t3"
             or research.name == prefix .. "t3-speed1"
@@ -563,7 +591,7 @@ local on_research_finished = function(event)
             or research.name == prefix .. "t3-speed3"
             or research.name == prefix .. "t3-infinite-speed"
         then
-            player.gui.top["t3"].caption = "| Tier 3: " .. tostring(rate.t3) .. " items / s."
+            player.gui.top["t3"].caption = "| Tier 3: " .. tostring(mod_state[3].rate) .. " items / s."
         end
     end
 end
@@ -576,11 +604,13 @@ local on_rotated_entity = function(event)
         return
     end
 
-    if entity.name == names.requester then
-        -- move the container in front of the requester again
-        local e_cont = requs.container[entity.unit_number]
-        local position = moveposition(entity.position, entity.direction)
-        e_cont.teleport(position)
+    for tier = 1, tiers do
+        if entity.name == names[tier].requester then
+            -- move the container in front of the requester again
+            local e_cont = requs[tier].container[entity.unit_number]
+            local position = moveposition(entity.position, entity.direction)
+            e_cont.teleport(position)
+        end
     end
 end
 
@@ -634,136 +664,136 @@ local signal
 -- local stack_size
 local unit_number
 local on_nth_tick = function(event)
-    if not item_transport_active then
-        return
-    end
-
     -- move items between provider-requester-pairs
-    for _, net_id in ipairs(same_net_id) do
-        -- all provider unit numbers with this network_id
-        provider_un_array = provs.net_id_and_un[net_id]
-        n_prov = #provider_un_array
+    for tier = 1, tiers do
+        if item_transport_active[tier] then
+            for _, net_id in ipairs(same_net_id[tier]) do
+                -- all provider unit numbers with this network_id
+                provider_un_array = provs[tier].net_id_and_un[net_id]
+                n_prov = #provider_un_array
 
-        -- all requester unit numbers with this network_id
-        requester_un_array = requs.net_id_and_un[net_id]
-        n_requ = #requester_un_array
+                -- all requester unit numbers with this network_id
+                requester_un_array = requs[tier].net_id_and_un[net_id]
+                n_requ = #requester_un_array
 
-        -- the signal of all requesters with this network_id
-        unit_number = requester_un_array[1]
-        signal = requs.signal[unit_number]
+                -- the signal of all requesters with this network_id
+                unit_number = requester_un_array[1]
+                signal = requs[tier].signal[unit_number]
 
-        if signal and signal.signal then
-            signal_name = signal.signal.name
+                if signal and signal.signal then
+                    signal_name = signal.signal.name
 
-            -- count items in providers' inventories
-            n_inve_prov = 0
-            inve_prov = {}
-            for _, un in ipairs(provider_un_array) do
-                e_prov = provs.un[un]
-                count = e_prov.get_inventory(defines.inventory.item_main).get_item_count(signal_name)
-                inve_prov[un] = count
-                n_inve_prov = n_inve_prov + count
-            end
-            keys_prov = keys_sorted_by_value(inve_prov)
-
-            -- count how many items fit in requesters' inventories
-            n_empty_inve_requ = 0
-            inve_requ = {}
-            for _, un in ipairs(requester_un_array) do
-                e_cont = requs.container[un]
-                count = e_cont.get_inventory(defines.inventory.item_main).get_insertable_count(signal_name)
-                inve_requ[un] = count
-                n_empty_inve_requ = n_empty_inve_requ + count
-            end
-            keys_requ = keys_sorted_by_value(inve_requ)
-
-            n_item_to_move = math.min(rate.t1, n_inve_prov, n_empty_inve_requ)
-            if n_item_to_move > 0 then
-                n_items_per_prov = math.floor(n_item_to_move / n_prov)
-                n_items_per_requ = math.floor(n_item_to_move / n_requ)
-
-                -- remove items from providers
-                n_prov_visi = 0
-                n_item_remo = 0
-                for _, k_un in ipairs(keys_prov) do
-                    n_prov_visi = n_prov_visi + 1
-                    n = inve_prov[k_un]
-                    e_prov = provs.un[k_un]
-                    inventory = e_prov.get_inventory(defines.inventory.item_main)
-                    if n >= n_items_per_prov then
-                        -- if there are enough items to remove, remove them
-                        if n_items_per_prov > 0 then
-                            inventory.remove({ name = signal_name, count = n_items_per_prov })
-                        end
-                        n_item_remo = n_item_remo + n_items_per_prov
-                    else
-                        -- otherwise remove as much as possible and update the remaining
-                        -- number of items that need to be removed
-
-                        if n_prov == n_prov_visi then
-                            -- this is the last provider
-                            -- try to remove as much as possible to achieve the move goal
-                            n_item_rema = n_item_to_move - n_item_remo
-                            if n >= n_item_rema then
-                                if n_item_rema then
-                                    inventory.remove({ name = signal_name, count = n_item_rema })
-                                end
-                            else
-                                if n > 0 then
-                                    inventory.remove({ name = signal_name, count = n })
-                                end
-                            end
-                        else
-                            -- Remove all items
-                            if n > 0 then
-                                inventory.remove({ name = signal_name, count = n })
-                            end
-                            n_item_remo = n_item_remo + n
-                            -- and update the number of items that need to be removed from the remaining providers.
-                            n_items_per_prov = math.floor((n_item_to_move - n_item_remo) / (n_prov - n_prov_visi))
-                        end
+                    -- count items in providers' inventories
+                    n_inve_prov = 0
+                    inve_prov = {}
+                    for _, un in ipairs(provider_un_array) do
+                        e_prov = provs[tier].un[un]
+                        count = e_prov.get_inventory(defines.inventory.item_main).get_item_count(signal_name)
+                        inve_prov[un] = count
+                        n_inve_prov = n_inve_prov + count
                     end
-                end
+                    keys_prov = keys_sorted_by_value(inve_prov)
 
-                -- insert items into requesters
-                n_requ_visi = 0
-                n_item_inse = 0
-                for _, k_un in ipairs(keys_requ) do
-                    n_requ_visi = n_requ_visi + 1
-                    n = inve_requ[k_un]
-                    e_cont = requs.container[k_un]
-                    inventory = e_cont.get_inventory(defines.inventory.item_main)
-                    if n >= n_items_per_requ then
-                        -- if enough items can be inserted, insert them
-                        if n_items_per_requ > 0 then
-                            inventory.insert({ name = signal_name, count = n_items_per_requ })
-                        end
-                        n_item_inse = n_item_inse + n_items_per_requ
-                    else
-                        -- otherwise insert as much as possible and update the remaining
-                        -- number of items that need to be inserted
+                    -- count how many items fit in requesters' inventories
+                    n_empty_inve_requ = 0
+                    inve_requ = {}
+                    for _, un in ipairs(requester_un_array) do
+                        e_cont = requs[tier].container[un]
+                        count = e_cont.get_inventory(defines.inventory.item_main).get_insertable_count(signal_name)
+                        inve_requ[un] = count
+                        n_empty_inve_requ = n_empty_inve_requ + count
+                    end
+                    keys_requ = keys_sorted_by_value(inve_requ)
 
-                        if n_requ == n_requ_visi then
-                            -- this is the last requester
-                            -- try to insert as much as possible to achieve the move goal
-                            n_item_rema = n_item_to_move - n_item_inse
-                            if n >= n_item_rema then
-                                if n_item_rema > 0 then
-                                    inventory.insert({ name = signal_name, count = n_item_rema })
+                    n_item_to_move = math.min(mod_state[tier].rate, n_inve_prov, n_empty_inve_requ)
+                    if n_item_to_move > 0 then
+                        n_items_per_prov = math.floor(n_item_to_move / n_prov)
+                        n_items_per_requ = math.floor(n_item_to_move / n_requ)
+
+                        -- remove items from providers
+                        n_prov_visi = 0
+                        n_item_remo = 0
+                        for _, k_un in ipairs(keys_prov) do
+                            n_prov_visi = n_prov_visi + 1
+                            n = inve_prov[k_un]
+                            e_prov = provs[tier].un[k_un]
+                            inventory = e_prov.get_inventory(defines.inventory.item_main)
+                            if n >= n_items_per_prov then
+                                -- if there are enough items to remove, remove them
+                                if n_items_per_prov > 0 then
+                                    inventory.remove({ name = signal_name, count = n_items_per_prov })
                                 end
+                                n_item_remo = n_item_remo + n_items_per_prov
                             else
-                                if n > 0 then
-                                    inventory.insert({ name = signal_name, count = n })
+                                -- otherwise remove as much as possible and update the remaining
+                                -- number of items that need to be removed
+
+                                if n_prov == n_prov_visi then
+                                    -- this is the last provider
+                                    -- try to remove as much as possible to achieve the move goal
+                                    n_item_rema = n_item_to_move - n_item_remo
+                                    if n >= n_item_rema then
+                                        if n_item_rema then
+                                            inventory.remove({ name = signal_name, count = n_item_rema })
+                                        end
+                                    else
+                                        if n > 0 then
+                                            inventory.remove({ name = signal_name, count = n })
+                                        end
+                                    end
+                                else
+                                    -- Remove all items
+                                    if n > 0 then
+                                        inventory.remove({ name = signal_name, count = n })
+                                    end
+                                    n_item_remo = n_item_remo + n
+                                    -- and update the number of items that need to be removed from the remaining providers.
+                                    n_items_per_prov = math.floor((n_item_to_move - n_item_remo) / (n_prov - n_prov_visi))
                                 end
                             end
-                        else
-                            -- Fill requester
-                            if n > 0 then
-                                inventory.insert({ name = signal_name, count = n })
+                        end
+
+                        -- insert items into requesters
+                        n_requ_visi = 0
+                        n_item_inse = 0
+                        for _, k_un in ipairs(keys_requ) do
+                            n_requ_visi = n_requ_visi + 1
+                            n = inve_requ[k_un]
+                            e_cont = requs[tier].container[k_un]
+                            inventory = e_cont.get_inventory(defines.inventory.item_main)
+                            if n >= n_items_per_requ then
+                                -- if enough items can be inserted, insert them
+                                if n_items_per_requ > 0 then
+                                    inventory.insert({ name = signal_name, count = n_items_per_requ })
+                                end
+                                n_item_inse = n_item_inse + n_items_per_requ
+                            else
+                                -- otherwise insert as much as possible and update the remaining
+                                -- number of items that need to be inserted
+
+                                if n_requ == n_requ_visi then
+                                    -- this is the last requester
+                                    -- try to insert as much as possible to achieve the move goal
+                                    n_item_rema = n_item_to_move - n_item_inse
+                                    if n >= n_item_rema then
+                                        if n_item_rema > 0 then
+                                            inventory.insert({ name = signal_name, count = n_item_rema })
+                                        end
+                                    else
+                                        if n > 0 then
+                                            inventory.insert({ name = signal_name, count = n })
+                                        end
+                                    end
+                                else
+                                    -- Fill requester
+                                    if n > 0 then
+                                        inventory.insert({ name = signal_name, count = n })
+                                    end
+                                    n_item_inse = n_item_inse + n
+                                    -- and update the number of items that need to be inserted into the remaining requesters.
+                                    n_items_per_requ = math.floor((n_item_to_move - n_item_inse) / (n_requ - n_requ_visi))
+                                end
                             end
-                            n_item_inse = n_item_inse + n
-                            -- and update the number of items that need to be inserted into the remaining requesters.
-                            n_items_per_requ = math.floor((n_item_to_move - n_item_inse) / (n_requ - n_requ_visi))
                         end
                     end
                 end
@@ -777,7 +807,7 @@ local initialize = function(global)
     provs = global.provider
     requs = global.requester
     same_net_id = global.same_net_id
-    rate = global.mod_state.rate
+    mod_state = global.mod_state
 
     -- use a MapPosition as index
     mt_position = {
@@ -794,8 +824,10 @@ local initialize = function(global)
         end
     }
 
-    setmetatable(provs.pos, mt_position)
-    setmetatable(requs.pos, mt_position)
+    for tier = 1, tiers do
+        setmetatable(provs[tier].pos, mt_position)
+        setmetatable(requs[tier].pos, mt_position)
+    end
 
     net_id_update_scheduled = true
 end
@@ -805,6 +837,7 @@ lib = {
     initialize = initialize,
     on_built_entity = on_built_entity,
     on_built_filter = on_built_filter,
+    on_console_command = on_console_command,
     on_entity_settings_pasted = on_entity_settings_pasted,
     on_gui_closed = on_gui_closed,
     on_mined_entity = on_mined_entity,
@@ -813,5 +846,6 @@ lib = {
     on_player_created = on_player_created,
     on_research_finished = on_research_finished,
     on_rotated_entity = on_rotated_entity,
-    on_tick = on_tick
+    on_tick = on_tick,
+    tiers = tiers
 }
