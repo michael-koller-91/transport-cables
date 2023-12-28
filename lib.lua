@@ -1,6 +1,6 @@
 require("util")
 
-local debug_lamp = true
+local debug_lamp = false
 local debug_print = true
 
 ---------------------------------------------------------------------------
@@ -25,7 +25,7 @@ local prefix = "transport-cables:"
 local names = {}
 for tier = 1, tiers do
     names[tier] = {
-        lamp = prefix .. "lamp",
+        lamp = prefix .. "lamp-t" .. tostring(tier),
         node = prefix .. "node-t" .. tostring(tier),
         provider = prefix .. "provider-t" .. tostring(tier),
         requester_container = prefix .. "requester-container-t" .. tostring(tier),

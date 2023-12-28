@@ -11,6 +11,11 @@ inventory_size.requester_container[1] = 16
 inventory_size.requester_container[2] = 32
 inventory_size.requester_container[3] = 64
 
+local max_distance = {}
+max_distance[1] = 5
+max_distance[2] = 7
+max_distance[3] = 9
+
 local mining_time = { cable = {}, node = {}, provider = {}, requester = {}, underground_cable = {} }
 mining_time.cable[1] = 0.01
 mining_time.cable[2] = 0.01
@@ -494,6 +499,7 @@ for tier = 1, tiers do
     entity.speed = speed
     entity.animation_speed_coefficient = animation_speed_coefficient[tier]
     entity.belt_animation_set = get_belt_animation_set(1)
+    entity.max_distance = max_distance[tier]
     entity.structure = {
         direction_in = {
             sheet = {
@@ -606,94 +612,71 @@ for tier = 1, tiers do
     }
 
     data:extend({ entity })
-end
 
---
--- helper entity
---
----------------------------------------------------------------------------
-local entity_name = prefix .. "lamp"
-local entity = table.deepcopy(data.raw["lamp"]["small-lamp"])
-entity.name = entity_name
-entity.destructible = false
-entity.minable = nil
-entity.operable = false
-entity.energy_source = { type = "void" }
-entity.selection_box = { { 0.0, 0.0 }, { 0.0, 0.0 } }
-entity.picture_off =
-{
-    layers =
+    --
+    -- helper entity
+    --
+    ---------------------------------------------------------------------------
+    local entity_name = prefix .. "lamp-t" .. tostring(tier)
+    local entity = table.deepcopy(data.raw["lamp"]["small-lamp"])
+    entity.name = entity_name
+    entity.destructible = false
+    entity.minable = nil
+    entity.operable = false
+    entity.energy_source = { type = "void" }
+    entity.selection_box = { { 0.0, 0.0 }, { 0.0, 0.0 } }
+    entity.picture_off =
     {
+        layers =
         {
-            filename = "__transport-cables__/sprites/entities/lr-lamp.png",
-            priority = "high",
-            width = 32,
-            height = 32,
-            frame_count = 1,
-            axially_symmetrical = false,
-            direction_count = 1,
-            shift = util.by_pixel(0, 3),
-            hr_version =
             {
-                filename = "__transport-cables__/sprites/entities/hr-lamp.png",
+                filename = "__transport-cables__/sprites/entities/lr-lamp-off-t" .. tostring(tier) .. ".png",
                 priority = "high",
-                width = 32,
-                height = 32,
+                width = 8,
+                height = 8,
                 frame_count = 1,
                 axially_symmetrical = false,
                 direction_count = 1,
-                shift = util.by_pixel(0.25, 3),
-                scale = 0.5
-            }
-        },
-        {
-            filename = "__transport-cables__/sprites/entities/lr-lamp-shadow.png",
-            priority = "high",
-            width = 32,
-            height = 32,
-            frame_count = 1,
-            axially_symmetrical = false,
-            direction_count = 1,
-            shift = util.by_pixel(4, 5),
-            draw_as_shadow = true,
-            hr_version =
+                shift = util.by_pixel(0, 0),
+                hr_version =
+                {
+                    filename = "__transport-cables__/sprites/entities/hr-lamp-off-t" .. tostring(tier) .. ".png",
+                    priority = "high",
+                    width = 8,
+                    height = 8,
+                    frame_count = 1,
+                    axially_symmetrical = false,
+                    direction_count = 1,
+                    shift = util.by_pixel(0, 0),
+                    scale = 0.5
+                }
+            },
             {
-                filename = "__transport-cables__/sprites/entities/hr-lamp-shadow.png",
+                filename = "__transport-cables__/sprites/entities/lr-lamp-off-t" .. tostring(tier) .. "-shadow.png",
                 priority = "high",
-                width = 32,
-                height = 32,
+                width = 8,
+                height = 8,
                 frame_count = 1,
                 axially_symmetrical = false,
                 direction_count = 1,
-                shift = util.by_pixel(4, 4.75),
+                shift = util.by_pixel(0, 0),
                 draw_as_shadow = true,
-                scale = 0.5
+                hr_version =
+                {
+                    filename = "__transport-cables__/sprites/entities/hr-lamp-off-t" .. tostring(tier) .. "-shadow.png",
+                    priority = "high",
+                    width = 8,
+                    height = 8,
+                    frame_count = 1,
+                    axially_symmetrical = false,
+                    direction_count = 1,
+                    shift = util.by_pixel(0, 0),
+                    draw_as_shadow = true,
+                    scale = 0.5
+                }
             }
         }
     }
-}
-entity.picture_on =
-{
-    filename = "__transport-cables__/sprites/entities/lr-lamp-light.png",
-    priority = "high",
-    width = 32,
-    height = 32,
-    frame_count = 1,
-    axially_symmetrical = false,
-    direction_count = 1,
-    shift = util.by_pixel(0, -7),
-    hr_version =
-    {
-        filename = "__transport-cables__/sprites/entities/hr-lamp-light.png",
-        priority = "high",
-        width = 32,
-        height = 32,
-        frame_count = 1,
-        axially_symmetrical = false,
-        direction_count = 1,
-        shift = util.by_pixel(0, -7),
-        scale = 0.5
-    }
-}
 
-data:extend({ entity })
+    data:extend({ entity })
+end

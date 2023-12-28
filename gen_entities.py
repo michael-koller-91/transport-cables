@@ -516,12 +516,10 @@ def gen(folder):
     # lamp
     #
     for tier in range(1, TIERS + 1):
-        images["array"].append(gu.zeros_rgba_wh(32, 32))
-        images["filename"].append("lamp.png")
-        images["array"].append(gu.zeros_rgba_wh(32, 32))
-        images["filename"].append("lamp-shadow.png")
-        images["array"].append(gu.zeros_rgba_wh(32, 32))
-        images["filename"].append("lamp-light.png")
+        images["array"].append(gu.zeros_rgba_wh(8, 8))
+        images["filename"].append(f"lamp-off-t{tier}.png")
+        images["array"].append(gu.zeros_rgba_wh(8, 8))
+        images["filename"].append(f"lamp-off-t{tier}-shadow.png")
 
     #
     # node
