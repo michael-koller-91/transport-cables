@@ -1,6 +1,5 @@
 require("util")
 
--- TODO: add return statements everywhere
 local debug_print = true
 
 ---------------------------------------------------------------------------
@@ -10,10 +9,11 @@ local mod_state = {}
 local rate_increment = 15
 local rate_increment_factor = 1.1
 
-local net_id_update_scheduled = false
 local item_transport_active = {}
+local net_id_update_scheduled = {}
 for tier = 1, tiers do
     item_transport_active[tier] = false
+    net_id_update_scheduled[tier] = false
 end
 
 local provs = {} -- all providers
@@ -35,11 +35,9 @@ for tier = 1, tiers do
 end
 
 ---------------------------------------------------------------------------
-local debugprint = function(str, debug_print)
-    if debug_print then
-        for _, player in pairs(game.players) do
-            player.print(str)
-        end
+local debugprint = function(str)
+    for _, player in pairs(game.players) do
+        player.print(str)
     end
 end
 
@@ -80,97 +78,91 @@ end
 ---------------------------------------------------------------------------
 -- Store every requester's signal in order to be able to detect a change
 -- when the on_gui_closed event fires.
-local update_requester_signals = function()
-    for tier = 1, tiers do
-        for unit_number, entity in pairs(requs[tier].un) do
-            requs[tier].signal[unit_number] = entity.get_control_behavior().get_signal(1)
-        end
+local update_requester_signals = function(tier)
+    for unit_number, entity in pairs(requs[tier].un) do
+        requs[tier].signal[unit_number] = entity.get_control_behavior().get_signal(1)
+    end
+
+    if debug_print then
+        debugprint("update_requester_signals(): tier = " .. tostring(tier))
     end
 end
 
 ---------------------------------------------------------------------------
 -- All requesters with the same network_id as `entity` get the signal of
 -- `entity`.
-local set_requester_signals_in_same_network_as = function(entity)
-    local net_id
-
-    for tier = 1, tiers do
-        net_id = requs[tier].net_id[entity.unit_number]
-        if net_id and net_id > 0 then
-            local unit_number_array = requs[tier].net_id_and_un[net_id]
-            if unit_number_array then
-                local signal = entity.get_control_behavior().get_signal(1)
-                for _, unit_number in ipairs(requs[tier].net_id_and_un[net_id]) do
-                    if signal.signal then
-                        requs[tier].un[unit_number].get_control_behavior().set_signal(1, signal)
-                    else
-                        requs[tier].un[unit_number].get_control_behavior().set_signal(1, nil)
-                    end
+local set_requester_signals_in_same_network_as = function(entity, tier)
+    local net_id = requs[tier].net_id[entity.unit_number]
+    if net_id and net_id > 0 then
+        local unit_number_array = requs[tier].net_id_and_un[net_id]
+        if unit_number_array then
+            local signal = entity.get_control_behavior().get_signal(1)
+            for _, unit_number in ipairs(requs[tier].net_id_and_un[net_id]) do
+                if signal.signal then
+                    requs[tier].un[unit_number].get_control_behavior().set_signal(1, signal)
+                else
+                    requs[tier].un[unit_number].get_control_behavior().set_signal(1, nil)
                 end
             end
-            update_requester_signals()
         end
+        update_requester_signals(tier)
     end
 end
 
 ---------------------------------------------------------------------------
 -- Store the circuit network id of all providers and requesters. Also, find
 -- providers and requesters with the same circuit network id.
-local update_net_id = function()
+local update_net_id = function(tier)
     local circuit_network
     local net_id
 
-    for tier = 1, tiers do
-        item_transport_active[tier] = false
-    end
+    item_transport_active[tier] = false
 
-    for tier = 1, tiers do
-        same_net_id[tier] = {}
-        provs[tier].net_id_and_un = {}
-        requs[tier].net_id_and_un = {}
+    same_net_id[tier] = {}
+    provs[tier].net_id_and_un = {}
+    requs[tier].net_id_and_un = {}
 
-        -- store network_id of all providers
-        for unit_number, entity in pairs(provs[tier].un) do
-            circuit_network = entity.get_circuit_network(wire)
-            if circuit_network then
-                net_id = circuit_network.network_id
+    -- store network_id of all providers
+    for unit_number, entity in pairs(provs[tier].un) do
+        circuit_network = entity.get_circuit_network(wire)
+        if circuit_network then
+            net_id = circuit_network.network_id
 
-                provs[tier].net_id[unit_number] = net_id
-                rendering.set_text(provs[tier].text_id[unit_number], "ID: " .. tostring(net_id))
+            provs[tier].net_id[unit_number] = net_id
+            rendering.set_text(provs[tier].text_id[unit_number], "ID: " .. tostring(net_id))
 
-                -- collect all providers with the same network_id
-                provs[tier].net_id_and_un[net_id] = provs[tier].net_id_and_un[net_id] or {}
-                table.insert(provs[tier].net_id_and_un[net_id], unit_number)
-            end
-        end
-
-        -- store network_id of all requesters
-        for unit_number, entity in pairs(requs[tier].un) do
-            circuit_network = entity.get_circuit_network(wire)
-            if circuit_network then
-                net_id = circuit_network.network_id
-
-                requs[tier].net_id[unit_number] = net_id
-                rendering.set_text(requs[tier].text_id[unit_number], "ID: " .. tostring(net_id))
-
-                -- collect all requesters with the same network_id
-                requs[tier].net_id_and_un[net_id] = requs[tier].net_id_and_un[net_id] or {}
-                table.insert(requs[tier].net_id_and_un[net_id], unit_number)
-            end
-        end
-
-        -- find providers and requesters with the same network_id
-        for net_id, _ in pairs(requs[tier].net_id_and_un) do
-            if provs[tier].net_id_and_un[net_id] then
-                table.insert(same_net_id[tier], net_id)
-                item_transport_active[tier] = true
-            end
+            -- collect all providers with the same network_id
+            provs[tier].net_id_and_un[net_id] = provs[tier].net_id_and_un[net_id] or {}
+            table.insert(provs[tier].net_id_and_un[net_id], unit_number)
         end
     end
 
-    for tier = 1, tiers do
+    -- store network_id of all requesters
+    for unit_number, entity in pairs(requs[tier].un) do
+        circuit_network = entity.get_circuit_network(wire)
+        if circuit_network then
+            net_id = circuit_network.network_id
+
+            requs[tier].net_id[unit_number] = net_id
+            rendering.set_text(requs[tier].text_id[unit_number], "ID: " .. tostring(net_id))
+
+            -- collect all requesters with the same network_id
+            requs[tier].net_id_and_un[net_id] = requs[tier].net_id_and_un[net_id] or {}
+            table.insert(requs[tier].net_id_and_un[net_id], unit_number)
+        end
+    end
+
+    -- find providers and requesters with the same network_id
+    for net_id, _ in pairs(requs[tier].net_id_and_un) do
+        if provs[tier].net_id_and_un[net_id] then
+            table.insert(same_net_id[tier], net_id)
+            item_transport_active[tier] = true
+        end
+    end
+
+    if debug_print then
         debugprint("update_net_id(): item_transport_active[" ..
-            tostring(tier) .. "] = " .. tostring(item_transport_active[tier]), debug_print)
+            tostring(tier) .. "] = " .. tostring(item_transport_active[tier]))
     end
 end
 
@@ -225,8 +217,8 @@ local on_built_entity = function(event)
                 end
             end
 
-            net_id_update_scheduled = true
-            -- return
+            net_id_update_scheduled[tier] = true
+            return
         elseif entity.name == names[tier].requester then
             requs[tier].un[entity.unit_number] = entity
             requs[tier].pos[entity.position] = entity
@@ -276,10 +268,10 @@ local on_built_entity = function(event)
                 end
             end
 
-            update_requester_signals()
+            update_requester_signals(tier)
 
-            net_id_update_scheduled = true
-            -- return
+            net_id_update_scheduled[tier] = true
+            return
         elseif entity.name == names[tier].node then
             -- connect to neighboring cables if they are facing towards or away
             -- from the node
@@ -301,8 +293,8 @@ local on_built_entity = function(event)
                 end
             end
 
-            net_id_update_scheduled = true
-            -- return
+            net_id_update_scheduled[tier] = true
+            return
         elseif entity.name == names[tier].cable then
             -- connect to neighboring cables
             for _, val in pairs(entity.belt_neighbours) do
@@ -365,8 +357,8 @@ local on_built_entity = function(event)
                 }
             end
 
-            net_id_update_scheduled = true
-            -- return
+            net_id_update_scheduled[tier] = true
+            return
         elseif entity.name == names[tier].underground_cable then
             -- also place a lamp
             local lamp = game.surfaces[1].create_entity {
@@ -410,8 +402,8 @@ local on_built_entity = function(event)
                 end
             end
 
-            net_id_update_scheduled = true
-            -- return
+            net_id_update_scheduled[tier] = true
+            return
         end
     end
 end
@@ -436,7 +428,8 @@ end
 local on_entity_settings_pasted = function(event)
     for tier = 1, tiers do
         if event.source.name == names[tier].requester and event.destination.name == names[tier].requester then
-            set_requester_signals_in_same_network_as(event.destination)
+            set_requester_signals_in_same_network_as(event.destination, tier)
+            return
         end
     end
 end
@@ -446,7 +439,8 @@ local on_gui_closed = function(event)
     for tier = 1, tiers do
         if event.entity and event.entity.valid then
             if event.entity.name == names[tier].requester then
-                set_requester_signals_in_same_network_as(event.entity)
+                set_requester_signals_in_same_network_as(event.entity, tier)
+                return
             end
         end
     end
@@ -472,9 +466,11 @@ local on_mined_entity = function(event)
             -- and the ID
             provs[tier].net_id[entity.unit_number] = nil
 
-            net_id_update_scheduled = true
+            net_id_update_scheduled[tier] = true
+            return
         elseif entity.name == names[tier].node then
-            net_id_update_scheduled = true
+            net_id_update_scheduled[tier] = true
+            return
         elseif entity.name == names[tier].requester then
             requs[tier].un[entity.unit_number] = nil
             requs[tier].pos[entity.position] = nil
@@ -493,14 +489,17 @@ local on_mined_entity = function(event)
             -- and the signal
             requs[tier].signal[entity.unit_number] = nil
 
-            net_id_update_scheduled = true
+            net_id_update_scheduled[tier] = true
+            return
         elseif entity.name == names[tier].cable then
-            net_id_update_scheduled = true
+            net_id_update_scheduled[tier] = true
+            return
         elseif entity.name == names[tier].underground_cable then
             -- destroy the associated lamp
             game.surfaces[1].find_entity(names.lamp, entity.position).destroy()
 
-            net_id_update_scheduled = true
+            net_id_update_scheduled[tier] = true
+            return
         end
     end
 
@@ -548,7 +547,9 @@ end
 local on_research_finished = function(event)
     local research = event.research
 
-    debugprint("on_research_finished(): research.name = " .. research.name, debug_print)
+    if debug_print then
+        debugprint("on_research_finished(): research.name = " .. research.name)
+    end
 
     if research.name == prefix .. "t1"
         or research.name == prefix .. "t1-speed"
@@ -610,6 +611,7 @@ local on_rotated_entity = function(event)
             local e_cont = requs[tier].container[entity.unit_number]
             local position = moveposition(entity.position, entity.direction)
             e_cont.teleport(position)
+            return
         end
     end
 end
@@ -628,9 +630,11 @@ end
 
 ---------------------------------------------------------------------------
 local on_tick = function(event)
-    if net_id_update_scheduled then
-        net_id_update_scheduled = false
-        update_net_id()
+    for tier = 1, tiers do
+        if net_id_update_scheduled[tier] then
+            net_id_update_scheduled[tier] = false
+            update_net_id(tier)
+        end
     end
 end
 
@@ -829,7 +833,9 @@ local initialize = function(global)
         setmetatable(requs[tier].pos, mt_position)
     end
 
-    net_id_update_scheduled = true
+    for tier = 1, tiers do
+        net_id_update_scheduled[tier] = true
+    end
 end
 
 ---------------------------------------------------------------------------

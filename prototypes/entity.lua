@@ -3,51 +3,40 @@ require("util")
 local prefix = "transport-cables:"
 local tiers = 3
 
-local inventory_size = {
-    provider = {
-        t1 = 16,
-        t2 = 32,
-        t3 = 64
-    },
-    requester_container = {
-        t1 = 16,
-        t2 = 32,
-        t3 = 64
-    }
-}
-local mining_time = {
-    cable = {
-        t1 = 0.01,
-        t2 = 0.01,
-        t3 = 0.01
-    },
-    node = {
-        t1 = 0.01,
-        t2 = 0.01,
-        t3 = 0.01
-    },
-    provider = {
-        t1 = 0.01,
-        t2 = 0.01,
-        t3 = 0.01
-    },
-    requester = {
-        t1 = 0.01,
-        t2 = 0.01,
-        t3 = 0.01
-    },
-    underground_cable = {
-        t1 = 0.01,
-        t2 = 0.01,
-        t3 = 0.01
-    }
-}
+local inventory_size = { provider = {}, requester_container = {} }
+inventory_size.provider[1] = 16
+inventory_size.provider[2] = 32
+inventory_size.provider[3] = 64
+inventory_size.requester_container[1] = 16
+inventory_size.requester_container[2] = 32
+inventory_size.requester_container[3] = 64
+
+local mining_time = { cable = {}, node = {}, provider = {}, requester = {}, underground_cable = {} }
+mining_time.cable[1] = 0.01
+mining_time.cable[2] = 0.01
+mining_time.cable[3] = 0.01
+mining_time.node[1] = 0.01
+mining_time.node[2] = 0.01
+mining_time.node[3] = 0.01
+mining_time.provider[1] = 0.01
+mining_time.provider[2] = 0.01
+mining_time.provider[3] = 0.01
+mining_time.requester[1] = 0.01
+mining_time.requester[2] = 0.01
+mining_time.requester[3] = 0.01
+mining_time.underground_cable[1] = 0.01
+mining_time.underground_cable[2] = 0.01
+mining_time.underground_cable[3] = 0.01
+
+local speed = 1e-8                     -- this makes the belt speed tooltip say 0.0 items / s
+local animation_speed_coefficient = {} -- cable animation speed (depends on `speed`)
+animation_speed_coefficient[1] = 4e7
+animation_speed_coefficient[2] = 8e7
+animation_speed_coefficient[3] = 12e7
 
 --
--- helper functions and parameters
+-- helper functions
 --
-local speed = 1e-8                      -- this makes the belt speed tooltip say 0.0 items / s
-local animation_speed_coefficient = 5e7 -- cable animation speed
 
 ---------------------------------------------------------------------------
 local get_belt_animation_set = function(tier)
@@ -205,11 +194,11 @@ for tier = 1, tiers do
     local entity = table.deepcopy(data.raw["transport-belt"]["transport-belt"])
     entity.name = entity_name
     entity.minable = {
-        mining_time = mining_time.cable["t" .. tostring(tier)],
+        mining_time = mining_time.cable[tier],
         result = entity_name
     }
     entity.speed = speed
-    entity.animation_speed_coefficient = animation_speed_coefficient
+    entity.animation_speed_coefficient = animation_speed_coefficient[tier]
     entity.related_underground_belt = prefix .. "underground-cable-t" .. tostring(tier)
     entity.belt_animation_set = get_belt_animation_set(tier)
     entity.connector_frame_sprites = get_transport_belt_connector_frame_sprites(tier)
@@ -224,7 +213,7 @@ for tier = 1, tiers do
     local entity = table.deepcopy(data.raw["lamp"]["small-lamp"])
     entity.name = entity_name
     entity.minable = {
-        mining_time = mining_time.node["t" .. tostring(tier)],
+        mining_time = mining_time.node[tier],
         result = entity_name
     }
     entity.energy_source = { type = "void" }
@@ -286,10 +275,10 @@ for tier = 1, tiers do
     local entity = table.deepcopy(data.raw["container"]["iron-chest"])
     entity.name = entity_name
     entity.minable = {
-        mining_time = mining_time.provider["t" .. tostring(tier)],
+        mining_time = mining_time.provider[tier],
         result = entity_name
     }
-    entity.inventory_size = inventory_size.provider["t" .. tostring(tier)]
+    entity.inventory_size = inventory_size.provider[tier]
     entity.picture = {
         layers =
         {
@@ -339,7 +328,7 @@ for tier = 1, tiers do
     local entity = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"])
     entity.name = entity_name
     entity.minable = {
-        mining_time = mining_time.requester["t" .. tostring(tier)],
+        mining_time = mining_time.requester[tier],
         result = entity_name
     }
     entity.circuit_wire_max_distance = 1
@@ -447,7 +436,7 @@ for tier = 1, tiers do
     local entity = table.deepcopy(data.raw["container"]["iron-chest"])
     entity.name = entity_name
     entity.minable = nil
-    entity.inventory_size = inventory_size.requester_container["t" .. tostring(tier)]
+    entity.inventory_size = inventory_size.requester_container[tier]
     entity.destructible = false
     entity.picture = {
         layers =
@@ -499,11 +488,11 @@ for tier = 1, tiers do
     local entity = table.deepcopy(data.raw["underground-belt"]["underground-belt"])
     entity.name = entity_name
     entity.minable = {
-        mining_time = mining_time.underground_cable["t" .. tostring(tier)],
+        mining_time = mining_time.underground_cable[tier],
         result = entity_name
     }
     entity.speed = speed
-    entity.animation_speed_coefficient = animation_speed_coefficient
+    entity.animation_speed_coefficient = animation_speed_coefficient[tier]
     entity.belt_animation_set = get_belt_animation_set(1)
     entity.structure = {
         direction_in = {
