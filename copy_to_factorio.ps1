@@ -1,4 +1,4 @@
-$source = "C:\git\transport-cables"
+$source = Get-Location
 $destination = "C:\Users\Admin\AppData\Roaming\Factorio\mods\transport-cables_0.0.1"
 $folders = (
     "locale",
