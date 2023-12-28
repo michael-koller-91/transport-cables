@@ -1,5 +1,6 @@
 require("util")
 
+local debug_lamp = true
 local debug_print = true
 
 ---------------------------------------------------------------------------
@@ -33,6 +34,9 @@ for tier = 1, tiers do
         underground_cable = prefix .. "underground-cable-t" .. tostring(tier),
     }
 end
+
+local command_debug_lamp = "transport-cables-debug-lamp"
+local command_debug_print = "transport-cables-debug-print"
 
 ---------------------------------------------------------------------------
 local debugprint = function(str)
@@ -420,8 +424,34 @@ end
 
 ---------------------------------------------------------------------------
 local on_console_command = function(command)
-    debug_print = not debug_print
-    game.get_player(command.player_index).print("debug_print = " .. tostring(debug_print))
+    if command.name == command_debug_lamp then
+        debug_lamp = not debug_lamp
+        game.get_player(command.player_index).print("debug_lamp = " .. tostring(debug_lamp))
+        local control_behavior
+        local entities
+        local comparator = "!="
+        if debug_lamp then
+            comparator = "="
+        end
+        entities = game.surfaces[1].find_entities_filtered { name = names[1].lamp }
+        for i, entity in ipairs(entities) do
+            control_behavior = entity.get_control_behavior()
+            control_behavior.circuit_condition = {
+                condition =
+                {
+                    comparator = comparator,
+                    first_signal = { type = "virtual", name = "signal-0" },
+                    second_signal = { type = "virtual", name = "signal-0" }
+                }
+            }
+        end
+        if debug_lamp then
+            game.get_player(command.player_index).print("found " .. tostring(#entities) .. " lamps")
+        end
+    elseif command.name == command_debug_print then
+        debug_print = not debug_print
+        game.get_player(command.player_index).print("debug_print = " .. tostring(debug_print))
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -496,7 +526,7 @@ local on_mined_entity = function(event)
             return
         elseif entity.name == names[tier].underground_cable then
             -- destroy the associated lamp
-            game.surfaces[1].find_entity(names.lamp, entity.position).destroy()
+            game.surfaces[1].find_entity(names[tier].lamp, entity.position).destroy()
 
             net_id_update_scheduled[tier] = true
             return
@@ -639,33 +669,31 @@ local on_tick = function(event)
 end
 
 ---------------------------------------------------------------------------
-local count
-local e_cont
-local e_prov
--- local entity_requester
-local inve_prov
-local inve_requ
-local inventory
-local keys_prov
-local keys_requ
-local n_empty_inve_requ
-local n
-local n_inve_prov
-local n_items_per_prov
-local n_items_per_requ
-local n_item_inse    -- The number of items that has already been inserted into requesters.
-local n_item_remo    -- The number of items that has already been removed from providers.
-local n_item_rema    -- The number of items that still needs to be removed from providers.
-local n_item_to_move -- The number of items that needs to be moved in this network.
-local n_prov
-local n_prov_visi    -- The number of providers from which items have already been removed.
-local n_requ
-local n_requ_visi    -- The number of requesters into which items have already been inserted.
+local count             -- counts items
+local e_cont            -- a requester container entity
+local e_prov            -- a provider entity
+local inve_prov         -- unit number -> number of items in a provider
+local inve_requ         -- unit number -> number of items that can be inserted into a requester
+local inventory         -- an entity's inventory
+local keys_prov         -- provider inventory keys
+local keys_requ         -- requester inventory keys
+local n_empty_inve_requ -- total number of empty slots in requesters
+local n                 -- an element of `inve_prov`
+local n_inve_prov       -- total number of items in providers
+local n_items_per_prov  -- the average number of items to be moved per provider
+local n_items_per_requ  -- the average number of items to be moved per requester
+local n_item_inse       -- the number of items that has already been inserted into requesters
+local n_item_remo       -- the number of items that has already been removed from providers
+local n_item_rema       -- the number of items that still needs to be removed from providers
+local n_item_to_move    -- the number of items that needs to be moved in this network
+local n_prov            -- the number of providers with the current network id
+local n_prov_visi       -- the number of providers from which items have already been removed
+local n_requ            -- the number of requesters with the current network id
+local n_requ_visi       -- the number of requesters into which items have already been inserted
 local provider_un_array
 local requester_un_array
 local signal_name
 local signal
--- local stack_size
 local unit_number
 local on_nth_tick = function(event)
     -- move items between provider-requester-pairs
@@ -840,6 +868,8 @@ end
 
 ---------------------------------------------------------------------------
 lib = {
+    command_debug_lamp = command_debug_lamp,
+    command_debug_print = command_debug_print,
     initialize = initialize,
     on_built_entity = on_built_entity,
     on_built_filter = on_built_filter,

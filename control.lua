@@ -1,7 +1,8 @@
 require("lib")
 
 ---------------------------------------------------------------------------
-commands.add_command("transport-cables-debug-print", nil, lib.on_console_command)
+commands.add_command(lib.command_debug_lamp, nil, lib.on_console_command)
+commands.add_command(lib.command_debug_print, nil, lib.on_console_command)
 
 ---------------------------------------------------------------------------
 script.on_event(defines.events.on_built_entity, lib.on_built_entity, lib.on_built_filter)
