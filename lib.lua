@@ -17,6 +17,7 @@ for tier = 1, tiers do
     net_id_update_scheduled[tier] = false
 end
 
+local lamps = {} -- all lamps
 local provs = {} -- all providers
 local requs = {} -- all requesters
 local same_net_id = {}
@@ -370,6 +371,11 @@ local on_built_entity = function(event)
                 position = entity.position,
                 force = 'player'
             }
+            lamps[tier][entity.position] = lamp
+
+            for pos, e in pairs(lamps[tier]) do
+                debugprint("pos.x = " .. tostring(pos.x) .. ", pos.y = " .. tostring(pos.y))
+            end
 
             -- connect to neighboring underground_cable's lamp
             if entity.neighbours then
@@ -425,28 +431,42 @@ end
 ---------------------------------------------------------------------------
 local on_console_command = function(command)
     if command.name == command_debug_lamp then
-        debug_lamp = not debug_lamp
+        if not command.parameters then
+            debug_lamp = not debug_lamp
+        else
+            debug_lamp = true
+        end
+
         game.get_player(command.player_index).print("debug_lamp = " .. tostring(debug_lamp))
-        local control_behavior
-        local entities
+
         local comparator = "!="
         if debug_lamp then
             comparator = "="
         end
-        entities = game.surfaces[1].find_entities_filtered { name = names[1].lamp }
-        for i, entity in ipairs(entities) do
-            control_behavior = entity.get_control_behavior()
-            control_behavior.circuit_condition = {
-                condition =
-                {
-                    comparator = comparator,
-                    first_signal = { type = "virtual", name = "signal-0" },
-                    second_signal = { type = "virtual", name = "signal-0" }
-                }
-            }
-        end
-        if debug_lamp then
-            game.get_player(command.player_index).print("found " .. tostring(#entities) .. " lamps")
+
+        local control_behavior
+        local entities
+        for tier = 1, tiers do
+            -- entities = game.surfaces[1].find_entities_filtered { name = names[1].lamp }
+            for i, entity in ipairs(lamps[tier]) do
+                if entity.valid then
+                    control_behavior = entity.get_control_behavior()
+                    control_behavior.circuit_condition = {
+                        condition =
+                        {
+                            comparator = comparator,
+                            first_signal = { type = "virtual", name = "signal-0" },
+                            second_signal = { type = "virtual", name = "signal-0" }
+                        }
+                    }
+                end
+            end
+            if debug_lamp then
+                game.get_player(
+                    command.player_index).print("tier " ..
+                    tostring(tier) .. ": found " .. tostring(#lamps[tier]) .. " lamps"
+                )
+            end
         end
     elseif command.name == command_debug_print then
         debug_print = not debug_print
@@ -835,7 +855,28 @@ local on_nth_tick = function(event)
 end
 
 ---------------------------------------------------------------------------
+local _iterator = function(tt, pos)
+    local kx
+    local v
+    local vv
+
+    kx, v = next(tt.t, tt.kx_prev)
+    if next(v, pos.y) == nil then
+        pos.y = nil
+        tt.kx_prev = kx
+        kx, v = next(tt.t, tt.kx_prev)
+    end
+
+    if v == nil then
+        return nil
+    else
+        pos.y, vv = next(v, pos.y)
+        return { x = kx, y = pos.y }, vv
+    end
+end
+
 local initialize = function(global)
+    lamps = global.lamps
     provs = global.provider
     requs = global.requester
     same_net_id = global.same_net_id
@@ -853,10 +894,15 @@ local initialize = function(global)
         __newindex = function(table, key, value)
             rawset(table, key.x, rawget(table, key.x) or {})
             rawget(table, key.x)[key.y] = value
+        end,
+        __pairs = function(table)
+            local tt = { t = table, kx_prev = nil }
+            return _iterator, tt, { x = nil, y = nil }
         end
     }
 
     for tier = 1, tiers do
+        setmetatable(lamps[tier], mt_position)
         setmetatable(provs[tier].pos, mt_position)
         setmetatable(requs[tier].pos, mt_position)
     end

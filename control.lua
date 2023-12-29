@@ -39,7 +39,7 @@ script.on_event(defines.events.on_tick, lib.on_tick)
 -- variable `text_id` holds the id of the text which displays the `net_id`.
 
 -- net_id: unit number -> circuit network id
--- net_id_and_un: circuit network id -> unit number
+-- net_id_and_un: circuit network id -> (unit number -> entity)
 -- pos: map position -> entity
 -- signal: unit number -> circuit network signal
 -- un: unit number -> entity
@@ -67,12 +67,14 @@ local requester_table = {
 
 ---------------------------------------------------------------------------
 script.on_init(function()
+    global.lamps = {}
     global.provider = {}
     global.requester = {}
     global.same_net_id = {}
     global.mod_state = {}
 
     for tier = 1, lib.tiers do
+        global.lamps[tier] = {}
         global.provider[tier] = table.deepcopy(provider_table)
         global.requester[tier] = table.deepcopy(requester_table)
         global.same_net_id[tier] = {}
