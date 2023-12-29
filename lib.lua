@@ -373,10 +373,6 @@ local on_built_entity = function(event)
             }
             lamps[tier][entity.position] = lamp
 
-            for pos, e in pairs(lamps[tier]) do
-                debugprint("pos.x = " .. tostring(pos.x) .. ", pos.y = " .. tostring(pos.y))
-            end
-
             -- connect to neighboring underground_cable's lamp
             if entity.neighbours then
                 local lamp_neighbor = game.surfaces[1].find_entity(names[tier].lamp, entity.neighbours.position)
@@ -445,12 +441,13 @@ local on_console_command = function(command)
         end
 
         local control_behavior
-        local entities
+        local counter
         for tier = 1, tiers do
-            -- entities = game.surfaces[1].find_entities_filtered { name = names[1].lamp }
-            for i, entity in ipairs(lamps[tier]) do
-                if entity.valid then
-                    control_behavior = entity.get_control_behavior()
+            counter = 0
+            for pos, lamp in pairs(lamps[tier]) do
+                counter = counter + 1
+                if lamp.valid then
+                    control_behavior = lamp.get_control_behavior()
                     control_behavior.circuit_condition = {
                         condition =
                         {
@@ -464,7 +461,7 @@ local on_console_command = function(command)
             if debug_lamp then
                 game.get_player(
                     command.player_index).print("tier " ..
-                    tostring(tier) .. ": found " .. tostring(#lamps[tier]) .. " lamps"
+                    tostring(tier) .. ": found " .. tostring(counter) .. " lamps"
                 )
             end
         end
@@ -855,23 +852,23 @@ local on_nth_tick = function(event)
 end
 
 ---------------------------------------------------------------------------
-local _iterator = function(tt, pos)
-    local kx
-    local v
-    local vv
+-- a stateful iterator for mt_position.__pairs
+local _iterator = function(tt, key)
+    local kx -- the current x-coordinate
+    local v, vv
 
     kx, v = next(tt.t, tt.kx_prev)
-    if next(v, pos.y) == nil then
-        pos.y = nil
-        tt.kx_prev = kx
-        kx, v = next(tt.t, tt.kx_prev)
+    if v ~= nil and next(v, key.y) == nil then      -- if there are no more y-coordinates for the current x-coordinate, ...
+        tt.kx_prev = kx                -- ... then remember the current x-coordinate, ...
+        kx, v = next(tt.t, tt.kx_prev) -- ... go to the next x-coordinate, ...
+        key.y = nil                    -- ... and start with the first y-coordinate again
     end
 
     if v == nil then
         return nil
     else
-        pos.y, vv = next(v, pos.y)
-        return { x = kx, y = pos.y }, vv
+        key.y, vv = next(v, key.y) -- the next y-coordinate
+        return { x = kx, y = key.y }, vv
     end
 end
 
@@ -883,7 +880,7 @@ local initialize = function(global)
     mod_state = global.mod_state
 
     -- use a MapPosition as index
-    mt_position = {
+    local mt = {
         __index = function(table, key)
             if rawget(table, key.x) then
                 return rawget(table, key.x)[key.y]
@@ -902,9 +899,9 @@ local initialize = function(global)
     }
 
     for tier = 1, tiers do
-        setmetatable(lamps[tier], mt_position)
-        setmetatable(provs[tier].pos, mt_position)
-        setmetatable(requs[tier].pos, mt_position)
+        setmetatable(lamps[tier], mt)
+        setmetatable(provs[tier].pos, mt)
+        setmetatable(requs[tier].pos, mt)
     end
 
     for tier = 1, tiers do
