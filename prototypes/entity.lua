@@ -2,6 +2,7 @@ require("util")
 
 local prefix = "transport-cables:"
 local tiers = 3
+local debug_mode = true
 
 local inventory_size = { provider = {}, requester_container = {} }
 inventory_size.provider[1] = 16
@@ -624,7 +625,11 @@ for tier = 1, tiers do
     entity.minable = nil
     entity.operable = false
     entity.energy_source = { type = "void" }
-    entity.selection_box = { { 0.0, 0.0 }, { 0.0, 0.0 } }
+    if debug_mode then
+        entity.selection_box = { { 0.0, 0.0 }, { 2.0, 2.0 } }
+    else
+        entity.selection_box = { { 0.0, 0.0 }, { 0.0, 0.0 } }
+    end
     entity.picture_off =
     {
         layers =
