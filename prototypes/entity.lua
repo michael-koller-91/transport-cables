@@ -2,7 +2,7 @@ require("util")
 
 local prefix = "transport-cables:"
 local tiers = 3
-local debug_mode = true
+local debug_mode = false
 
 local inventory_size = { provider = {}, requester_container = {} }
 inventory_size.provider[1] = 16
@@ -40,10 +40,17 @@ animation_speed_coefficient[1] = 4e7
 animation_speed_coefficient[2] = 8e7
 animation_speed_coefficient[3] = 12e7
 
+-- make sure the lamp reaches at least as far as underground cables
+local lamp_circuit_wire_max_distance = 0
+for _, v in ipairs(max_distance) do
+    if v > lamp_circuit_wire_max_distance then
+        lamp_circuit_wire_max_distance = v
+    end
+end
+
 --
 -- helper functions
 --
-
 ---------------------------------------------------------------------------
 local get_belt_animation_set = function(tier)
     return {
@@ -223,6 +230,7 @@ for tier = 1, tiers do
         result = entity_name
     }
     entity.energy_source = { type = "void" }
+    entity.circuit_wire_max_distance = lamp_circuit_wire_max_distance + 1
     entity.picture_off = {
         layers = {
             {
