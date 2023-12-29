@@ -94,10 +94,34 @@ local update_requester_signals = function(tier)
 end
 
 ---------------------------------------------------------------------------
+-- get the container associated with `entity` (a requester)
+local get_container = function(entity, tier)
+    return requs[tier].container[entity.unit_number]
+end
+
+-- create a container north of `entity` (a requester)
+local create_container = function(entity, tier)
+    requs[tier].container[entity.unit_number] = game.surfaces[1].create_entity {
+        name = names[tier].requester_container,
+        position = moveposition(entity.position, entity.direction),
+        force = "player"
+    }
+end
+
+-- destroy the container associated with `entity` (a requester)
+local destroy_container = function(entity, tier)
+    local destroyed = requs[tier].container[entity.unit_number].destroy()
+    requs[tier].container[entity.unit_number] = nil
+    return destroyed
+end
+
+---------------------------------------------------------------------------
+-- get the lamp associated with `entity`
 local get_lamp = function(entity, tier)
     return lamps[tier][entity.unit_number]
 end
 
+-- connect the two lamps associated with `source_entity` and `target_entity`
 local connect_lamps = function(source_entity, target_entity, tier)
     get_lamp(source_entity, tier).connect_neighbour {
         wire = wire,
@@ -105,19 +129,20 @@ local connect_lamps = function(source_entity, target_entity, tier)
     }
 
     if debug_print then
-        debugprint("connected " .. source_entity.name .. " to " .. target_entity.name)
+        debugprint("connect_lamps(): " .. source_entity.name .. " < == > " .. target_entity.name)
     end
 end
 
+-- create a lamp and associated it with `entity`
 local create_lamp = function(entity, tier)
     lamps[tier][entity.unit_number] = game.surfaces[1].create_entity {
         name = names[tier].lamp,
         position = entity.position,
         force = 'player'
     }
-    return lamps[tier][entity.unit_number]
 end
 
+-- destroy the lamp associated with `entity`
 local destroy_lamp = function(entity, tier)
     local destroyed = lamps[tier][entity.unit_number].destroy()
     lamps[tier][entity.unit_number] = nil
@@ -160,7 +185,7 @@ local update_net_id = function(tier)
 
     -- store network_id of all providers
     for unit_number, entity in pairs(provs[tier].un) do
-        circuit_network = entity.get_circuit_network(wire)
+        circuit_network = get_lamp(entity, tier).get_circuit_network(wire)
         if circuit_network then
             net_id = circuit_network.network_id
 
@@ -175,7 +200,7 @@ local update_net_id = function(tier)
 
     -- store network_id of all requesters
     for unit_number, entity in pairs(requs[tier].un) do
-        circuit_network = entity.get_circuit_network(wire)
+        circuit_network = get_lamp(entity, tier).get_circuit_network(wire)
         if circuit_network then
             net_id = circuit_network.network_id
 
@@ -215,7 +240,6 @@ local on_built_entity = function(event)
             create_lamp(entity, tier)
 
             provs[tier].un[entity.unit_number] = entity
-            provs[tier].pos[entity.position] = entity
 
             -- default ID
             provs[tier].net_id[entity.unit_number] = -1
@@ -257,16 +281,12 @@ local on_built_entity = function(event)
         elseif entity.name == names[tier].requester then
             create_lamp(entity, tier)
 
+            local position
+
             requs[tier].un[entity.unit_number] = entity
-            requs[tier].pos[entity.position] = entity
 
             -- in addition, place a container
-            local position = moveposition(entity.position, entity.direction)
-            requs[tier].container[entity.unit_number] = game.surfaces[1].create_entity {
-                name = names[tier].requester_container,
-                position = position,
-                force = "player"
-            }
+            create_container(entity, tier)
 
             -- default ID
             requs[tier].net_id[entity.unit_number] = -1
@@ -336,28 +356,27 @@ local on_built_entity = function(event)
                 for _, neighbor in ipairs(val) do
                     -- if the neighbor is an underground_cable, connect to the corresponding lamp
                     if neighbor.name == names[tier].underground_cable then
-                        -- local lamp = game.surfaces[1].find_entity(names[tier].lamp, neighbor.position)
                         if (entity.direction ~= util.oppositedirection(neighbor.direction)) then
                             connect_lamps(entity, neighbor, tier)
                         end
                     else
                         connect_lamps(entity, neighbor, tier)
-                        -- entity.get_control_behavior().enable_disable = false
-                        -- neighbor.get_control_behavior().enable_disable = false
                     end
                 end
             end
 
             -- connect to requester north of cable
             local position = moveposition(entity.position, entity.direction, 1)
-            if requs[tier].pos[position] then
-                connect_lamps(entity, requs[tier].pos[position], tier)
+            local requester = game.surfaces[1].find_entity(names[tier].requester, position)
+            if requester then
+                connect_lamps(entity, requester, tier)
             end
 
             -- connect to provider south of cable
             position = moveposition(entity.position, entity.direction, -1)
-            if provs[tier].pos[position] then
-                connect_lamps(entity, provs[tier].pos[position], tier)
+            local provider = game.surfaces[1].find_entity(names[tier].provider, position)
+            if provider then
+                connect_lamps(entity, provider, tier)
             end
 
             -- connect to node north of cable
@@ -522,7 +541,6 @@ local on_mined_entity = function(event)
             destroy_lamp(entity, tier)
 
             provs[tier].un[entity.unit_number] = nil
-            provs[tier].pos[entity.position] = nil
 
             -- also destroy the displayed text
             rendering.destroy(provs[tier].text_id[entity.unit_number])
@@ -542,11 +560,9 @@ local on_mined_entity = function(event)
             destroy_lamp(entity, tier)
 
             requs[tier].un[entity.unit_number] = nil
-            requs[tier].pos[entity.position] = nil
 
             -- also destroy the container
-            requs[tier].container[entity.unit_number].destroy()
-            requs[tier].container[entity.unit_number] = nil
+            destroy_container(entity, tier)
 
             -- and the displayed text
             rendering.destroy(requs[tier].text_id[entity.unit_number])
@@ -678,7 +694,7 @@ local on_rotated_entity = function(event)
     for tier = 1, tiers do
         if entity.name == names[tier].requester then
             -- move the container in front of the requester again
-            local e_cont = requs[tier].container[entity.unit_number]
+            local e_cont = get_container(entity, tier)
             local position = moveposition(entity.position, entity.direction)
             e_cont.teleport(position)
             return
@@ -875,56 +891,12 @@ local on_nth_tick = function(event)
 end
 
 ---------------------------------------------------------------------------
--- a stateful iterator for mt_position.__pairs
-local _iterator = function(tt, key)
-    local kx -- the current x-coordinate
-    local v, vv
-
-    kx, v = next(tt.t, tt.kx_prev)
-    if v ~= nil and next(v, key.y) == nil then -- if there are no more y-coordinates for the current x-coordinate, ...
-        tt.kx_prev = kx                        -- ... then remember the current x-coordinate, ...
-        kx, v = next(tt.t, tt.kx_prev)         -- ... go to the next x-coordinate, ...
-        key.y = nil                            -- ... and start with the first y-coordinate again
-    end
-
-    if v == nil then
-        return nil
-    else
-        key.y, vv = next(v, key.y) -- the next y-coordinate
-        return { x = kx, y = key.y }, vv
-    end
-end
-
 local initialize = function(global)
     lamps = global.lamps
     provs = global.provider
     requs = global.requester
     same_net_id = global.same_net_id
     mod_state = global.mod_state
-
-    -- use a MapPosition as index
-    local mt = {
-        __index = function(table, key)
-            if rawget(table, key.x) then
-                return rawget(table, key.x)[key.y]
-            else
-                return nil
-            end
-        end,
-        __newindex = function(table, key, value)
-            rawset(table, key.x, rawget(table, key.x) or {})
-            rawget(table, key.x)[key.y] = value
-        end,
-        __pairs = function(table)
-            local tt = { t = table, kx_prev = nil }
-            return _iterator, tt, { x = nil, y = nil }
-        end
-    }
-
-    for tier = 1, tiers do
-        setmetatable(provs[tier].pos, mt)
-        setmetatable(requs[tier].pos, mt)
-    end
 
     for tier = 1, tiers do
         net_id_update_scheduled[tier] = true
