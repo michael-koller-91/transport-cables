@@ -1,8 +1,8 @@
 name: Transport Cables
-run-name: Generate Transport Cables
+run-name: Transport Cables
 on: [push]
 jobs:
-  Generate-Transport-Cables:
+  Transport-Cables:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
@@ -18,27 +18,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run generate_sprites.py
+      - name: Generate sprites
         run: python generate_sprites.py
 
       - name: Archive generated sprites
         uses: actions/upload-artifact@v3
         with:
           name: sprites
-          path: |
-            sprites
+          path: sprites
 
       - name: Extract version from info.json
-        id: generate-mod-version
+        id: get_mod_version
         run: |
           MOD_VERSION=$(grep -i '\"version\":' info.json | grep -o '[0-9].[0-9].[0-9]')
           echo "MOD_VERSION = ${MOD_VERSION}"
           echo "mod_version=${MOD_VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Archive transport-cables
+      - name: Archive transport cables
+        if: github.ref_type == 'tag'
         uses: actions/upload-artifact@v3
         with:
-          name: transport-cables-${{ steps.generate-mod-version.outputs.mod_version }}
+          name: transport-cables-${{ steps.get_mod_version.outputs.mod_version }}
           path: |
             locale
             prototypes
