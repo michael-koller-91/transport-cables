@@ -18,9 +18,7 @@ folder_entities = folder_sprites / "entities"
 folder_icons = folder_sprites / "icons"
 folder_technologies = folder_sprites / "technologies"
 
-#
 # create the sprites directory if it does not exist
-#
 if parargs.clean and folder_sprites.exists():
     shutil.rmtree(str(folder_sprites))
 if not folder_sprites.exists():

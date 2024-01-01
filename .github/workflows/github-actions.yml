@@ -1,8 +1,8 @@
-name: Sprite Generation
-run-name: Generate Sprites
+name: Transport Cables
+run-name: Generate Transport Cables
 on: [push]
 jobs:
-  Generate-Sprites:
+  Generate-Transport-Cables:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
@@ -27,3 +27,21 @@ jobs:
           name: sprites
           path: |
             sprites
+
+      - name: Extract version from info.json
+        id: generate-mod-version
+        run: |
+          MOD_VERSION=$(grep -i '\"version\":' info.json | grep -o '[0-9].[0-9].[0-9]')
+          echo "MOD_VERSION = ${MOD_VERSION}"
+          echo "mod_version=${MOD_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Archive transport-cables
+        uses: actions/upload-artifact@v3
+        with:
+          name: transport-cables-${{ steps.generate-mod-version.outputs.mod_version }}
+          path: |
+            locale
+            prototypes
+            sprites
+            *.lua
+            info.json
