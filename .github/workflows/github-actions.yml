@@ -27,21 +27,13 @@ jobs:
           name: sprites
           path: sprites
 
-      - name: Extract version from info.json
+      - name: Extract mod version from info.json
+        if: github.ref_type == 'tag'
         id: get_mod_version
         run: |
           MOD_VERSION=$(grep -i '\"version\":' info.json | grep -o '[0-9].[0-9].[0-9]')
           echo "MOD_VERSION = ${MOD_VERSION}"
           echo "mod_version=${MOD_VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Archive transport cables
-        if: github.ref_type == 'tag'
-        uses: actions/upload-artifact@v3
-        with:
-          name: transport-cables-${{ steps.get_mod_version.outputs.mod_version }}
-          path: |
-            locale
-            prototypes
-            sprites
-            *.lua
-            info.json
+      - name: Create mod .zip
+        run: zip -r ${MOD_VERSION}.zip locale/ prototypes/ sprites/ *.lua info.json
