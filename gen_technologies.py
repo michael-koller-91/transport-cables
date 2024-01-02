@@ -32,12 +32,8 @@ def gen(folder):
         )
 
         # scale image up
-        img = Image.fromarray(arr, mode="RGB")
-        img = img.resize(
-            (img.size[0] * UPSCALE, img.size[1] * UPSCALE), Image.Resampling.NEAREST
-        )
+        arr = gu.rescale(arr, (arr.shape[0] * UPSCALE, arr.shape[1] * UPSCALE))
 
-        arr = np.array(img)
         super_arr = gu.make_mipmaps_rgb(arr, 4)
 
         images["array"].append(super_arr)

@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--clean", action="store_true", help="remove an existing sprites directory"
 )
+parser.add_argument("--aux", action="store_true", help="also create auxiliary sprites")
 parargs = parser.parse_args()
 
 folder_sprites = Path("sprites")
@@ -28,6 +29,6 @@ if not folder_sprites.exists():
     os.mkdir(str(folder_technologies))
 
 
-gen_entities.gen(folder_entities)
+gen_entities.gen(folder_entities, parargs.aux)
 gen_icons.gen(folder_icons)
 gen_technologies.gen(folder_technologies)

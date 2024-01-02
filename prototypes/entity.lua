@@ -237,8 +237,8 @@ for tier = 1, tiers do
             {
                 filename = "__transport-cables__/sprites/entities/lr-node-t" .. tostring(tier) .. ".png",
                 priority = "high",
-                width = 64,
-                height = 64,
+                width = 32,
+                height = 32,
                 frame_count = 1,
                 axially_symmetrical = false,
                 direction_count = 1,
@@ -258,8 +258,8 @@ for tier = 1, tiers do
             {
                 filename = "__transport-cables__/sprites/entities/lr-node-t" .. tostring(tier) .. "-shadow.png",
                 priority = "high",
-                width = 32,
-                height = 32,
+                width = 16,
+                height = 16,
                 frame_count = 1,
                 axially_symmetrical = false,
                 direction_count = 1,
@@ -301,8 +301,8 @@ for tier = 1, tiers do
             {
                 filename = "__transport-cables__/sprites/entities/lr-provider-t" .. tostring(tier) .. ".png",
                 priority = "extra-high",
-                width = 64,
-                height = 64,
+                width = 32,
+                height = 32,
                 shift = util.by_pixel(0, -0.5),
                 hr_version =
                 {
@@ -317,8 +317,8 @@ for tier = 1, tiers do
             {
                 filename = "__transport-cables__/sprites/entities/lr-provider-t" .. tostring(tier) .. "-shadow.png",
                 priority = "extra-high",
-                width = 64,
-                height = 64,
+                width = 32,
+                height = 32,
                 shift = util.by_pixel(0, 0),
                 draw_as_shadow = true,
                 hr_version =
@@ -356,8 +356,8 @@ for tier = 1, tiers do
             {
                 filename = "__transport-cables__/sprites/entities/lr-requester-with-container-north-t" ..
                     tostring(tier) .. ".png",
-                width = 64,
-                height = 128,
+                width = 32,
+                height = 64,
                 frame_count = 1,
                 shift = util.by_pixel(0, -16),
                 hr_version =
@@ -379,8 +379,8 @@ for tier = 1, tiers do
             {
                 filename = "__transport-cables__/sprites/entities/lr-requester-with-container-south-t" ..
                     tostring(tier) .. ".png",
-                width = 64,
-                height = 128,
+                width = 32,
+                height = 64,
                 frame_count = 1,
                 shift = util.by_pixel(0, 16),
                 hr_version =
@@ -402,8 +402,8 @@ for tier = 1, tiers do
             {
                 filename = "__transport-cables__/sprites/entities/lr-requester-with-container-east-t" ..
                     tostring(tier) .. ".png",
-                width = 128,
-                height = 64,
+                width = 64,
+                height = 32,
                 frame_count = 1,
                 shift = util.by_pixel(16, 0),
                 hr_version =
@@ -425,8 +425,8 @@ for tier = 1, tiers do
             {
                 filename = "__transport-cables__/sprites/entities/lr-requester-with-container-west-t" ..
                     tostring(tier) .. ".png",
-                width = 128,
-                height = 64,
+                width = 64,
+                height = 32,
                 frame_count = 1,
                 shift = util.by_pixel(-16, 0),
                 hr_version =
@@ -462,8 +462,8 @@ for tier = 1, tiers do
             {
                 filename = "__transport-cables__/sprites/entities/lr-empty-t" .. tostring(tier) .. ".png",
                 priority = "extra-high",
-                width = 8,
-                height = 8,
+                width = 4,
+                height = 4,
                 shift = util.by_pixel(0, 0),
                 hr_version =
                 {
@@ -479,8 +479,8 @@ for tier = 1, tiers do
                 filename = "__transport-cables__/sprites/entities/lr-empty-t" ..
                     tostring(tier) .. "-shadow.png",
                 priority = "extra-high",
-                width = 8,
-                height = 8,
+                width = 4,
+                height = 4,
                 shift = util.by_pixel(0, 0),
                 draw_as_shadow = true,
                 hr_version =
@@ -649,8 +649,8 @@ for tier = 1, tiers do
             {
                 filename = "__transport-cables__/sprites/entities/lr-lamp-off-t" .. tostring(tier) .. ".png",
                 priority = "high",
-                width = 8,
-                height = 8,
+                width = 4,
+                height = 4,
                 frame_count = 1,
                 axially_symmetrical = false,
                 direction_count = 1,
@@ -671,8 +671,8 @@ for tier = 1, tiers do
             {
                 filename = "__transport-cables__/sprites/entities/lr-lamp-off-t" .. tostring(tier) .. "-shadow.png",
                 priority = "high",
-                width = 8,
-                height = 8,
+                width = 4,
+                height = 4,
                 frame_count = 1,
                 axially_symmetrical = false,
                 direction_count = 1,

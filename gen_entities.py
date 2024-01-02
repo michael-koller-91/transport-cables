@@ -89,87 +89,94 @@ def combine_ul_lr(array_horizontal, array_vertical):
     return arr
 
 
-def gen(folder):
+def gen(folder, auxiliary=False):
     print("generating entities ... ", end="", flush=True)
 
     #
     # cable
     #
-    # auxiliary cable image
-    base_cable = gu.make_base_cable(PIXELS, PIXELS, YELLOW_LINE_OFFSET)
-    images["array"].append(base_cable)
-    images["filename"].append("base-straight.png")
+    if auxiliary:
+        # auxiliary cable image
+        base_cable = gu.make_base_cable(PIXELS, PIXELS, YELLOW_LINE_OFFSET)
+        images["array"].append(base_cable)
+        images["filename"].append("base-straight.png")
 
-    # helper for aligning straight parts
-    for shift in range(30):
-        base_cable_shifted = gu.shifted_base_cable(
-            shift, PIXELS, THICKNESS, YELLOW_LINE_OFFSET
-        )
-        base_cable_shifted = gu.make_tier_lines(
-            base_cable_shifted,
-            1,
-            TIER_FRAME_THICKNESS,
-            left=False,
-            top=True,
-            right=False,
-            bottom=True,
-        )
-        images["array"].append(base_cable_shifted)
-        images["filename"].append("base_cable_shifted.png")
-
-        base_cable_connector_beginning = (
-            shifted_base_cable_connector(shift, True, False) * 2
-        )
-        base_cable_connector_beginning = gu.make_tier_lines(
-            base_cable_connector_beginning,
-            1,
-            TIER_FRAME_THICKNESS,
-            top=True,
-            bottom=True,
-        )
-        images["array"].append(base_cable_connector_beginning)
-        images["filename"].append("base_cable_connector_beginning.png")
-
-        base_cable_connector_end = shifted_base_cable_connector(shift, False, True) * 2
-        base_cable_connector_end = gu.make_tier_lines(
-            base_cable_connector_end, 1, TIER_FRAME_THICKNESS, top=True, bottom=True
-        )
-        images["array"].append(base_cable_connector_end)
-        images["filename"].append("base_cable_connector_end.png")
-
-        arr = np.concatenate(
-            [
-                base_cable_connector_beginning,
+        # helper for aligning straight parts
+        for shift in range(30):
+            base_cable_shifted = gu.shifted_base_cable(
+                shift, PIXELS, THICKNESS, YELLOW_LINE_OFFSET
+            )
+            base_cable_shifted = gu.make_tier_lines(
                 base_cable_shifted,
-                base_cable_connector_end,
-            ],
-            axis=1,
-        )
-        if shift == 0:
-            base_cable_alignment = arr
-        else:
-            base_cable_alignment = np.concatenate([base_cable_alignment, arr], axis=0)
-    images["array"].append(base_cable_alignment)
-    images["filename"].append("base_cable_straight_alignment.png")
+                1,
+                TIER_FRAME_THICKNESS,
+                left=False,
+                top=True,
+                right=False,
+                bottom=True,
+            )
+            images["array"].append(base_cable_shifted)
+            images["filename"].append("base_cable_shifted.png")
 
-    # helper for aligning curved parts
-    for j in range(16):
-        arr_left_right = gu.shifted_base_cable(
-            2 * j, PIXELS, THICKNESS, YELLOW_LINE_OFFSET
-        )
-        arr_right_left = np.rot90(arr_left_right, 2, axes=(0, 1))
-        arr_top_bottom = np.rot90(arr_left_right, 3, axes=(0, 1))
+            base_cable_connector_beginning = (
+                shifted_base_cable_connector(shift, True, False) * 2
+            )
+            base_cable_connector_beginning = gu.make_tier_lines(
+                base_cable_connector_beginning,
+                1,
+                TIER_FRAME_THICKNESS,
+                top=True,
+                bottom=True,
+            )
+            images["array"].append(base_cable_connector_beginning)
+            images["filename"].append("base_cable_connector_beginning.png")
 
-        arr = combine_ur_ll(arr_right_left, arr_top_bottom)
-        arr = gu.make_tier_lines(arr, 1, TIER_FRAME_THICKNESS, right=True, bottom=True)
+            base_cable_connector_end = (
+                shifted_base_cable_connector(shift, False, True) * 2
+            )
+            base_cable_connector_end = gu.make_tier_lines(
+                base_cable_connector_end, 1, TIER_FRAME_THICKNESS, top=True, bottom=True
+            )
+            images["array"].append(base_cable_connector_end)
+            images["filename"].append("base_cable_connector_end.png")
 
-        arr = gu.surround_by_transparent(arr, PIXELS // 2, PIXELS // 2)
-        if j == 0:
-            super_arr = arr
-        else:
-            super_arr = np.concatenate([super_arr, arr], axis=1)
-    images["array"].append(super_arr)
-    images["filename"].append("ase_cable_curved_alignment.png")
+            arr = np.concatenate(
+                [
+                    base_cable_connector_beginning,
+                    base_cable_shifted,
+                    base_cable_connector_end,
+                ],
+                axis=1,
+            )
+            if shift == 0:
+                base_cable_alignment = arr
+            else:
+                base_cable_alignment = np.concatenate(
+                    [base_cable_alignment, arr], axis=0
+                )
+        images["array"].append(base_cable_alignment)
+        images["filename"].append("base_cable_straight_alignment.png")
+
+        # helper for aligning curved parts
+        for j in range(16):
+            arr_left_right = gu.shifted_base_cable(
+                2 * j, PIXELS, THICKNESS, YELLOW_LINE_OFFSET
+            )
+            arr_right_left = np.rot90(arr_left_right, 2, axes=(0, 1))
+            arr_top_bottom = np.rot90(arr_left_right, 3, axes=(0, 1))
+
+            arr = combine_ur_ll(arr_right_left, arr_top_bottom)
+            arr = gu.make_tier_lines(
+                arr, 1, TIER_FRAME_THICKNESS, right=True, bottom=True
+            )
+
+            arr = gu.surround_by_transparent(arr, PIXELS // 2, PIXELS // 2)
+            if j == 0:
+                super_arr = arr
+            else:
+                super_arr = np.concatenate([super_arr, arr], axis=1)
+        images["array"].append(super_arr)
+        images["filename"].append("ase_cable_curved_alignment.png")
 
     for tier in range(1, TIERS + 1):
         #
@@ -666,11 +673,13 @@ def gen(folder):
         filename_lr = "lr-" + filename
         filename_hr = "hr-" + filename
         if array.shape[-1] == 3:
-            Image.fromarray(array, mode="RGB").save(folder / filename_lr)
             Image.fromarray(array, mode="RGB").save(folder / filename_hr)
+            arr = gu.rescale(array, (array.shape[0] // 2, array.shape[1] // 2))
+            Image.fromarray(arr, mode="RGB").save(folder / filename_lr)
         elif array.shape[-1] == 4:
-            Image.fromarray(array, mode="RGBA").save(folder / filename_lr)
             Image.fromarray(array, mode="RGBA").save(folder / filename_hr)
+            arr = gu.rescale(array, (array.shape[0] // 2, array.shape[1] // 2))
+            Image.fromarray(arr, mode="RGBA").save(folder / filename_lr)
         else:
             raise ValueError("Unknown: array.shape[-1] =", array.ndim)
 

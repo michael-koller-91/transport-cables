@@ -1,4 +1,5 @@
 import numpy as np
+from PIL import Image
 
 
 def compress_rgb(arr, shape):
@@ -320,6 +321,24 @@ def make_tier_lines(
         if bottom:
             arr[r - k * lt : r - (k - 1) * lt, c // 4 : -c // 4, 1] = 255
     return arr
+
+
+def rescale(arr, shape):
+    """
+    Rescale the image given by the numpy array `arr` to width and height
+    given by `shape`.
+    """
+    if arr.shape[-1] == 3:
+        mode = "RGB"
+    elif arr.shape[-1] == 4:
+        mode = "RGBA"
+    else:
+        raise ValueError(f"Unexpected arr.shape[-1] = {arr.shape[-1]}.")
+
+    sh = (shape[1], shape[0])
+    return np.array(
+        Image.fromarray(arr, mode=mode).resize(sh, Image.Resampling.NEAREST)
+    )
 
 
 def rotate_180(arr):
