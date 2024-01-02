@@ -455,6 +455,7 @@ for tier = 1, tiers do
     entity.inventory_size = inventory_size.requester_container[tier]
     entity.destructible = false
     entity.rotatable = false
+    entity.placeable_by = { item = prefix .. "requester-t" .. tostring(tier), count = 1 } -- using pipette on requester-container yields requester
     entity.picture = {
         layers =
         {

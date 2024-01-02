@@ -39,22 +39,22 @@ script.on_event(defines.events.on_tick, lib.on_tick)
 -- The variable `text_id` holds the id of the text which displays the `net_id`.
 
 local provider_table = {
-    net_id = {}, -- unit number -> circuit network id
+    net_id = {},        -- unit number -> circuit network id
     net_id_and_un = {}, -- circuit network id -> (unit number -> entity)
-    text_id = {}, -- unit number -> text id
-    un = {} -- unit number -> entity
+    text_id = {},       -- unit number -> text id
+    un = {}             -- unit number -> entity
 }
 
 -- The container entity assiciated with a requester is stored in `container`
 -- and `signal` is the requester's state, i.e., the signal which it is
 -- requesting.
 local requester_table = {
-    container = {}, -- unit number -> entity
-    net_id = {}, -- unit number -> circuit network id
+    container = {},     -- unit number -> entity
+    net_id = {},        -- unit number -> circuit network id
     net_id_and_un = {}, -- circuit network id -> (unit number -> entity)
-    signal = {}, -- unit number -> circuit network signal
-    text_id = {}, -- unit number -> text id
-    un = {} -- unit number -> entity
+    signal = {},        -- unit number -> circuit network signal
+    text_id = {},       -- unit number -> text id
+    un = {}             -- unit number -> entity
 }
 
 ---------------------------------------------------------------------------
