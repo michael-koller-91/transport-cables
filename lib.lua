@@ -123,13 +123,15 @@ end
 
 -- connect the two lamps associated with `source_entity` and `target_entity`
 local connect_lamps = function(source_entity, target_entity, tier)
-    get_lamp(source_entity, tier).connect_neighbour {
-        wire = wire,
-        target_entity = get_lamp(target_entity, tier)
-    }
+    if source_entity.type ~= "entity-ghost" and target_entity.type ~= "entity-ghost" then
+        get_lamp(source_entity, tier).connect_neighbour {
+            wire = wire,
+            target_entity = get_lamp(target_entity, tier)
+        }
 
-    if debug_print then
-        debugprint("connect_lamps(): " .. source_entity.name .. " < == > " .. target_entity.name)
+        if debug_print then
+            debugprint("connect_lamps(): " .. source_entity.name .. " < == > " .. target_entity.name)
+        end
     end
 end
 
