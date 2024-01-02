@@ -24,7 +24,8 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * write the how it works section
 * replace the helper lamps' circuit wire connector sprites with empty sprites
 * use custom circuit wire sprites for the helper lamps
-* rotating a cable should connect it to a new neighbor
 * non-HD sprites
 * using pipette on requester containers should yield a requester
 * when mod entities are destroyed, should only the corresponding circuit network id tables be updated (instead of always calling update_network_ids())?
+* is the requester rotatable even if the future container tile is occupied?
+* a cable connected to a provider or node should be able to be a curved cable

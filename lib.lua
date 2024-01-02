@@ -142,6 +142,15 @@ local create_lamp = function(entity, tier)
     }
 end
 
+-- disconnect the circuit connections associated with `entity`'s lamp
+local disconnect_lamps = function(entity, tier)
+    get_lamp(entity, tier).disconnect_neighbour(wire)
+
+    if debug_print then
+        debugprint("disconnect_lamps(): " .. entity.name)
+    end
+end
+
 -- destroy the lamp associated with `entity`
 local destroy_lamp = function(entity, tier)
     local destroyed = lamps[tier][entity.unit_number].destroy()
@@ -224,6 +233,99 @@ local update_net_id = function(tier)
     if debug_print then
         debugprint("update_net_id(): item_transport_active[" ..
             tostring(tier) .. "] = " .. tostring(item_transport_active[tier]))
+    end
+end
+
+---------------------------------------------------------------------------
+-- Connect a cable to suitable neighbors.
+local cable_connect_to_neighbors = function(entity, tier)
+    -- connect to neighboring cables
+    for _, val in pairs(entity.belt_neighbours) do
+        for _, neighbor in ipairs(val) do
+            -- if the neighbor is an underground_cable, connect to the corresponding lamp
+            if neighbor.name == names[tier].underground_cable then
+                if (entity.direction ~= util.oppositedirection(neighbor.direction)) then
+                    connect_lamps(entity, neighbor, tier)
+                end
+            else
+                connect_lamps(entity, neighbor, tier)
+            end
+        end
+    end
+
+    -- connect to requester north of cable
+    local position = moveposition(entity.position, entity.direction, 1)
+    local requester = game.surfaces[1].find_entity(names[tier].requester, position)
+    if requester then
+        connect_lamps(entity, requester, tier)
+    end
+
+    -- connect to provider south of cable
+    position = moveposition(entity.position, entity.direction, -1)
+    local provider = game.surfaces[1].find_entity(names[tier].provider, position)
+    if provider then
+        connect_lamps(entity, provider, tier)
+    end
+
+    -- connect to node north of cable
+    position = moveposition(entity.position, entity.direction, 1)
+    local entity_node = game.surfaces[1].find_entity(names[tier].node, position)
+    if entity_node then
+        connect_lamps(entity, entity_node, tier)
+    end
+
+    -- connect to node south of cable
+    position = moveposition(entity.position, entity.direction, -1)
+    entity_node = game.surfaces[1].find_entity(names[tier].node, position)
+    if entity_node then
+        connect_lamps(entity, entity_node, tier)
+    end
+end
+
+---------------------------------------------------------------------------
+-- Connect an underground cable to suitable neighbors.
+local underground_cable_connect_to_neighbors = function(entity, tier)
+    -- connect to neighboring underground_cable
+    if entity.neighbours then
+        connect_lamps(entity, entity.neighbours, tier)
+    end
+
+    -- connect to underground_cable north of underground_cable if it is facing in the same direction
+    local position = moveposition(entity.position, entity.direction, 1)
+    local entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
+    if entity_cable then
+        if entity_cable.direction == entity.direction then
+            connect_lamps(entity, entity_cable, tier)
+        end
+    end
+
+    -- connect to underground_cable south of underground_cable if it is facing in the same direction
+    position = moveposition(entity.position, entity.direction, -1)
+    entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
+    if entity_cable then
+        if entity_cable.direction == entity.direction then
+            connect_lamps(entity, entity_cable, tier)
+        end
+    end
+
+    -- connect to cable north of underground_cable if it is not facing towards
+    -- the underground_cable
+    position = moveposition(entity.position, entity.direction, 1)
+    entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
+    if entity_cable then
+        if entity_cable.direction ~= util.oppositedirection(entity.direction) then
+            connect_lamps(entity, entity_cable, tier)
+        end
+    end
+
+    -- connect to cable south of underground_cable if it is facing in the
+    -- same direction
+    position = moveposition(entity.position, entity.direction, -1)
+    entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
+    if entity_cable then
+        if entity_cable.direction == entity.direction then
+            connect_lamps(entity, entity_cable, tier)
+        end
     end
 end
 
@@ -350,96 +452,13 @@ local on_built_entity = function(event)
             return
         elseif entity.name == names[tier].cable then
             create_lamp(entity, tier)
-
-            -- connect to neighboring cables
-            for _, val in pairs(entity.belt_neighbours) do
-                for _, neighbor in ipairs(val) do
-                    -- if the neighbor is an underground_cable, connect to the corresponding lamp
-                    if neighbor.name == names[tier].underground_cable then
-                        if (entity.direction ~= util.oppositedirection(neighbor.direction)) then
-                            connect_lamps(entity, neighbor, tier)
-                        end
-                    else
-                        connect_lamps(entity, neighbor, tier)
-                    end
-                end
-            end
-
-            -- connect to requester north of cable
-            local position = moveposition(entity.position, entity.direction, 1)
-            local requester = game.surfaces[1].find_entity(names[tier].requester, position)
-            if requester then
-                connect_lamps(entity, requester, tier)
-            end
-
-            -- connect to provider south of cable
-            position = moveposition(entity.position, entity.direction, -1)
-            local provider = game.surfaces[1].find_entity(names[tier].provider, position)
-            if provider then
-                connect_lamps(entity, provider, tier)
-            end
-
-            -- connect to node north of cable
-            position = moveposition(entity.position, entity.direction, 1)
-            local entity_node = game.surfaces[1].find_entity(names[tier].node, position)
-            if entity_node then
-                connect_lamps(entity, entity_node, tier)
-            end
-
-            -- connect to node south of cable
-            position = moveposition(entity.position, entity.direction, -1)
-            entity_node = game.surfaces[1].find_entity(names[tier].node, position)
-            if entity_node then
-                connect_lamps(entity, entity_node, tier)
-            end
+            cable_connect_to_neighbors(entity, tier)
 
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].underground_cable then
             create_lamp(entity, tier)
-
-            -- connect to neighboring underground_cable
-            if entity.neighbours then
-                connect_lamps(entity, entity.neighbours, tier)
-            end
-
-            -- connect to underground_cable north of underground_cable if it is facing in the same direction
-            local position = moveposition(entity.position, entity.direction, 1)
-            local entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
-            if entity_cable then
-                if entity_cable.direction == entity.direction then
-                    connect_lamps(entity, entity_cable, tier)
-                end
-            end
-
-            -- connect to underground_cable south of underground_cable if it is facing in the same direction
-            position = moveposition(entity.position, entity.direction, -1)
-            entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
-            if entity_cable then
-                if entity_cable.direction == entity.direction then
-                    connect_lamps(entity, entity_cable, tier)
-                end
-            end
-
-            -- connect to cable north of underground_cable if it is not facing towards
-            -- the underground_cable
-            position = moveposition(entity.position, entity.direction, 1)
-            entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
-            if entity_cable then
-                if entity_cable.direction ~= util.oppositedirection(entity.direction) then
-                    connect_lamps(entity, entity_cable, tier)
-                end
-            end
-
-            -- connect to cable south of underground_cable if it is facing in the
-            -- same direction
-            position = moveposition(entity.position, entity.direction, -1)
-            entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
-            if entity_cable then
-                if entity_cable.direction == entity.direction then
-                    connect_lamps(entity, entity_cable, tier)
-                end
-            end
+            underground_cable_connect_to_neighbors(entity, tier)
 
             net_id_update_scheduled[tier] = true
             return
@@ -697,6 +716,24 @@ local on_rotated_entity = function(event)
             local e_cont = get_container(entity, tier)
             local position = moveposition(entity.position, entity.direction)
             e_cont.teleport(position)
+            return
+        elseif entity.name == names[tier].cable then
+            disconnect_lamps(entity, tier)
+            cable_connect_to_neighbors(entity, tier)
+
+            net_id_update_scheduled[tier] = true
+            return
+        elseif entity.name == names[tier].underground_cable then
+            disconnect_lamps(entity, tier)
+            underground_cable_connect_to_neighbors(entity, tier)
+
+            -- also make the neighboring underground cable react
+            if entity.neighbours then
+                disconnect_lamps(entity.neighbours, tier)
+                underground_cable_connect_to_neighbors(entity.neighbours, tier)
+            end
+
+            net_id_update_scheduled[tier] = true
             return
         end
     end

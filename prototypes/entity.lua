@@ -231,6 +231,7 @@ for tier = 1, tiers do
     }
     entity.energy_source = { type = "void" }
     entity.circuit_wire_max_distance = lamp_circuit_wire_max_distance + 1
+    entity.rotatable = false
     entity.picture_off = {
         layers = {
             {
@@ -293,6 +294,7 @@ for tier = 1, tiers do
         result = entity_name
     }
     entity.inventory_size = inventory_size.provider[tier]
+    entity.rotatable = false
     entity.picture = {
         layers =
         {
@@ -452,6 +454,7 @@ for tier = 1, tiers do
     entity.minable = nil
     entity.inventory_size = inventory_size.requester_container[tier]
     entity.destructible = false
+    entity.rotatable = false
     entity.picture = {
         layers =
         {
