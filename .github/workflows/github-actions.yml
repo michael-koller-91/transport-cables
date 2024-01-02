@@ -47,6 +47,7 @@ jobs:
           prerelease: false
           release_name: transport-cables-${{ github.ref }}
           tag_name: ${{ github.ref }}
+          body_path: CHANGELOG.md
 
       - name: Create mod .zip folder
         if: github.ref_type == 'tag'
