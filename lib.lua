@@ -1,10 +1,6 @@
+local dbg = require("debuglib")
+
 require("util")
-
-local debug_lamp = false
-local debug_print = true
-
-local command_debug_lamp = "transport-cables-debug-lamp"
-local command_debug_print = "transport-cables-debug-print"
 
 ---------------------------------------------------------------------------
 local tiers = 3
@@ -37,13 +33,6 @@ for tier = 1, tiers do
         cable = prefix .. "cable-t" .. tostring(tier),
         underground_cable = prefix .. "underground-cable-t" .. tostring(tier),
     }
-end
-
----------------------------------------------------------------------------
-local debugprint = function(str)
-    for _, player in pairs(game.players) do
-        player.print(str)
-    end
 end
 
 ---------------------------------------------------------------------------
@@ -88,8 +77,8 @@ local update_requester_signals = function(tier)
         requs[tier].signal[unit_number] = entity.get_control_behavior().get_signal(1)
     end
 
-    if debug_print then
-        debugprint("update_requester_signals(): tier = " .. tostring(tier))
+    if dbg.flags.print_update_receiver_signals then
+        dbg.print("update_requester_signals(): tier = " .. tostring(tier))
     end
 end
 
@@ -129,8 +118,8 @@ local connect_lamps = function(source_entity, target_entity, tier)
             target_entity = get_lamp(target_entity, tier)
         }
 
-        if debug_print then
-            debugprint("connect_lamps(): " .. source_entity.name .. " < == > " .. target_entity.name)
+        if dbg.flags.print_connect_lamps then
+            dbg.print("connect_lamps(): " .. source_entity.name .. " < == > " .. target_entity.name)
         end
     end
 end
@@ -148,8 +137,8 @@ end
 local disconnect_lamps = function(entity, tier)
     get_lamp(entity, tier).disconnect_neighbour(wire)
 
-    if debug_print then
-        debugprint("disconnect_lamps(): " .. entity.name)
+    if dbg.flags.print_connect_lamps then
+        dbg.print("disconnect_lamps(): " .. entity.name)
     end
 end
 
@@ -232,8 +221,8 @@ local update_net_id = function(tier)
         end
     end
 
-    if debug_print then
-        debugprint("update_net_id(): item_transport_active[" ..
+    if dbg.flags.print_update_net_id then
+        dbg.print("update_net_id(): item_transport_active[" ..
             tostring(tier) .. "] = " .. tostring(item_transport_active[tier]))
     end
 end
@@ -480,50 +469,28 @@ end
 
 ---------------------------------------------------------------------------
 local on_console_command = function(command)
-    if command.name == command_debug_lamp then
-        if not command.parameters then
-            debug_lamp = not debug_lamp
-        else
-            debug_lamp = true
-        end
-
-        game.get_player(command.player_index).print("debug_lamp = " .. tostring(debug_lamp))
-
-        local comparator = "!="
-        if debug_lamp then
-            comparator = "="
-        end
-
-        local control_behavior
-        local counter
-        for tier = 1, tiers do
-            counter = 0
-            for _, lamp in pairs(lamps[tier]) do
-                counter = counter + 1
-                if lamp and lamp.valid then
-                    control_behavior = lamp.get_control_behavior()
-                    if control_behavior then
-                        control_behavior.circuit_condition = {
-                            condition =
-                            {
-                                comparator = comparator,
-                                first_signal = { type = "virtual", name = "signal-0" },
-                                second_signal = { type = "virtual", name = "signal-0" }
-                            }
-                        }
-                    end
-                end
-            end
-            if debug_lamp then
-                game.get_player(
-                    command.player_index).print("tier " ..
-                    tostring(tier) .. ": found " .. tostring(counter) .. " lamps"
-                )
-            end
-        end
-    elseif command.name == command_debug_print then
-        debug_print = not debug_print
-        game.get_player(command.player_index).print("debug_print = " .. tostring(debug_print))
+    if command.name == dbg.commands.print_off then
+        dbg.flags.print_connect_lamps = false
+        dbg.flags.print_update_net_id = false
+        dbg.flags.print_update_receiver_signals = false
+        dbg.print("set all print flags false")
+    elseif command.name == dbg.commands.print_on then
+        dbg.flags.print_connect_lamps = true
+        dbg.flags.print_update_net_id = true
+        dbg.flags.print_update_receiver_signals = true
+        dbg.print("set all print flags true")
+    elseif command.name == dbg.commands.print_connect_lamps then
+        dbg.flags.print_connect_lamps = not dbg.flags.print_connect_lamps
+        dbg.print("print_connect_lamps = " .. tostring(dbg.flags.print_connect_lamps))
+    elseif command.name == dbg.commands.print_on_research_finished then
+        dbg.flags.print_on_research_finished = not dbg.flags.print_on_research_finished
+        dbg.print("print_on_research_finished = " .. tostring(dbg.flags.print_on_research_finished))
+    elseif command.name == dbg.commands.print_update_net_id then
+        dbg.flags.print_update_net_id = not dbg.flags.print_update_net_id
+        dbg.print("print_update_net_id = " .. tostring(dbg.flags.print_update_net_id))
+    elseif command.name == dbg.commands.print_update_receiver_signals then
+        dbg.flags.print_update_receiver_signals = not dbg.flags.print_update_receiver_signals
+        dbg.print("print_update_receiver_signals = " .. tostring(dbg.flags.print_update_receiver_signals))
     end
 end
 
@@ -654,8 +621,8 @@ end
 local on_research_finished = function(event)
     local research = event.research
 
-    if debug_print then
-        debugprint("on_research_finished(): research.name = " .. research.name)
+    if dbg.flags.print_on_research_finished then
+        dbg.print("on_research_finished(): research.name = " .. research.name)
     end
 
     if research.name == prefix .. "t1"
@@ -943,9 +910,7 @@ local initialize = function(global)
 end
 
 ---------------------------------------------------------------------------
-lib = {
-    command_debug_lamp = command_debug_lamp,
-    command_debug_print = command_debug_print,
+return {
     initialize = initialize,
     on_built_entity = on_built_entity,
     on_built_filter = on_built_filter,

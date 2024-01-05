@@ -8,7 +8,7 @@ from pathlib import Path
 source = Path(os.getcwd())
 destination = Path(r"C:\Users\Admin\AppData\Roaming\Factorio\mods")
 folders = ["locale", "prototypes", "sprites"]
-files = ["control.lua", "data.lua", "info.json", "lib.lua"]
+files = ["control.lua", "data.lua", "debuglib.lua", "info.json", "lib.lua"]
 
 with open("info.json", "r") as f:
     version = json.load(f)["version"]

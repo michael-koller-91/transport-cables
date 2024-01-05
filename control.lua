@@ -1,8 +1,14 @@
-require("lib")
+local dbg = require("debuglib")
+local lib = require("lib")
 
 ---------------------------------------------------------------------------
-commands.add_command(lib.command_debug_lamp, nil, lib.on_console_command)
-commands.add_command(lib.command_debug_print, nil, lib.on_console_command)
+if dbg.flags.add_debug_commands then
+    commands.add_command(dbg.commands.print_off, nil, lib.on_console_command)
+    commands.add_command(dbg.commands.print_on, nil, lib.on_console_command)
+    commands.add_command(dbg.commands.print_connect_lamps, nil, lib.on_console_command)
+    commands.add_command(dbg.commands.print_update_receiver_signals, nil, lib.on_console_command)
+    commands.add_command(dbg.commands.print_update_net_id, nil, lib.on_console_command)
+end
 
 ---------------------------------------------------------------------------
 script.on_event(defines.events.on_built_entity, lib.on_built_entity, lib.on_built_filter)
