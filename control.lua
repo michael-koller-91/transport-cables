@@ -65,6 +65,7 @@ script.on_init(function()
     global.active_nets = {}
     global.lamps = {}
     global.mod_state = {}
+    global.net_id_update_scheduled = {}
     global.receiver = {}
     global.transmitter = {}
     global.force = game.create_force(lib.prefix .. "force")
@@ -73,6 +74,7 @@ script.on_init(function()
         global.active_nets[tier] = {}
         global.lamps[tier] = {}
         global.mod_state[tier] = { rate = 0 }
+        global.net_id_update_scheduled[tier] = true
         global.receiver[tier] = table.deepcopy(receiver_table)
         global.transmitter[tier] = table.deepcopy(transmitter_table)
     end

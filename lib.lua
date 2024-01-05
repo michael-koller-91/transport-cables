@@ -29,11 +29,11 @@ for tier = 1, tiers do
     }
 end
 
-local item_transport_active = {}   -- are there any rx/tx pairs between which items need to be transported?
 local net_id_update_scheduled = {} -- is an update of the network ids necessary?
+
+local item_transport_active = {}   -- are there any rx/tx pairs between which items need to be transported?
 for tier = 1, tiers do
     item_transport_active[tier] = false
-    net_id_update_scheduled[tier] = false
 end
 
 ---------------------------------------------------------------------------
@@ -570,6 +570,10 @@ local on_player_created = function(event)
     force.set_cease_fire(player.force, true)
     force.set_friend(player.force, true)
 
+    for tier = 1, tiers do
+        net_id_update_scheduled[tier] = true
+    end
+
     if mod_state[1].rate > 0 then
         player.gui.top.add { type = "label", name = "t1", caption = "Tier 1: " .. tostring(mod_state[1].rate) .. " items / s." }
     else
@@ -863,14 +867,11 @@ end
 local initialize = function(global)
     active_nets = global.active_nets
     mod_state = global.mod_state
+    net_id_update_scheduled = global.net_id_update_scheduled
     lamps = global.lamps
     rx = global.receiver
     tx = global.transmitter
     force = global.force
-
-    for tier = 1, tiers do
-        net_id_update_scheduled[tier] = true
-    end
 end
 
 ---------------------------------------------------------------------------
