@@ -33,6 +33,9 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * rewrite the item distribution algorithm; for example, 31 receivers with a rate of 30 items / s is a problem
 * upgrade planner should work on cables, currently suggests belts
 * make sprites for receiver animation
+* make sprite for upgrade planner
+* fix straight vs curved cables connection edge cases
+* offset circuit wire connectors between different tiers
 
 ## Acknowledgement
 

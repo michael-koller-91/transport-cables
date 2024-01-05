@@ -204,7 +204,7 @@ for tier = 1, tiers do
     -- cable
     --
     local entity_name = prefix .. "cable-t" .. tostring(tier)
-    local entity = table.deepcopy(data.raw["transport-belt"]["transport-belt"])
+    local entity = table.deepcopy(data.raw["transport-belt"]["express-transport-belt"])
     entity.name = entity_name
     entity.minable = {
         mining_time = mining_time.cable[tier],
@@ -212,7 +212,11 @@ for tier = 1, tiers do
     }
     entity.speed = speed
     entity.animation_speed_coefficient = animation_speed_coefficient[tier]
+    entity.fast_replaceable_group = "transport-cables"
     entity.related_underground_belt = prefix .. "underground-cable-t" .. tostring(tier)
+    if tier < tiers then
+        entity.next_upgrade = prefix .. "cable-t" .. tostring(tier + 1)
+    end
     entity.belt_animation_set = get_belt_animation_set(tier)
     entity.connector_frame_sprites = get_transport_belt_connector_frame_sprites(tier)
     entity.operable = false
@@ -232,6 +236,10 @@ for tier = 1, tiers do
     entity.energy_source = { type = "void" }
     entity.circuit_wire_max_distance = lamp_circuit_wire_max_distance + 1
     entity.rotatable = false
+    entity.fast_replaceable_group = "transport-cables"
+    if tier < tiers then
+        entity.next_upgrade = prefix .. "node-t" .. tostring(tier + 1)
+    end
     entity.picture_off = {
         layers = {
             {
@@ -284,61 +292,6 @@ for tier = 1, tiers do
     data:extend({ entity })
 
     --
-    -- transmitter
-    --
-    local entity_name = prefix .. "transmitter-t" .. tostring(tier)
-    local entity = table.deepcopy(data.raw["container"]["iron-chest"])
-    entity.name = entity_name
-    entity.minable = {
-        mining_time = mining_time.transmitter[tier],
-        result = entity_name
-    }
-    entity.inventory_size = inventory_size.transmitter[tier]
-    entity.rotatable = false
-    entity.picture = {
-        layers =
-        {
-            {
-                filename = "__transport-cables__/sprites/entities/lr-transmitter-t" .. tostring(tier) .. ".png",
-                priority = "extra-high",
-                width = 32,
-                height = 32,
-                shift = util.by_pixel(0, -0.5),
-                hr_version =
-                {
-                    filename = "__transport-cables__/sprites/entities/hr-transmitter-t" .. tostring(tier) .. ".png",
-                    priority = "extra-high",
-                    width = 64,
-                    height = 64,
-                    shift = util.by_pixel(0, 0),
-                    scale = 0.5
-                }
-            },
-            {
-                filename = "__transport-cables__/sprites/entities/lr-transmitter-t" .. tostring(tier) .. "-shadow.png",
-                priority = "extra-high",
-                width = 32,
-                height = 32,
-                shift = util.by_pixel(0, 0),
-                draw_as_shadow = true,
-                hr_version =
-                {
-                    filename = "__transport-cables__/sprites/entities/hr-transmitter-t" ..
-                    tostring(tier) .. "-shadow.png",
-                    priority = "extra-high",
-                    width = 64,
-                    height = 64,
-                    shift = util.by_pixel(0, 0),
-                    draw_as_shadow = true,
-                    scale = 0.5
-                }
-            }
-        }
-    }
-
-    data:extend({ entity })
-
-    --
     -- receiver
     --
     local entity_name = prefix .. "receiver-t" .. tostring(tier)
@@ -353,6 +306,10 @@ for tier = 1, tiers do
     entity.render_not_in_network_icon = false
     entity.inventory_size = inventory_size.receiver[tier]
     entity.rotatable = false
+    entity.fast_replaceable_group = "transport-cables"
+    if tier < tiers then
+        entity.next_upgrade = prefix .. "receiver-t" .. tostring(tier + 1)
+    end
     entity.animation =
     {
         layers =
@@ -397,10 +354,69 @@ for tier = 1, tiers do
     data:extend({ entity })
 
     --
+    -- transmitter
+    --
+    local entity_name = prefix .. "transmitter-t" .. tostring(tier)
+    local entity = table.deepcopy(data.raw["container"]["iron-chest"])
+    entity.name = entity_name
+    entity.minable = {
+        mining_time = mining_time.transmitter[tier],
+        result = entity_name
+    }
+    entity.inventory_size = inventory_size.transmitter[tier]
+    entity.rotatable = false
+    entity.fast_replaceable_group = "transport-cables"
+    if tier < tiers then
+        entity.next_upgrade = prefix .. "transmitter-t" .. tostring(tier + 1)
+    end
+    entity.picture = {
+        layers =
+        {
+            {
+                filename = "__transport-cables__/sprites/entities/lr-transmitter-t" .. tostring(tier) .. ".png",
+                priority = "extra-high",
+                width = 32,
+                height = 32,
+                shift = util.by_pixel(0, -0.5),
+                hr_version =
+                {
+                    filename = "__transport-cables__/sprites/entities/hr-transmitter-t" .. tostring(tier) .. ".png",
+                    priority = "extra-high",
+                    width = 64,
+                    height = 64,
+                    shift = util.by_pixel(0, 0),
+                    scale = 0.5
+                }
+            },
+            {
+                filename = "__transport-cables__/sprites/entities/lr-transmitter-t" .. tostring(tier) .. "-shadow.png",
+                priority = "extra-high",
+                width = 32,
+                height = 32,
+                shift = util.by_pixel(0, 0),
+                draw_as_shadow = true,
+                hr_version =
+                {
+                    filename = "__transport-cables__/sprites/entities/hr-transmitter-t" ..
+                        tostring(tier) .. "-shadow.png",
+                    priority = "extra-high",
+                    width = 64,
+                    height = 64,
+                    shift = util.by_pixel(0, 0),
+                    draw_as_shadow = true,
+                    scale = 0.5
+                }
+            }
+        }
+    }
+
+    data:extend({ entity })
+
+    --
     -- underground cable
     --
     local entity_name = prefix .. "underground-cable-t" .. tostring(tier)
-    local entity = table.deepcopy(data.raw["underground-belt"]["underground-belt"])
+    local entity = table.deepcopy(data.raw["underground-belt"]["express-underground-belt"])
     entity.name = entity_name
     entity.minable = {
         mining_time = mining_time.underground_cable[tier],
@@ -410,6 +426,10 @@ for tier = 1, tiers do
     entity.animation_speed_coefficient = animation_speed_coefficient[tier]
     entity.belt_animation_set = get_belt_animation_set(1)
     entity.max_distance = max_distance[tier]
+    entity.fast_replaceable_group = "transport-cables"
+    if tier < tiers then
+        entity.next_upgrade = prefix .. "underground-cable-t" .. tostring(tier + 1)
+    end
     entity.structure = {
         direction_in = {
             sheet = {
