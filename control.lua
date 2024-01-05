@@ -70,6 +70,7 @@ script.on_init(function()
     global.requester = {}
     global.same_net_id = {}
     global.mod_state = {}
+    global.force = game.create_force(lib.prefix .. "force")
 
     for tier = 1, lib.tiers do
         global.lamps[tier] = {}

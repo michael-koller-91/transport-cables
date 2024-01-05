@@ -133,32 +133,12 @@ def gen_requester(pixels, thickness, tier_frame_thickness, tier):
 
     # add the other three gray lines via rotation
     sub_arr = arr
-
     mask = np.zeros_like(arr)
     mask[: p_2 - thickness, :, :] = 1
     for _ in range(3):
         mask = rotate_counterclockwise(mask.copy())
         sub_arr = rotate_counterclockwise(sub_arr.copy())
         arr += mask * sub_arr
-
-    # blue line going up
-    arr[: p_2 - t, p_2 - t : p_2 + t, :] = 0
-    arr[: p_2 - t, p_2 - t : p_2 + t, 2] = 255
-
-    # add arrow
-    for l in range(4):
-        # facing up
-        o = t_2 + (3 - l) - 1
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 255
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 255
-        # facing up
-        o = p_2 - 2 * t + (3 - l)
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 255
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 255
 
     arr = make_tier_edges(
         arr, tier, tier_frame_thickness, tl=True, tr=True, br=True, bl=True

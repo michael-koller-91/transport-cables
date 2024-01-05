@@ -341,154 +341,50 @@ for tier = 1, tiers do
     -- requester
     --
     local entity_name = prefix .. "requester-t" .. tostring(tier)
-    local entity = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"])
+    local entity = table.deepcopy(data.raw["logistic-container"]["logistic-chest-storage"])
     entity.name = entity_name
     entity.minable = {
         mining_time = mining_time.requester[tier],
         result = entity_name
     }
-    entity.circuit_wire_max_distance = 1
-    entity.item_slot_count = 1
-    entity.sprites = { north = {}, east = {}, south = {}, west = {} }
-    entity.sprites.north = {
-        layers =
-        {
-            {
-                filename = "__transport-cables__/sprites/entities/lr-requester-with-container-north-t" ..
-                    tostring(tier) .. ".png",
-                width = 32,
-                height = 64,
-                frame_count = 1,
-                shift = util.by_pixel(0, -16),
-                hr_version =
-                {
-                    scale = 0.5,
-                    filename = "__transport-cables__/sprites/entities/hr-requester-with-container-north-t" ..
-                        tostring(tier) .. ".png",
-                    width = 64,
-                    height = 128,
-                    frame_count = 1,
-                    shift = util.by_pixel(0, -16)
-                }
-            }
-        }
-    }
-    entity.sprites.south = {
-        layers =
-        {
-            {
-                filename = "__transport-cables__/sprites/entities/lr-requester-with-container-south-t" ..
-                    tostring(tier) .. ".png",
-                width = 32,
-                height = 64,
-                frame_count = 1,
-                shift = util.by_pixel(0, 16),
-                hr_version =
-                {
-                    scale = 0.5,
-                    filename = "__transport-cables__/sprites/entities/hr-requester-with-container-south-t" ..
-                        tostring(tier) .. ".png",
-                    width = 64,
-                    height = 128,
-                    frame_count = 1,
-                    shift = util.by_pixel(0, 16)
-                }
-            }
-        }
-    }
-    entity.sprites.east = {
-        layers =
-        {
-            {
-                filename = "__transport-cables__/sprites/entities/lr-requester-with-container-east-t" ..
-                    tostring(tier) .. ".png",
-                width = 64,
-                height = 32,
-                frame_count = 1,
-                shift = util.by_pixel(16, 0),
-                hr_version =
-                {
-                    scale = 0.5,
-                    filename = "__transport-cables__/sprites/entities/hr-requester-with-container-east-t" ..
-                        tostring(tier) .. ".png",
-                    width = 128,
-                    height = 64,
-                    frame_count = 1,
-                    shift = util.by_pixel(16, 0)
-                }
-            }
-        }
-    }
-    entity.sprites.west = {
-        layers =
-        {
-            {
-                filename = "__transport-cables__/sprites/entities/lr-requester-with-container-west-t" ..
-                    tostring(tier) .. ".png",
-                width = 64,
-                height = 32,
-                frame_count = 1,
-                shift = util.by_pixel(-16, 0),
-                hr_version =
-                {
-                    scale = 0.5,
-                    filename = "__transport-cables__/sprites/entities/hr-requester-with-container-west-t" ..
-                        tostring(tier) .. ".png",
-                    width = 128,
-                    height = 64,
-                    frame_count = 1,
-                    shift = util.by_pixel(-16, 0)
-                }
-            }
-        }
-    }
-
-    data:extend({ entity })
-
-    --
-    -- requester container
-    --
-    local entity_name = prefix .. "requester-container-t" .. tostring(tier)
-    local entity = table.deepcopy(data.raw["container"]["iron-chest"])
     entity.name = entity_name
-    entity.minable = nil
+    entity.max_logistic_slots = 1
+    entity.render_not_in_network_icon = false
     entity.inventory_size = inventory_size.requester_container[tier]
-    entity.destructible = false
     entity.rotatable = false
-    entity.placeable_by = { item = prefix .. "requester-t" .. tostring(tier), count = 1 } -- using pipette on requester-container yields requester
-    entity.picture = {
+    entity.animation =
+    {
         layers =
         {
             {
-                filename = "__transport-cables__/sprites/entities/lr-empty-t" .. tostring(tier) .. ".png",
+                filename = "__transport-cables__/sprites/entities/lr-requester-t" .. tostring(tier) .. ".png",
                 priority = "extra-high",
-                width = 4,
-                height = 4,
+                width = 32,
+                height = 32,
                 shift = util.by_pixel(0, 0),
                 hr_version =
                 {
-                    filename = "__transport-cables__/sprites/entities/hr-empty-t" .. tostring(tier) .. ".png",
+                    filename = "__transport-cables__/sprites/entities/hr-requester-t" .. tostring(tier) .. ".png",
                     priority = "extra-high",
-                    width = 8,
-                    height = 8,
+                    width = 64,
+                    height = 64,
                     shift = util.by_pixel(0, 0),
                     scale = 0.5
                 }
             },
             {
-                filename = "__transport-cables__/sprites/entities/lr-empty-t" ..
-                    tostring(tier) .. "-shadow.png",
+                filename = "__transport-cables__/sprites/entities/lr-requester-t" .. tostring(tier) .. "-shadow.png",
                 priority = "extra-high",
-                width = 4,
-                height = 4,
+                width = 32,
+                height = 32,
                 shift = util.by_pixel(0, 0),
                 draw_as_shadow = true,
                 hr_version =
                 {
-                    filename = "__transport-cables__/sprites/entities/hr-empty-t" .. tostring(tier) .. "-shadow.png",
+                    filename = "__transport-cables__/sprites/entities/hr-requester-t" .. tostring(tier) .. "-shadow.png",
                     priority = "extra-high",
-                    width = 8,
-                    height = 8,
+                    width = 64,
+                    height = 64,
                     shift = util.by_pixel(0, 0),
                     draw_as_shadow = true,
                     scale = 0.5

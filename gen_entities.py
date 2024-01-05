@@ -556,32 +556,19 @@ def gen(folder, auxiliary=False):
         images["filename"].append(f"provider-t{tier}-shadow.png")
 
     #
-    # requester with requester-container
+    # requester
     #
     for tier in range(1, TIERS + 1):
-        requester = gu.gen_requester(
-            PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier
-        )
-        container = gu.gen_requester_container(
-            PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier
-        )
-
-        arr = np.concatenate([container, requester], axis=0)
+        arr = gu.gen_requester(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
 
         images["array"].append(arr)
-        images["filename"].append(f"requester-with-container-north-t{tier}.png")
+        images["filename"].append(f"requester-t{tier}.png")
 
-        arr = gu.rotate_clockwise(arr)
-        images["array"].append(arr)
-        images["filename"].append(f"requester-with-container-east-t{tier}.png")
+        #
+        arr = np.zeros((PIXELS_SHADOW, PIXELS_SHADOW, 3), dtype=np.uint8)
 
-        arr = gu.rotate_clockwise(arr)
         images["array"].append(arr)
-        images["filename"].append(f"requester-with-container-south-t{tier}.png")
-
-        arr = gu.rotate_clockwise(arr)
-        images["array"].append(arr)
-        images["filename"].append(f"requester-with-container-west-t{tier}.png")
+        images["filename"].append(f"requester-t{tier}-shadow.png")
 
     #
     # underground

@@ -34,6 +34,7 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * curved belts should only connect to neighbors facing in the same direction
 * rewrite the item distribution algorithm; for example, 31 receivers with a rate of 30 items / s is a problem
 * upgrade planner should work on cables, currently suggests belts
+* make sprites for receiver animation
 
 ## Acknowledgement
 

@@ -20,6 +20,7 @@ local lamps = {} -- all lamps
 local provs = {} -- all providers
 local requs = {} -- all requesters
 local same_net_id = {}
+local force
 
 local prefix = "transport-cables:"
 local names = {}
@@ -74,7 +75,7 @@ end
 -- when the on_gui_closed event fires.
 local update_requester_signals = function(tier)
     for unit_number, entity in pairs(requs[tier].un) do
-        requs[tier].signal[unit_number] = entity.get_control_behavior().get_signal(1)
+        requs[tier].signal[unit_number] = entity.get_filter(1)
     end
 
     if dbg.flags.print_update_receiver_signals then
@@ -86,15 +87,6 @@ end
 -- get the container associated with `entity` (a requester)
 local get_container = function(entity, tier)
     return requs[tier].container[entity.unit_number]
-end
-
--- create a container north of `entity` (a requester)
-local create_container = function(entity, tier)
-    requs[tier].container[entity.unit_number] = game.surfaces[1].create_entity {
-        name = names[tier].requester_container,
-        position = moveposition(entity.position, entity.direction),
-        force = "player"
-    }
 end
 
 -- destroy the container associated with `entity` (a requester)
@@ -372,14 +364,13 @@ local on_built_entity = function(event)
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].requester then
+            entity.force = force
+
             create_lamp(entity, tier)
 
             local position
 
             requs[tier].un[entity.unit_number] = entity
-
-            -- in addition, place a container
-            create_container(entity, tier)
 
             -- default ID
             requs[tier].net_id[entity.unit_number] = -1
@@ -597,6 +588,10 @@ end
 -- Initialize the GUI elements.
 local on_player_created = function(event)
     local player = game.players[event.player_index]
+
+    -- make friends with receiver
+    force.set_cease_fire(player.force, true)
+    force.set_friend(player.force, true)
 
     if mod_state[1].rate > 0 then
         player.gui.top.add { type = "label", name = "t1", caption = "Tier 1: " .. tostring(mod_state[1].rate) .. " items / s." }
@@ -903,6 +898,7 @@ local initialize = function(global)
     requs = global.requester
     same_net_id = global.same_net_id
     mod_state = global.mod_state
+    force = global.force
 
     for tier = 1, tiers do
         net_id_update_scheduled[tier] = true
@@ -924,5 +920,6 @@ return {
     on_research_finished = on_research_finished,
     on_rotated_entity = on_rotated_entity,
     on_tick = on_tick,
+    prefix = prefix,
     tiers = tiers
 }
