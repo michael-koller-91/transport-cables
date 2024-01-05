@@ -1,8 +1,11 @@
+## v0.1.3
+* Every level of the infinite research doubles the rate (up from times 1.1).
+
 ## v0.1.2
-* rotating cables and underground cables disconnects them from old neighbors and connects them to new neighbors
-* using pipette on a receiver container yields a receiver
-* add low resolution sprites
-* placing a mod entity next to a connectable ghost mod entity no longer crashes the game
+* Rotating cables and underground cables disconnects them from old neighbors and connects them to new neighbors
+* Using the pipette on a receiver container yields a receiver.
+* Add low resolution sprites.
+* Placing a mod entity next to a connectable ghost mod entity no longer crashes the game.
 
 ## v0.1.1
-* the first playable version
+* This is the first playable version.

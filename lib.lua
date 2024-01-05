@@ -3,12 +3,15 @@ require("util")
 local debug_lamp = false
 local debug_print = true
 
+local command_debug_lamp = "transport-cables-debug-lamp"
+local command_debug_print = "transport-cables-debug-print"
+
 ---------------------------------------------------------------------------
 local tiers = 3
 local wire = defines.wire_type.red
 local mod_state = {}
 local rate_increment = 15
-local rate_increment_factor = 1.1
+local rate_increment_factor = 2
 
 local item_transport_active = {}
 local net_id_update_scheduled = {}
@@ -35,9 +38,6 @@ for tier = 1, tiers do
         underground_cable = prefix .. "underground-cable-t" .. tostring(tier),
     }
 end
-
-local command_debug_lamp = "transport-cables-debug-lamp"
-local command_debug_print = "transport-cables-debug-print"
 
 ---------------------------------------------------------------------------
 local debugprint = function(str)
@@ -539,8 +539,8 @@ end
 
 ---------------------------------------------------------------------------
 local on_gui_closed = function(event)
-    for tier = 1, tiers do
-        if event.entity and event.entity.valid then
+    if event.entity and event.entity.valid then
+        for tier = 1, tiers do
             if event.entity.name == names[tier].requester then
                 set_requester_signals_in_same_network_as(event.entity, tier)
                 return
