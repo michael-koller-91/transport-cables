@@ -65,19 +65,19 @@ local receiver_table = {
 
 ---------------------------------------------------------------------------
 script.on_init(function()
+    global.active_nets = {}
     global.lamps = {}
-    global.transmitter = {}
-    global.receiver = {}
-    global.same_net_id = {}
     global.mod_state = {}
+    global.receiver = {}
+    global.transmitter = {}
     global.force = game.create_force(lib.prefix .. "force")
 
     for tier = 1, lib.tiers do
+        global.active_nets[tier] = {}
         global.lamps[tier] = {}
-        global.transmitter[tier] = table.deepcopy(transmitter_table)
-        global.receiver[tier] = table.deepcopy(receiver_table)
-        global.same_net_id[tier] = {}
         global.mod_state[tier] = { rate = 0 }
+        global.receiver[tier] = table.deepcopy(receiver_table)
+        global.transmitter[tier] = table.deepcopy(transmitter_table)
     end
 
     -- `rate` is by one `rate_increment` smaller than what the first research grants

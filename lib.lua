@@ -5,7 +5,6 @@ require("util")
 ---------------------------------------------------------------------------
 local tiers = 3
 local wire = defines.wire_type.red
-local mod_state = {}
 local rate_increment = 15
 local rate_increment_factor = 2
 
@@ -16,11 +15,13 @@ for tier = 1, tiers do
     net_id_update_scheduled[tier] = false
 end
 
+-- globals
+local active_nets = {}
 local lamps = {} -- all lamps
-local provs = {} -- all transmitters
-local requs = {} -- all receivers
-local same_net_id = {}
-local force
+local rx = {}    -- all receivers
+local tx = {}    -- all transmitters
+local force      -- the force of the receiver
+local mod_state = {}
 
 local prefix = "transport-cables:"
 local names = {}
@@ -74,8 +75,8 @@ end
 -- Store every receiver's signal in order to be able to detect a change
 -- when the on_gui_closed event fires.
 local update_receiver_signals = function(tier)
-    for unit_number, entity in pairs(requs[tier].un) do
-        requs[tier].signal[unit_number] = entity.get_filter(1)
+    for unit_number, entity in pairs(rx[tier].un) do
+        rx[tier].signal[unit_number] = entity.get_filter(1)
     end
 
     if dbg.flags.print_update_receiver_signals then
@@ -86,13 +87,13 @@ end
 ---------------------------------------------------------------------------
 -- get the container associated with `entity` (a receiver)
 local get_container = function(entity, tier)
-    return requs[tier].container[entity.unit_number]
+    return rx[tier].container[entity.unit_number]
 end
 
 -- destroy the container associated with `entity` (a receiver)
 local destroy_container = function(entity, tier)
-    local destroyed = requs[tier].container[entity.unit_number].destroy()
-    requs[tier].container[entity.unit_number] = nil
+    local destroyed = rx[tier].container[entity.unit_number].destroy()
+    rx[tier].container[entity.unit_number] = nil
     return destroyed
 end
 
@@ -145,16 +146,16 @@ end
 -- All receivers with the same network_id as `entity` get the signal of
 -- `entity`.
 local set_receiver_signals_in_same_network_as = function(entity, tier)
-    local net_id = requs[tier].net_id[entity.unit_number]
+    local net_id = rx[tier].net_id[entity.unit_number]
     if net_id and net_id > 0 then
-        local unit_number_array = requs[tier].net_id_and_un[net_id]
+        local unit_number_array = rx[tier].net_id_and_un[net_id]
         if unit_number_array then
             local signal = entity.get_control_behavior().get_signal(1)
-            for _, unit_number in ipairs(requs[tier].net_id_and_un[net_id]) do
+            for _, unit_number in ipairs(rx[tier].net_id_and_un[net_id]) do
                 if signal.signal then
-                    requs[tier].un[unit_number].get_control_behavior().set_signal(1, signal)
+                    rx[tier].un[unit_number].get_control_behavior().set_signal(1, signal)
                 else
-                    requs[tier].un[unit_number].get_control_behavior().set_signal(1, nil)
+                    rx[tier].un[unit_number].get_control_behavior().set_signal(1, nil)
                 end
             end
         end
@@ -171,44 +172,44 @@ local update_net_id = function(tier)
 
     item_transport_active[tier] = false
 
-    same_net_id[tier] = {}
-    provs[tier].net_id_and_un = {}
-    requs[tier].net_id_and_un = {}
+    active_nets[tier] = {}
+    tx[tier].net_id_and_un = {}
+    rx[tier].net_id_and_un = {}
 
     -- store network_id of all transmitters
-    for unit_number, entity in pairs(provs[tier].un) do
+    for unit_number, entity in pairs(tx[tier].un) do
         circuit_network = get_lamp(entity, tier).get_circuit_network(wire)
         if circuit_network then
             net_id = circuit_network.network_id
 
-            provs[tier].net_id[unit_number] = net_id
-            rendering.set_text(provs[tier].text_id[unit_number], "ID: " .. tostring(net_id))
+            tx[tier].net_id[unit_number] = net_id
+            rendering.set_text(tx[tier].text_id[unit_number], "ID: " .. tostring(net_id))
 
             -- collect all transmitters with the same network_id
-            provs[tier].net_id_and_un[net_id] = provs[tier].net_id_and_un[net_id] or {}
-            table.insert(provs[tier].net_id_and_un[net_id], unit_number)
+            tx[tier].net_id_and_un[net_id] = tx[tier].net_id_and_un[net_id] or {}
+            table.insert(tx[tier].net_id_and_un[net_id], unit_number)
         end
     end
 
     -- store network_id of all receivers
-    for unit_number, entity in pairs(requs[tier].un) do
+    for unit_number, entity in pairs(rx[tier].un) do
         circuit_network = get_lamp(entity, tier).get_circuit_network(wire)
         if circuit_network then
             net_id = circuit_network.network_id
 
-            requs[tier].net_id[unit_number] = net_id
-            rendering.set_text(requs[tier].text_id[unit_number], "ID: " .. tostring(net_id))
+            rx[tier].net_id[unit_number] = net_id
+            rendering.set_text(rx[tier].text_id[unit_number], "ID: " .. tostring(net_id))
 
             -- collect all receivers with the same network_id
-            requs[tier].net_id_and_un[net_id] = requs[tier].net_id_and_un[net_id] or {}
-            table.insert(requs[tier].net_id_and_un[net_id], unit_number)
+            rx[tier].net_id_and_un[net_id] = rx[tier].net_id_and_un[net_id] or {}
+            table.insert(rx[tier].net_id_and_un[net_id], unit_number)
         end
     end
 
     -- find transmitters and receivers with the same network_id
-    for net_id, _ in pairs(requs[tier].net_id_and_un) do
-        if provs[tier].net_id_and_un[net_id] then
-            table.insert(same_net_id[tier], net_id)
+    for net_id, _ in pairs(rx[tier].net_id_and_un) do
+        if tx[tier].net_id_and_un[net_id] then
+            table.insert(active_nets[tier], net_id)
             item_transport_active[tier] = true
         end
     end
@@ -324,13 +325,13 @@ local on_built_entity = function(event)
         if entity.name == names[tier].transmitter then
             create_lamp(entity, tier)
 
-            provs[tier].un[entity.unit_number] = entity
+            tx[tier].un[entity.unit_number] = entity
 
             -- default ID
-            provs[tier].net_id[entity.unit_number] = -1
+            tx[tier].net_id[entity.unit_number] = -1
 
             -- display ID
-            provs[tier].text_id[entity.unit_number] = rendering.draw_text {
+            tx[tier].text_id[entity.unit_number] = rendering.draw_text {
                 text = "ID: -1",
                 surface = game.surfaces[1],
                 target = entity,
@@ -370,13 +371,13 @@ local on_built_entity = function(event)
 
             local position
 
-            requs[tier].un[entity.unit_number] = entity
+            rx[tier].un[entity.unit_number] = entity
 
             -- default ID
-            requs[tier].net_id[entity.unit_number] = -1
+            rx[tier].net_id[entity.unit_number] = -1
 
             -- display ID
-            requs[tier].text_id[entity.unit_number] = rendering.draw_text {
+            rx[tier].text_id[entity.unit_number] = rendering.draw_text {
                 text = "ID: -1",
                 surface = game.surfaces[1],
                 target = entity,
@@ -519,14 +520,14 @@ local on_mined_entity = function(event)
         if entity.name == names[tier].transmitter then
             destroy_lamp(entity, tier)
 
-            provs[tier].un[entity.unit_number] = nil
+            tx[tier].un[entity.unit_number] = nil
 
             -- also destroy the displayed text
-            rendering.destroy(provs[tier].text_id[entity.unit_number])
-            provs[tier].text_id[entity.unit_number] = nil
+            rendering.destroy(tx[tier].text_id[entity.unit_number])
+            tx[tier].text_id[entity.unit_number] = nil
 
             -- and the ID
-            provs[tier].net_id[entity.unit_number] = nil
+            tx[tier].net_id[entity.unit_number] = nil
 
             net_id_update_scheduled[tier] = true
             return
@@ -538,20 +539,20 @@ local on_mined_entity = function(event)
         elseif entity.name == names[tier].receiver then
             destroy_lamp(entity, tier)
 
-            requs[tier].un[entity.unit_number] = nil
+            rx[tier].un[entity.unit_number] = nil
 
             -- also destroy the container
             destroy_container(entity, tier)
 
             -- and the displayed text
-            rendering.destroy(requs[tier].text_id[entity.unit_number])
-            requs[tier].text_id[entity.unit_number] = nil
+            rendering.destroy(rx[tier].text_id[entity.unit_number])
+            rx[tier].text_id[entity.unit_number] = nil
 
             -- and the ID
-            requs[tier].net_id[entity.unit_number] = nil
+            rx[tier].net_id[entity.unit_number] = nil
 
             -- and the signal
-            requs[tier].signal[entity.unit_number] = nil
+            rx[tier].signal[entity.unit_number] = nil
 
             net_id_update_scheduled[tier] = true
             return
@@ -756,18 +757,18 @@ local on_nth_tick = function(event)
     -- move items between transmitter-receiver-pairs
     for tier = 1, tiers do
         if item_transport_active[tier] then
-            for _, net_id in ipairs(same_net_id[tier]) do
+            for _, net_id in ipairs(active_nets[tier]) do
                 -- all transmitter unit numbers with this network_id
-                transmitter_un_array = provs[tier].net_id_and_un[net_id]
+                transmitter_un_array = tx[tier].net_id_and_un[net_id]
                 n_prov = #transmitter_un_array
 
                 -- all receiver unit numbers with this network_id
-                receiver_un_array = requs[tier].net_id_and_un[net_id]
+                receiver_un_array = rx[tier].net_id_and_un[net_id]
                 n_requ = #receiver_un_array
 
                 -- the signal of all receivers with this network_id
                 unit_number = receiver_un_array[1]
-                signal = requs[tier].signal[unit_number]
+                signal = rx[tier].signal[unit_number]
 
                 if signal and signal.signal then
                     signal_name = signal.signal.name
@@ -776,7 +777,7 @@ local on_nth_tick = function(event)
                     n_inve_prov = 0
                     inve_prov = {}
                     for _, un in ipairs(transmitter_un_array) do
-                        e_prov = provs[tier].un[un]
+                        e_prov = tx[tier].un[un]
                         count = e_prov.get_inventory(defines.inventory.item_main).get_item_count(signal_name)
                         inve_prov[un] = count
                         n_inve_prov = n_inve_prov + count
@@ -787,7 +788,7 @@ local on_nth_tick = function(event)
                     n_empty_inve_requ = 0
                     inve_requ = {}
                     for _, un in ipairs(receiver_un_array) do
-                        e_cont = requs[tier].container[un]
+                        e_cont = rx[tier].container[un]
                         count = e_cont.get_inventory(defines.inventory.item_main).get_insertable_count(signal_name)
                         inve_requ[un] = count
                         n_empty_inve_requ = n_empty_inve_requ + count
@@ -805,7 +806,7 @@ local on_nth_tick = function(event)
                         for _, k_un in ipairs(keys_prov) do
                             n_prov_visi = n_prov_visi + 1
                             n = inve_prov[k_un]
-                            e_prov = provs[tier].un[k_un]
+                            e_prov = tx[tier].un[k_un]
                             inventory = e_prov.get_inventory(defines.inventory.item_main)
                             if n >= n_items_per_prov then
                                 -- if there are enough items to remove, remove them
@@ -848,7 +849,7 @@ local on_nth_tick = function(event)
                         for _, k_un in ipairs(keys_requ) do
                             n_requ_visi = n_requ_visi + 1
                             n = inve_requ[k_un]
-                            e_cont = requs[tier].container[k_un]
+                            e_cont = rx[tier].container[k_un]
                             inventory = e_cont.get_inventory(defines.inventory.item_main)
                             if n >= n_items_per_requ then
                                 -- if enough items can be inserted, insert them
@@ -893,11 +894,11 @@ end
 
 ---------------------------------------------------------------------------
 local initialize = function(global)
-    lamps = global.lamps
-    provs = global.transmitter
-    requs = global.receiver
-    same_net_id = global.same_net_id
+    active_nets = global.active_nets
     mod_state = global.mod_state
+    lamps = global.lamps
+    rx = global.receiver
+    tx = global.transmitter
     force = global.force
 
     for tier = 1, tiers do
