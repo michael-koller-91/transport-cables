@@ -23,11 +23,11 @@ data:extend({
             },
             {
                 type = "unlock-recipe",
-                recipe = prefix .. "provider-t1"
+                recipe = prefix .. "transmitter-t1"
             },
             {
                 type = "unlock-recipe",
-                recipe = prefix .. "requester-t1",
+                recipe = prefix .. "receiver-t1",
             },
             {
                 type = "unlock-recipe",
@@ -92,11 +92,11 @@ data:extend({
             },
             {
                 type = "unlock-recipe",
-                recipe = prefix .. "provider-t2"
+                recipe = prefix .. "transmitter-t2"
             },
             {
                 type = "unlock-recipe",
-                recipe = prefix .. "requester-t2",
+                recipe = prefix .. "receiver-t2",
             },
             {
                 type = "unlock-recipe",
@@ -191,11 +191,11 @@ data:extend({
             },
             {
                 type = "unlock-recipe",
-                recipe = prefix .. "provider-t3"
+                recipe = prefix .. "transmitter-t3"
             },
             {
                 type = "unlock-recipe",
-                recipe = prefix .. "requester-t3",
+                recipe = prefix .. "receiver-t3",
             },
             {
                 type = "unlock-recipe",

@@ -17,8 +17,8 @@ for tier = 1, tiers do
 end
 
 local lamps = {} -- all lamps
-local provs = {} -- all providers
-local requs = {} -- all requesters
+local provs = {} -- all transmitters
+local requs = {} -- all receivers
 local same_net_id = {}
 local force
 
@@ -28,9 +28,9 @@ for tier = 1, tiers do
     names[tier] = {
         lamp = prefix .. "lamp-t" .. tostring(tier),
         node = prefix .. "node-t" .. tostring(tier),
-        provider = prefix .. "provider-t" .. tostring(tier),
-        requester_container = prefix .. "requester-container-t" .. tostring(tier),
-        requester = prefix .. "requester-t" .. tostring(tier),
+        transmitter = prefix .. "transmitter-t" .. tostring(tier),
+        receiver_container = prefix .. "receiver-container-t" .. tostring(tier),
+        receiver = prefix .. "receiver-t" .. tostring(tier),
         cable = prefix .. "cable-t" .. tostring(tier),
         underground_cable = prefix .. "underground-cable-t" .. tostring(tier),
     }
@@ -71,25 +71,25 @@ local moveposition = function(position, direction, distance)
 end
 
 ---------------------------------------------------------------------------
--- Store every requester's signal in order to be able to detect a change
+-- Store every receiver's signal in order to be able to detect a change
 -- when the on_gui_closed event fires.
-local update_requester_signals = function(tier)
+local update_receiver_signals = function(tier)
     for unit_number, entity in pairs(requs[tier].un) do
         requs[tier].signal[unit_number] = entity.get_filter(1)
     end
 
     if dbg.flags.print_update_receiver_signals then
-        dbg.print("update_requester_signals(): tier = " .. tostring(tier))
+        dbg.print("update_receiver_signals(): tier = " .. tostring(tier))
     end
 end
 
 ---------------------------------------------------------------------------
--- get the container associated with `entity` (a requester)
+-- get the container associated with `entity` (a receiver)
 local get_container = function(entity, tier)
     return requs[tier].container[entity.unit_number]
 end
 
--- destroy the container associated with `entity` (a requester)
+-- destroy the container associated with `entity` (a receiver)
 local destroy_container = function(entity, tier)
     local destroyed = requs[tier].container[entity.unit_number].destroy()
     requs[tier].container[entity.unit_number] = nil
@@ -142,9 +142,9 @@ local destroy_lamp = function(entity, tier)
 end
 
 ---------------------------------------------------------------------------
--- All requesters with the same network_id as `entity` get the signal of
+-- All receivers with the same network_id as `entity` get the signal of
 -- `entity`.
-local set_requester_signals_in_same_network_as = function(entity, tier)
+local set_receiver_signals_in_same_network_as = function(entity, tier)
     local net_id = requs[tier].net_id[entity.unit_number]
     if net_id and net_id > 0 then
         local unit_number_array = requs[tier].net_id_and_un[net_id]
@@ -158,13 +158,13 @@ local set_requester_signals_in_same_network_as = function(entity, tier)
                 end
             end
         end
-        update_requester_signals(tier)
+        update_receiver_signals(tier)
     end
 end
 
 ---------------------------------------------------------------------------
--- Store the circuit network id of all providers and requesters. Also, find
--- providers and requesters with the same circuit network id.
+-- Store the circuit network id of all transmitters and receivers. Also, find
+-- transmitters and receivers with the same circuit network id.
 local update_net_id = function(tier)
     local circuit_network
     local net_id
@@ -175,7 +175,7 @@ local update_net_id = function(tier)
     provs[tier].net_id_and_un = {}
     requs[tier].net_id_and_un = {}
 
-    -- store network_id of all providers
+    -- store network_id of all transmitters
     for unit_number, entity in pairs(provs[tier].un) do
         circuit_network = get_lamp(entity, tier).get_circuit_network(wire)
         if circuit_network then
@@ -184,13 +184,13 @@ local update_net_id = function(tier)
             provs[tier].net_id[unit_number] = net_id
             rendering.set_text(provs[tier].text_id[unit_number], "ID: " .. tostring(net_id))
 
-            -- collect all providers with the same network_id
+            -- collect all transmitters with the same network_id
             provs[tier].net_id_and_un[net_id] = provs[tier].net_id_and_un[net_id] or {}
             table.insert(provs[tier].net_id_and_un[net_id], unit_number)
         end
     end
 
-    -- store network_id of all requesters
+    -- store network_id of all receivers
     for unit_number, entity in pairs(requs[tier].un) do
         circuit_network = get_lamp(entity, tier).get_circuit_network(wire)
         if circuit_network then
@@ -199,13 +199,13 @@ local update_net_id = function(tier)
             requs[tier].net_id[unit_number] = net_id
             rendering.set_text(requs[tier].text_id[unit_number], "ID: " .. tostring(net_id))
 
-            -- collect all requesters with the same network_id
+            -- collect all receivers with the same network_id
             requs[tier].net_id_and_un[net_id] = requs[tier].net_id_and_un[net_id] or {}
             table.insert(requs[tier].net_id_and_un[net_id], unit_number)
         end
     end
 
-    -- find providers and requesters with the same network_id
+    -- find transmitters and receivers with the same network_id
     for net_id, _ in pairs(requs[tier].net_id_and_un) do
         if provs[tier].net_id_and_un[net_id] then
             table.insert(same_net_id[tier], net_id)
@@ -236,18 +236,18 @@ local cable_connect_to_neighbors = function(entity, tier)
         end
     end
 
-    -- connect to requester north of cable
+    -- connect to receiver north of cable
     local position = moveposition(entity.position, entity.direction, 1)
-    local requester = game.surfaces[1].find_entity(names[tier].requester, position)
-    if requester then
-        connect_lamps(entity, requester, tier)
+    local receiver = game.surfaces[1].find_entity(names[tier].receiver, position)
+    if receiver then
+        connect_lamps(entity, receiver, tier)
     end
 
-    -- connect to provider south of cable
+    -- connect to transmitter south of cable
     position = moveposition(entity.position, entity.direction, -1)
-    local provider = game.surfaces[1].find_entity(names[tier].provider, position)
-    if provider then
-        connect_lamps(entity, provider, tier)
+    local transmitter = game.surfaces[1].find_entity(names[tier].transmitter, position)
+    if transmitter then
+        connect_lamps(entity, transmitter, tier)
     end
 
     -- connect to node north of cable
@@ -321,7 +321,7 @@ local on_built_entity = function(event)
     end
 
     for tier = 1, tiers do
-        if entity.name == names[tier].provider then
+        if entity.name == names[tier].transmitter then
             create_lamp(entity, tier)
 
             provs[tier].un[entity.unit_number] = entity
@@ -344,8 +344,8 @@ local on_built_entity = function(event)
                 scale = 1.0
             }
 
-            -- connect to cable north, east, south, west of provider if it is
-            -- facing away from the provider
+            -- connect to cable north, east, south, west of transmitter if it is
+            -- facing away from the transmitter
             local position
             local direction
             local entity_cable
@@ -363,7 +363,7 @@ local on_built_entity = function(event)
 
             net_id_update_scheduled[tier] = true
             return
-        elseif entity.name == names[tier].requester then
+        elseif entity.name == names[tier].receiver then
             entity.force = force
 
             create_lamp(entity, tier)
@@ -390,8 +390,8 @@ local on_built_entity = function(event)
                 scale = 1.0
             }
 
-            -- connect to cable east, south, west of requester if it is facing
-            -- towards the requester
+            -- connect to cable east, south, west of receiver if it is facing
+            -- towards the receiver
             local direction
             local entity_cable
             for i = 2, 6, 2 do
@@ -406,7 +406,7 @@ local on_built_entity = function(event)
                 end
             end
 
-            update_requester_signals(tier)
+            update_receiver_signals(tier)
 
             net_id_update_scheduled[tier] = true
             return
@@ -453,8 +453,8 @@ local on_built_filter = {}
 for tier = 1, tiers do
     table.insert(on_built_filter, { filter = "name", name = names[tier].cable })
     table.insert(on_built_filter, { filter = "name", name = names[tier].node })
-    table.insert(on_built_filter, { filter = "name", name = names[tier].provider })
-    table.insert(on_built_filter, { filter = "name", name = names[tier].requester })
+    table.insert(on_built_filter, { filter = "name", name = names[tier].transmitter })
+    table.insert(on_built_filter, { filter = "name", name = names[tier].receiver })
     table.insert(on_built_filter, { filter = "name", name = names[tier].underground_cable })
 end
 
@@ -488,8 +488,8 @@ end
 ---------------------------------------------------------------------------
 local on_entity_settings_pasted = function(event)
     for tier = 1, tiers do
-        if event.source.name == names[tier].requester and event.destination.name == names[tier].requester then
-            set_requester_signals_in_same_network_as(event.destination, tier)
+        if event.source.name == names[tier].receiver and event.destination.name == names[tier].receiver then
+            set_receiver_signals_in_same_network_as(event.destination, tier)
             return
         end
     end
@@ -499,8 +499,8 @@ end
 local on_gui_closed = function(event)
     if event.entity and event.entity.valid then
         for tier = 1, tiers do
-            if event.entity.name == names[tier].requester then
-                set_requester_signals_in_same_network_as(event.entity, tier)
+            if event.entity.name == names[tier].receiver then
+                set_receiver_signals_in_same_network_as(event.entity, tier)
                 return
             end
         end
@@ -516,7 +516,7 @@ local on_mined_entity = function(event)
     end
 
     for tier = 1, tiers do
-        if entity.name == names[tier].provider then
+        if entity.name == names[tier].transmitter then
             destroy_lamp(entity, tier)
 
             provs[tier].un[entity.unit_number] = nil
@@ -535,7 +535,7 @@ local on_mined_entity = function(event)
 
             net_id_update_scheduled[tier] = true
             return
-        elseif entity.name == names[tier].requester then
+        elseif entity.name == names[tier].receiver then
             destroy_lamp(entity, tier)
 
             requs[tier].un[entity.unit_number] = nil
@@ -579,8 +579,8 @@ local on_mined_filter = {}
 for tier = 1, tiers do
     table.insert(on_mined_filter, { filter = "name", name = names[tier].cable })
     table.insert(on_mined_filter, { filter = "name", name = names[tier].node })
-    table.insert(on_mined_filter, { filter = "name", name = names[tier].provider })
-    table.insert(on_mined_filter, { filter = "name", name = names[tier].requester })
+    table.insert(on_mined_filter, { filter = "name", name = names[tier].transmitter })
+    table.insert(on_mined_filter, { filter = "name", name = names[tier].receiver })
     table.insert(on_mined_filter, { filter = "name", name = names[tier].underground_cable })
 end
 
@@ -675,8 +675,8 @@ local on_rotated_entity = function(event)
     end
 
     for tier = 1, tiers do
-        if entity.name == names[tier].requester then
-            -- move the container in front of the requester again
+        if entity.name == names[tier].receiver then
+            -- move the container in front of the receiver again
             local e_cont = get_container(entity, tier)
             local position = moveposition(entity.position, entity.direction)
             e_cont.teleport(position)
@@ -727,55 +727,55 @@ end
 
 ---------------------------------------------------------------------------
 local count             -- counts items
-local e_cont            -- a requester container entity
-local e_prov            -- a provider entity
-local inve_prov         -- unit number -> number of items in a provider
-local inve_requ         -- unit number -> number of items that can be inserted into a requester
+local e_cont            -- a receiver container entity
+local e_prov            -- a transmitter entity
+local inve_prov         -- unit number -> number of items in a transmitter
+local inve_requ         -- unit number -> number of items that can be inserted into a receiver
 local inventory         -- an entity's inventory
-local keys_prov         -- provider inventory keys
-local keys_requ         -- requester inventory keys
-local n_empty_inve_requ -- total number of empty slots in requesters
+local keys_prov         -- transmitter inventory keys
+local keys_requ         -- receiver inventory keys
+local n_empty_inve_requ -- total number of empty slots in receivers
 local n                 -- an element of `inve_prov`
-local n_inve_prov       -- total number of items in providers
-local n_items_per_prov  -- the average number of items to be moved per provider
-local n_items_per_requ  -- the average number of items to be moved per requester
-local n_item_inse       -- the number of items that has already been inserted into requesters
-local n_item_remo       -- the number of items that has already been removed from providers
-local n_item_rema       -- the number of items that still needs to be removed from providers
+local n_inve_prov       -- total number of items in transmitters
+local n_items_per_prov  -- the average number of items to be moved per transmitter
+local n_items_per_requ  -- the average number of items to be moved per receiver
+local n_item_inse       -- the number of items that has already been inserted into receivers
+local n_item_remo       -- the number of items that has already been removed from transmitters
+local n_item_rema       -- the number of items that still needs to be removed from transmitters
 local n_item_to_move    -- the number of items that needs to be moved in this network
-local n_prov            -- the number of providers with the current network id
-local n_prov_visi       -- the number of providers from which items have already been removed
-local n_requ            -- the number of requesters with the current network id
-local n_requ_visi       -- the number of requesters into which items have already been inserted
-local provider_un_array
-local requester_un_array
+local n_prov            -- the number of transmitters with the current network id
+local n_prov_visi       -- the number of transmitters from which items have already been removed
+local n_requ            -- the number of receivers with the current network id
+local n_requ_visi       -- the number of receivers into which items have already been inserted
+local transmitter_un_array
+local receiver_un_array
 local signal_name
 local signal
 local unit_number
 local on_nth_tick = function(event)
-    -- move items between provider-requester-pairs
+    -- move items between transmitter-receiver-pairs
     for tier = 1, tiers do
         if item_transport_active[tier] then
             for _, net_id in ipairs(same_net_id[tier]) do
-                -- all provider unit numbers with this network_id
-                provider_un_array = provs[tier].net_id_and_un[net_id]
-                n_prov = #provider_un_array
+                -- all transmitter unit numbers with this network_id
+                transmitter_un_array = provs[tier].net_id_and_un[net_id]
+                n_prov = #transmitter_un_array
 
-                -- all requester unit numbers with this network_id
-                requester_un_array = requs[tier].net_id_and_un[net_id]
-                n_requ = #requester_un_array
+                -- all receiver unit numbers with this network_id
+                receiver_un_array = requs[tier].net_id_and_un[net_id]
+                n_requ = #receiver_un_array
 
-                -- the signal of all requesters with this network_id
-                unit_number = requester_un_array[1]
+                -- the signal of all receivers with this network_id
+                unit_number = receiver_un_array[1]
                 signal = requs[tier].signal[unit_number]
 
                 if signal and signal.signal then
                     signal_name = signal.signal.name
 
-                    -- count items in providers' inventories
+                    -- count items in transmitters' inventories
                     n_inve_prov = 0
                     inve_prov = {}
-                    for _, un in ipairs(provider_un_array) do
+                    for _, un in ipairs(transmitter_un_array) do
                         e_prov = provs[tier].un[un]
                         count = e_prov.get_inventory(defines.inventory.item_main).get_item_count(signal_name)
                         inve_prov[un] = count
@@ -783,10 +783,10 @@ local on_nth_tick = function(event)
                     end
                     keys_prov = keys_sorted_by_value(inve_prov)
 
-                    -- count how many items fit in requesters' inventories
+                    -- count how many items fit in receivers' inventories
                     n_empty_inve_requ = 0
                     inve_requ = {}
-                    for _, un in ipairs(requester_un_array) do
+                    for _, un in ipairs(receiver_un_array) do
                         e_cont = requs[tier].container[un]
                         count = e_cont.get_inventory(defines.inventory.item_main).get_insertable_count(signal_name)
                         inve_requ[un] = count
@@ -799,7 +799,7 @@ local on_nth_tick = function(event)
                         n_items_per_prov = math.floor(n_item_to_move / n_prov)
                         n_items_per_requ = math.floor(n_item_to_move / n_requ)
 
-                        -- remove items from providers
+                        -- remove items from transmitters
                         n_prov_visi = 0
                         n_item_remo = 0
                         for _, k_un in ipairs(keys_prov) do
@@ -818,7 +818,7 @@ local on_nth_tick = function(event)
                                 -- number of items that need to be removed
 
                                 if n_prov == n_prov_visi then
-                                    -- this is the last provider
+                                    -- this is the last transmitter
                                     -- try to remove as much as possible to achieve the move goal
                                     n_item_rema = n_item_to_move - n_item_remo
                                     if n >= n_item_rema then
@@ -836,13 +836,13 @@ local on_nth_tick = function(event)
                                         inventory.remove({ name = signal_name, count = n })
                                     end
                                     n_item_remo = n_item_remo + n
-                                    -- and update the number of items that need to be removed from the remaining providers.
+                                    -- and update the number of items that need to be removed from the remaining transmitters.
                                     n_items_per_prov = math.floor((n_item_to_move - n_item_remo) / (n_prov - n_prov_visi))
                                 end
                             end
                         end
 
-                        -- insert items into requesters
+                        -- insert items into receivers
                         n_requ_visi = 0
                         n_item_inse = 0
                         for _, k_un in ipairs(keys_requ) do
@@ -861,7 +861,7 @@ local on_nth_tick = function(event)
                                 -- number of items that need to be inserted
 
                                 if n_requ == n_requ_visi then
-                                    -- this is the last requester
+                                    -- this is the last receiver
                                     -- try to insert as much as possible to achieve the move goal
                                     n_item_rema = n_item_to_move - n_item_inse
                                     if n >= n_item_rema then
@@ -874,12 +874,12 @@ local on_nth_tick = function(event)
                                         end
                                     end
                                 else
-                                    -- Fill requester
+                                    -- Fill receiver
                                     if n > 0 then
                                         inventory.insert({ name = signal_name, count = n })
                                     end
                                     n_item_inse = n_item_inse + n
-                                    -- and update the number of items that need to be inserted into the remaining requesters.
+                                    -- and update the number of items that need to be inserted into the remaining receivers.
                                     n_items_per_requ = math.floor((n_item_to_move - n_item_inse) / (n_requ - n_requ_visi))
                                 end
                             end
@@ -894,8 +894,8 @@ end
 ---------------------------------------------------------------------------
 local initialize = function(global)
     lamps = global.lamps
-    provs = global.provider
-    requs = global.requester
+    provs = global.transmitter
+    requs = global.receiver
     same_net_id = global.same_net_id
     mod_state = global.mod_state
     force = global.force

@@ -38,13 +38,13 @@ for tier = 1, tiers do
     } })
 
     --
-    -- provider
+    -- transmitter
     --
-    entity_name = prefix .. "provider-t" .. tostring(tier)
+    entity_name = prefix .. "transmitter-t" .. tostring(tier)
     data:extend({ {
         type = "item",
         name = entity_name,
-        icon = "__transport-cables__/sprites/icons/provider-t" .. tostring(tier) .. ".png",
+        icon = "__transport-cables__/sprites/icons/transmitter-t" .. tostring(tier) .. ".png",
         icon_size = 64,
         icon_mipmaps = 4,
         place_result = entity_name,
@@ -55,13 +55,13 @@ for tier = 1, tiers do
     } })
 
     --
-    -- requester
+    -- receiver
     --
-    entity_name = prefix .. "requester-t" .. tostring(tier)
+    entity_name = prefix .. "receiver-t" .. tostring(tier)
     data:extend({ {
         type = "item",
         name = entity_name,
-        icon = "__transport-cables__/sprites/icons/requester-t" .. tostring(tier) .. ".png",
+        icon = "__transport-cables__/sprites/icons/receiver-t" .. tostring(tier) .. ".png",
         icon_size = 64,
         icon_mipmaps = 4,
         place_result = entity_name,

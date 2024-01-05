@@ -11,12 +11,12 @@ local energy_required = {
         t2 = 0.5,
         t3 = 0.5
     },
-    provider = {
+    transmitter = {
         t1 = 0.5,
         t2 = 0.5,
         t3 = 0.5
     },
-    requester = {
+    receiver = {
         t1 = 0.5,
         t2 = 0.5,
         t3 = 0.5
@@ -137,15 +137,15 @@ data:extend({ {
 } })
 
 --
--- providers
+-- transmitters
 --
 ---------------------------------------------------------------------------
-entity_name = prefix .. "provider-t1"
+entity_name = prefix .. "transmitter-t1"
 data:extend({ {
     type = "recipe",
     name = entity_name,
     enabled = false,
-    energy_required = energy_required.provider.t1,
+    energy_required = energy_required.transmitter.t1,
     ingredients =
     {
         { "copper-plate",      1 },
@@ -156,12 +156,12 @@ data:extend({ {
     result_count = 1
 } })
 
-entity_name = prefix .. "provider-t2"
+entity_name = prefix .. "transmitter-t2"
 data:extend({ {
     type = "recipe",
     name = entity_name,
     enabled = false,
-    energy_required = energy_required.provider.t2,
+    energy_required = energy_required.transmitter.t2,
     ingredients =
     {
         { "iron-chest",         1 },
@@ -172,12 +172,12 @@ data:extend({ {
     result_count = 1
 } })
 
-entity_name = prefix .. "provider-t3"
+entity_name = prefix .. "transmitter-t3"
 data:extend({ {
     type = "recipe",
     name = entity_name,
     enabled = false,
-    energy_required = energy_required.provider.t3,
+    energy_required = energy_required.transmitter.t3,
     ingredients =
     {
         { "steel-chest",        1 },
@@ -189,15 +189,15 @@ data:extend({ {
 } })
 
 --
--- requesters
+-- receivers
 --
 ---------------------------------------------------------------------------
-entity_name = prefix .. "requester-t1"
+entity_name = prefix .. "receiver-t1"
 data:extend({ {
     type = "recipe",
     name = entity_name,
     enabled = false,
-    energy_required = energy_required.requester.t1,
+    energy_required = energy_required.receiver.t1,
     ingredients =
     {
         { "copper-plate",      1 },
@@ -208,12 +208,12 @@ data:extend({ {
     result_count = 1
 } })
 
-entity_name = prefix .. "requester-t2"
+entity_name = prefix .. "receiver-t2"
 data:extend({ {
     type = "recipe",
     name = entity_name,
     enabled = false,
-    energy_required = energy_required.requester.t2,
+    energy_required = energy_required.receiver.t2,
     ingredients =
     {
         { "iron-chest",          1 },
@@ -225,12 +225,12 @@ data:extend({ {
     result_count = 1
 } })
 
-entity_name = prefix .. "requester-t3"
+entity_name = prefix .. "receiver-t3"
 data:extend({ {
     type = "recipe",
     name = entity_name,
     enabled = false,
-    energy_required = energy_required.requester.t3,
+    energy_required = energy_required.receiver.t3,
     ingredients =
     {
         { "steel-chest",         1 },

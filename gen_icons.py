@@ -50,24 +50,24 @@ def gen(folder):
         images["filename"].append(f"node-t{tier}.png")
 
     #
-    # provider
+    # transmitter
     #
     for tier in range(1, TIERS + 1):
-        arr = gu.gen_provider(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
+        arr = gu.gen_transmitter(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
         super_arr = gu.make_mipmaps_rgb(arr, 4)
 
         images["array"].append(super_arr)
-        images["filename"].append(f"provider-t{tier}.png")
+        images["filename"].append(f"transmitter-t{tier}.png")
 
     #
-    # requester
+    # receiver
     #
     for tier in range(1, TIERS + 1):
-        arr = gu.gen_requester(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
+        arr = gu.gen_receiver(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
         super_arr = gu.make_mipmaps_rgb(arr, 4)
 
         images["array"].append(super_arr)
-        images["filename"].append(f"requester-t{tier}.png")
+        images["filename"].append(f"receiver-t{tier}.png")
 
     #
     # underground

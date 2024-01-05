@@ -541,34 +541,34 @@ def gen(folder, auxiliary=False):
         images["filename"].append(f"node-t{tier}-shadow.png")
 
     #
-    # provider
+    # transmitter
     #
     for tier in range(1, TIERS + 1):
-        arr = gu.gen_provider(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
+        arr = gu.gen_transmitter(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
 
         images["array"].append(arr)
-        images["filename"].append(f"provider-t{tier}.png")
+        images["filename"].append(f"transmitter-t{tier}.png")
 
         #
         arr = np.zeros((PIXELS_SHADOW, PIXELS_SHADOW, 3), dtype=np.uint8)
 
         images["array"].append(arr)
-        images["filename"].append(f"provider-t{tier}-shadow.png")
+        images["filename"].append(f"transmitter-t{tier}-shadow.png")
 
     #
-    # requester
+    # receiver
     #
     for tier in range(1, TIERS + 1):
-        arr = gu.gen_requester(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
+        arr = gu.gen_receiver(PIXELS, THICKNESS_OVER_2, TIER_FRAME_THICKNESS, tier)
 
         images["array"].append(arr)
-        images["filename"].append(f"requester-t{tier}.png")
+        images["filename"].append(f"receiver-t{tier}.png")
 
         #
         arr = np.zeros((PIXELS_SHADOW, PIXELS_SHADOW, 3), dtype=np.uint8)
 
         images["array"].append(arr)
-        images["filename"].append(f"requester-t{tier}-shadow.png")
+        images["filename"].append(f"receiver-t{tier}-shadow.png")
 
     #
     # underground

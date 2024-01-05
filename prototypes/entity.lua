@@ -4,32 +4,32 @@ local prefix = "transport-cables:"
 local tiers = 3
 local debug_mode = false
 
-local inventory_size = { provider = {}, requester_container = {} }
-inventory_size.provider[1] = 16
-inventory_size.provider[2] = 32
-inventory_size.provider[3] = 64
-inventory_size.requester_container[1] = 16
-inventory_size.requester_container[2] = 32
-inventory_size.requester_container[3] = 64
+local inventory_size = { transmitter = {}, receiver = {} }
+inventory_size.transmitter[1] = 16
+inventory_size.transmitter[2] = 32
+inventory_size.transmitter[3] = 64
+inventory_size.receiver[1] = 16
+inventory_size.receiver[2] = 32
+inventory_size.receiver[3] = 64
 
 local max_distance = {}
 max_distance[1] = 5
 max_distance[2] = 7
 max_distance[3] = 9
 
-local mining_time = { cable = {}, node = {}, provider = {}, requester = {}, underground_cable = {} }
+local mining_time = { cable = {}, node = {}, transmitter = {}, receiver = {}, underground_cable = {} }
 mining_time.cable[1] = 0.01
 mining_time.cable[2] = 0.01
 mining_time.cable[3] = 0.01
 mining_time.node[1] = 0.01
 mining_time.node[2] = 0.01
 mining_time.node[3] = 0.01
-mining_time.provider[1] = 0.01
-mining_time.provider[2] = 0.01
-mining_time.provider[3] = 0.01
-mining_time.requester[1] = 0.01
-mining_time.requester[2] = 0.01
-mining_time.requester[3] = 0.01
+mining_time.transmitter[1] = 0.01
+mining_time.transmitter[2] = 0.01
+mining_time.transmitter[3] = 0.01
+mining_time.receiver[1] = 0.01
+mining_time.receiver[2] = 0.01
+mining_time.receiver[3] = 0.01
 mining_time.underground_cable[1] = 0.01
 mining_time.underground_cable[2] = 0.01
 mining_time.underground_cable[3] = 0.01
@@ -284,29 +284,29 @@ for tier = 1, tiers do
     data:extend({ entity })
 
     --
-    -- provider
+    -- transmitter
     --
-    local entity_name = prefix .. "provider-t" .. tostring(tier)
+    local entity_name = prefix .. "transmitter-t" .. tostring(tier)
     local entity = table.deepcopy(data.raw["container"]["iron-chest"])
     entity.name = entity_name
     entity.minable = {
-        mining_time = mining_time.provider[tier],
+        mining_time = mining_time.transmitter[tier],
         result = entity_name
     }
-    entity.inventory_size = inventory_size.provider[tier]
+    entity.inventory_size = inventory_size.transmitter[tier]
     entity.rotatable = false
     entity.picture = {
         layers =
         {
             {
-                filename = "__transport-cables__/sprites/entities/lr-provider-t" .. tostring(tier) .. ".png",
+                filename = "__transport-cables__/sprites/entities/lr-transmitter-t" .. tostring(tier) .. ".png",
                 priority = "extra-high",
                 width = 32,
                 height = 32,
                 shift = util.by_pixel(0, -0.5),
                 hr_version =
                 {
-                    filename = "__transport-cables__/sprites/entities/hr-provider-t" .. tostring(tier) .. ".png",
+                    filename = "__transport-cables__/sprites/entities/hr-transmitter-t" .. tostring(tier) .. ".png",
                     priority = "extra-high",
                     width = 64,
                     height = 64,
@@ -315,7 +315,7 @@ for tier = 1, tiers do
                 }
             },
             {
-                filename = "__transport-cables__/sprites/entities/lr-provider-t" .. tostring(tier) .. "-shadow.png",
+                filename = "__transport-cables__/sprites/entities/lr-transmitter-t" .. tostring(tier) .. "-shadow.png",
                 priority = "extra-high",
                 width = 32,
                 height = 32,
@@ -323,7 +323,8 @@ for tier = 1, tiers do
                 draw_as_shadow = true,
                 hr_version =
                 {
-                    filename = "__transport-cables__/sprites/entities/hr-provider-t" .. tostring(tier) .. "-shadow.png",
+                    filename = "__transport-cables__/sprites/entities/hr-transmitter-t" ..
+                    tostring(tier) .. "-shadow.png",
                     priority = "extra-high",
                     width = 64,
                     height = 64,
@@ -338,33 +339,33 @@ for tier = 1, tiers do
     data:extend({ entity })
 
     --
-    -- requester
+    -- receiver
     --
-    local entity_name = prefix .. "requester-t" .. tostring(tier)
+    local entity_name = prefix .. "receiver-t" .. tostring(tier)
     local entity = table.deepcopy(data.raw["logistic-container"]["logistic-chest-storage"])
     entity.name = entity_name
     entity.minable = {
-        mining_time = mining_time.requester[tier],
+        mining_time = mining_time.receiver[tier],
         result = entity_name
     }
     entity.name = entity_name
     entity.max_logistic_slots = 1
     entity.render_not_in_network_icon = false
-    entity.inventory_size = inventory_size.requester_container[tier]
+    entity.inventory_size = inventory_size.receiver[tier]
     entity.rotatable = false
     entity.animation =
     {
         layers =
         {
             {
-                filename = "__transport-cables__/sprites/entities/lr-requester-t" .. tostring(tier) .. ".png",
+                filename = "__transport-cables__/sprites/entities/lr-receiver-t" .. tostring(tier) .. ".png",
                 priority = "extra-high",
                 width = 32,
                 height = 32,
                 shift = util.by_pixel(0, 0),
                 hr_version =
                 {
-                    filename = "__transport-cables__/sprites/entities/hr-requester-t" .. tostring(tier) .. ".png",
+                    filename = "__transport-cables__/sprites/entities/hr-receiver-t" .. tostring(tier) .. ".png",
                     priority = "extra-high",
                     width = 64,
                     height = 64,
@@ -373,7 +374,7 @@ for tier = 1, tiers do
                 }
             },
             {
-                filename = "__transport-cables__/sprites/entities/lr-requester-t" .. tostring(tier) .. "-shadow.png",
+                filename = "__transport-cables__/sprites/entities/lr-receiver-t" .. tostring(tier) .. "-shadow.png",
                 priority = "extra-high",
                 width = 32,
                 height = 32,
@@ -381,7 +382,7 @@ for tier = 1, tiers do
                 draw_as_shadow = true,
                 hr_version =
                 {
-                    filename = "__transport-cables__/sprites/entities/hr-requester-t" .. tostring(tier) .. "-shadow.png",
+                    filename = "__transport-cables__/sprites/entities/hr-receiver-t" .. tostring(tier) .. "-shadow.png",
                     priority = "extra-high",
                     width = 64,
                     height = 64,

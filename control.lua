@@ -40,21 +40,21 @@ script.on_event(defines.events.on_research_finished, lib.on_research_finished)
 script.on_event(defines.events.on_tick, lib.on_tick)
 
 ---------------------------------------------------------------------------
--- Every provider/requester has a unit number `un` and is associated with a
+-- Every transmitter/receiver has a unit number `un` and is associated with a
 -- circuit network id `net_id`.
 -- The variable `text_id` holds the id of the text which displays the `net_id`.
 
-local provider_table = {
+local transmitter_table = {
     net_id = {},        -- unit number -> circuit network id
     net_id_and_un = {}, -- circuit network id -> (unit number -> entity)
     text_id = {},       -- unit number -> text id
     un = {}             -- unit number -> entity
 }
 
--- The container entity assiciated with a requester is stored in `container`
--- and `signal` is the requester's state, i.e., the signal which it is
+-- The container entity assiciated with a receiver is stored in `container`
+-- and `signal` is the receiver's state, i.e., the signal which it is
 -- requesting.
-local requester_table = {
+local receiver_table = {
     container = {},     -- unit number -> entity
     net_id = {},        -- unit number -> circuit network id
     net_id_and_un = {}, -- circuit network id -> (unit number -> entity)
@@ -66,16 +66,16 @@ local requester_table = {
 ---------------------------------------------------------------------------
 script.on_init(function()
     global.lamps = {}
-    global.provider = {}
-    global.requester = {}
+    global.transmitter = {}
+    global.receiver = {}
     global.same_net_id = {}
     global.mod_state = {}
     global.force = game.create_force(lib.prefix .. "force")
 
     for tier = 1, lib.tiers do
         global.lamps[tier] = {}
-        global.provider[tier] = table.deepcopy(provider_table)
-        global.requester[tier] = table.deepcopy(requester_table)
+        global.transmitter[tier] = table.deepcopy(transmitter_table)
+        global.receiver[tier] = table.deepcopy(receiver_table)
         global.same_net_id[tier] = {}
         global.mod_state[tier] = { rate = 0 }
     end

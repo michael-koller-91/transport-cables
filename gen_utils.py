@@ -59,51 +59,7 @@ def gen_node(pixels, thickness, tier_frame_thickness, tier):
     return arr
 
 
-def gen_provider(pixels, thickness, tier_frame_thickness, tier):
-    p_2 = pixels // 2
-    t = thickness
-    t_2 = thickness // 2
-
-    arr = zeros_rgb(pixels, pixels)
-
-    # red square
-    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 0] = 255
-
-    # gray line going up
-    arr[: p_2 - t, p_2 - t : p_2 + t, :] = 100
-
-    # add arrow
-    for l in range(4):
-        # facing up
-        o = t_2 + (3 - l) - 1
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 255
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 255
-        # facing up
-        o = p_2 - 2 * t + (3 - l)
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 255
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 255
-
-    # add the other three gray lines via rotation
-    sub_arr = arr
-
-    mask = np.zeros_like(arr)
-    mask[: p_2 - thickness, :, :] = 1
-    for _ in range(3):
-        mask = rotate_counterclockwise(mask.copy())
-        sub_arr = rotate_counterclockwise(sub_arr.copy())
-        arr += mask * sub_arr
-
-    arr = make_tier_edges(
-        arr, tier, tier_frame_thickness, tl=True, tr=True, br=True, bl=True
-    )
-    return arr
-
-
-def gen_requester(pixels, thickness, tier_frame_thickness, tier):
+def gen_receiver(pixels, thickness, tier_frame_thickness, tier):
     p_2 = pixels // 2
     t = thickness
     t_2 = thickness // 2
@@ -146,13 +102,44 @@ def gen_requester(pixels, thickness, tier_frame_thickness, tier):
     return arr
 
 
-def gen_requester_container(pixels, thickness, tier_frame_thickness, tier):
+def gen_transmitter(pixels, thickness, tier_frame_thickness, tier):
+    p_2 = pixels // 2
+    t = thickness
+    t_2 = thickness // 2
+
     arr = zeros_rgb(pixels, pixels)
-    arr[
-        pixels // 2 - thickness : pixels // 2 + thickness,
-        pixels // 2 - thickness : pixels // 2 + thickness,
-        2,
-    ] = 255
+
+    # red square
+    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 0] = 255
+
+    # gray line going up
+    arr[: p_2 - t, p_2 - t : p_2 + t, :] = 100
+
+    # add arrow
+    for l in range(4):
+        # facing up
+        o = t_2 + (3 - l) - 1
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 255
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 255
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 255
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 255
+        # facing up
+        o = p_2 - 2 * t + (3 - l)
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 255
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 255
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 255
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 255
+
+    # add the other three gray lines via rotation
+    sub_arr = arr
+
+    mask = np.zeros_like(arr)
+    mask[: p_2 - thickness, :, :] = 1
+    for _ in range(3):
+        mask = rotate_counterclockwise(mask.copy())
+        sub_arr = rotate_counterclockwise(sub_arr.copy())
+        arr += mask * sub_arr
+
     arr = make_tier_edges(
         arr, tier, tier_frame_thickness, tl=True, tr=True, br=True, bl=True
     )
