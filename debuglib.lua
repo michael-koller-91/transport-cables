@@ -6,7 +6,7 @@ local commands = {
     print_connect_lamps = prefix .. "print-connect-lamps",
     print_on_research_finished = prefix .. "print-on-research-finished",
     print_update_net_id = prefix .. "print-update-net-id",
-    print_update_receiver_signals = prefix .. "print-update-receiver-signals"
+    print_update_receiver_filters = prefix .. "print-update-receiver-filters"
 }
 
 local flags = {
@@ -14,7 +14,7 @@ local flags = {
     print_connect_lamps = true,
     print_on_research_finished = true,
     print_update_net_id = true,
-    print_update_receiver_signals = true
+    print_update_receiver_filters = true
 }
 
 local print_to_players = function(str)

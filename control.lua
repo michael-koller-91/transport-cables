@@ -6,7 +6,7 @@ if dbg.flags.add_debug_commands then
     commands.add_command(dbg.commands.print_off, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_on, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_connect_lamps, nil, lib.on_console_command)
-    commands.add_command(dbg.commands.print_update_receiver_signals, nil, lib.on_console_command)
+    commands.add_command(dbg.commands.print_update_receiver_filters, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_update_net_id, nil, lib.on_console_command)
 end
 
@@ -51,14 +51,11 @@ local transmitter_table = {
     un = {}             -- unit number -> entity
 }
 
--- The container entity assiciated with a receiver is stored in `container`
--- and `signal` is the receiver's state, i.e., the signal which it is
--- requesting.
+-- The receiver's storage filter is called `filter`.
 local receiver_table = {
-    container = {},     -- unit number -> entity
     net_id = {},        -- unit number -> circuit network id
     net_id_and_un = {}, -- circuit network id -> (unit number -> entity)
-    signal = {},        -- unit number -> circuit network signal
+    filter = {},        -- unit number -> storage filter
     text_id = {},       -- unit number -> text id
     un = {}             -- unit number -> entity
 }

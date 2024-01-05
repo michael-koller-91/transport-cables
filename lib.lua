@@ -1,20 +1,7 @@
 local dbg = require("debuglib")
-
 require("util")
 
 ---------------------------------------------------------------------------
-local tiers = 3
-local wire = defines.wire_type.red
-local rate_increment = 15
-local rate_increment_factor = 2
-
-local item_transport_active = {}
-local net_id_update_scheduled = {}
-for tier = 1, tiers do
-    item_transport_active[tier] = false
-    net_id_update_scheduled[tier] = false
-end
-
 -- globals
 local active_nets = {}
 local lamps = {} -- all lamps
@@ -23,6 +10,12 @@ local tx = {}    -- all transmitters
 local force      -- the force of the receiver
 local mod_state = {}
 
+---------------------------------------------------------------------------
+local tiers = 3
+local wire = defines.wire_type.red
+local rate_increment = 15       -- whenever a research is finished, the item transport rate is increased by this amount
+local rate_increment_factor = 2 -- whenever the infinite research is finished, multiply the item transport rate by this amount
+
 local prefix = "transport-cables:"
 local names = {}
 for tier = 1, tiers do
@@ -30,11 +23,17 @@ for tier = 1, tiers do
         lamp = prefix .. "lamp-t" .. tostring(tier),
         node = prefix .. "node-t" .. tostring(tier),
         transmitter = prefix .. "transmitter-t" .. tostring(tier),
-        receiver_container = prefix .. "receiver-container-t" .. tostring(tier),
         receiver = prefix .. "receiver-t" .. tostring(tier),
         cable = prefix .. "cable-t" .. tostring(tier),
         underground_cable = prefix .. "underground-cable-t" .. tostring(tier),
     }
+end
+
+local item_transport_active = {}   -- are there any rx/tx pairs between which items need to be transported?
+local net_id_update_scheduled = {} -- is an update of the network ids necessary?
+for tier = 1, tiers do
+    item_transport_active[tier] = false
+    net_id_update_scheduled[tier] = false
 end
 
 ---------------------------------------------------------------------------
@@ -72,29 +71,16 @@ local moveposition = function(position, direction, distance)
 end
 
 ---------------------------------------------------------------------------
--- Store every receiver's signal in order to be able to detect a change
+-- Store every receiver's filter in order to be able to detect a change
 -- when the on_gui_closed event fires.
-local update_receiver_signals = function(tier)
+local update_receiver_filters = function(tier)
     for unit_number, entity in pairs(rx[tier].un) do
-        rx[tier].signal[unit_number] = entity.get_filter(1)
+        rx[tier].filter[unit_number] = entity.get_filter(1)
     end
 
-    if dbg.flags.print_update_receiver_signals then
-        dbg.print("update_receiver_signals(): tier = " .. tostring(tier))
+    if dbg.flags.print_update_receiver_filters then
+        dbg.print("update_receiver_filters(): tier = " .. tostring(tier))
     end
-end
-
----------------------------------------------------------------------------
--- get the container associated with `entity` (a receiver)
-local get_container = function(entity, tier)
-    return rx[tier].container[entity.unit_number]
-end
-
--- destroy the container associated with `entity` (a receiver)
-local destroy_container = function(entity, tier)
-    local destroyed = rx[tier].container[entity.unit_number].destroy()
-    rx[tier].container[entity.unit_number] = nil
-    return destroyed
 end
 
 ---------------------------------------------------------------------------
@@ -143,23 +129,18 @@ local destroy_lamp = function(entity, tier)
 end
 
 ---------------------------------------------------------------------------
--- All receivers with the same network_id as `entity` get the signal of
+-- All receivers with the same network_id as `entity` get the filter of
 -- `entity`.
-local set_receiver_signals_in_same_network_as = function(entity, tier)
+local set_receiver_filter_in_same_network_as = function(entity, tier)
     local net_id = rx[tier].net_id[entity.unit_number]
     if net_id and net_id > 0 then
-        local unit_number_array = rx[tier].net_id_and_un[net_id]
-        if unit_number_array then
-            local signal = entity.get_control_behavior().get_signal(1)
+        if rx[tier].net_id_and_un[net_id] then
+            local filter = entity.get_filter(1)
             for _, unit_number in ipairs(rx[tier].net_id_and_un[net_id]) do
-                if signal.signal then
-                    rx[tier].un[unit_number].get_control_behavior().set_signal(1, signal)
-                else
-                    rx[tier].un[unit_number].get_control_behavior().set_signal(1, nil)
-                end
+                rx[tier].un[unit_number].set_filter(1, filter)
             end
         end
-        update_receiver_signals(tier)
+        update_receiver_filters(tier)
     end
 end
 
@@ -345,8 +326,7 @@ local on_built_entity = function(event)
                 scale = 1.0
             }
 
-            -- connect to cable north, east, south, west of transmitter if it is
-            -- facing away from the transmitter
+            -- connect to cable north, east, south, west of transmitter if it is facing away from the transmitter
             local position
             local direction
             local entity_cable
@@ -391,11 +371,10 @@ local on_built_entity = function(event)
                 scale = 1.0
             }
 
-            -- connect to cable east, south, west of receiver if it is facing
-            -- towards the receiver
+            -- connect to cable north, east, south, west of receiver if it is facing towards the receiver
             local direction
             local entity_cable
-            for i = 2, 6, 2 do
+            for i = 0, 6, 2 do
                 -- rotate direction by i / 2 * 90°
                 direction = (entity.direction + i) % 8
                 position = moveposition(entity.position, direction, 1)
@@ -407,7 +386,7 @@ local on_built_entity = function(event)
                 end
             end
 
-            update_receiver_signals(tier)
+            update_receiver_filters(tier)
 
             net_id_update_scheduled[tier] = true
             return
@@ -419,7 +398,7 @@ local on_built_entity = function(event)
             local position
             local direction
             local entity_cable
-            for i = 0, 8, 2 do
+            for i = 0, 6, 2 do
                 -- rotate direction by i / 2 * 90°
                 direction = (entity.direction + i) % 8
                 position = moveposition(entity.position, direction, 1)
@@ -464,12 +443,12 @@ local on_console_command = function(command)
     if command.name == dbg.commands.print_off then
         dbg.flags.print_connect_lamps = false
         dbg.flags.print_update_net_id = false
-        dbg.flags.print_update_receiver_signals = false
+        dbg.flags.print_update_receiver_filter = false
         dbg.print("set all print flags false")
     elseif command.name == dbg.commands.print_on then
         dbg.flags.print_connect_lamps = true
         dbg.flags.print_update_net_id = true
-        dbg.flags.print_update_receiver_signals = true
+        dbg.flags.print_update_receiver_filter = true
         dbg.print("set all print flags true")
     elseif command.name == dbg.commands.print_connect_lamps then
         dbg.flags.print_connect_lamps = not dbg.flags.print_connect_lamps
@@ -480,9 +459,9 @@ local on_console_command = function(command)
     elseif command.name == dbg.commands.print_update_net_id then
         dbg.flags.print_update_net_id = not dbg.flags.print_update_net_id
         dbg.print("print_update_net_id = " .. tostring(dbg.flags.print_update_net_id))
-    elseif command.name == dbg.commands.print_update_receiver_signals then
-        dbg.flags.print_update_receiver_signals = not dbg.flags.print_update_receiver_signals
-        dbg.print("print_update_receiver_signals = " .. tostring(dbg.flags.print_update_receiver_signals))
+    elseif command.name == dbg.commands.print_update_receiver_filter then
+        dbg.flags.print_update_receiver_filter = not dbg.flags.print_update_receiver_filter
+        dbg.print("print_update_receiver_filter = " .. tostring(dbg.flags.print_update_receiver_filter))
     end
 end
 
@@ -490,7 +469,7 @@ end
 local on_entity_settings_pasted = function(event)
     for tier = 1, tiers do
         if event.source.name == names[tier].receiver and event.destination.name == names[tier].receiver then
-            set_receiver_signals_in_same_network_as(event.destination, tier)
+            set_receiver_filter_in_same_network_as(event.destination, tier)
             return
         end
     end
@@ -501,7 +480,7 @@ local on_gui_closed = function(event)
     if event.entity and event.entity.valid then
         for tier = 1, tiers do
             if event.entity.name == names[tier].receiver then
-                set_receiver_signals_in_same_network_as(event.entity, tier)
+                set_receiver_filter_in_same_network_as(event.entity, tier)
                 return
             end
         end
@@ -541,9 +520,6 @@ local on_mined_entity = function(event)
 
             rx[tier].un[entity.unit_number] = nil
 
-            -- also destroy the container
-            destroy_container(entity, tier)
-
             -- and the displayed text
             rendering.destroy(rx[tier].text_id[entity.unit_number])
             rx[tier].text_id[entity.unit_number] = nil
@@ -551,8 +527,8 @@ local on_mined_entity = function(event)
             -- and the ID
             rx[tier].net_id[entity.unit_number] = nil
 
-            -- and the signal
-            rx[tier].signal[entity.unit_number] = nil
+            -- and the filter
+            rx[tier].filter[entity.unit_number] = nil
 
             net_id_update_scheduled[tier] = true
             return
@@ -676,13 +652,7 @@ local on_rotated_entity = function(event)
     end
 
     for tier = 1, tiers do
-        if entity.name == names[tier].receiver then
-            -- move the container in front of the receiver again
-            local e_cont = get_container(entity, tier)
-            local position = moveposition(entity.position, entity.direction)
-            e_cont.teleport(position)
-            return
-        elseif entity.name == names[tier].cable then
+        if entity.name == names[tier].cable then
             disconnect_lamps(entity, tier)
             cable_connect_to_neighbors(entity, tier)
 
@@ -727,31 +697,30 @@ local on_tick = function(event)
 end
 
 ---------------------------------------------------------------------------
-local count             -- counts items
-local e_cont            -- a receiver container entity
-local e_prov            -- a transmitter entity
-local inve_prov         -- unit number -> number of items in a transmitter
-local inve_requ         -- unit number -> number of items that can be inserted into a receiver
-local inventory         -- an entity's inventory
-local keys_prov         -- transmitter inventory keys
-local keys_requ         -- receiver inventory keys
-local n_empty_inve_requ -- total number of empty slots in receivers
-local n                 -- an element of `inve_prov`
-local n_inve_prov       -- total number of items in transmitters
-local n_items_per_prov  -- the average number of items to be moved per transmitter
-local n_items_per_requ  -- the average number of items to be moved per receiver
-local n_item_inse       -- the number of items that has already been inserted into receivers
-local n_item_remo       -- the number of items that has already been removed from transmitters
-local n_item_rema       -- the number of items that still needs to be removed from transmitters
-local n_item_to_move    -- the number of items that needs to be moved in this network
-local n_prov            -- the number of transmitters with the current network id
-local n_prov_visi       -- the number of transmitters from which items have already been removed
-local n_requ            -- the number of receivers with the current network id
-local n_requ_visi       -- the number of receivers into which items have already been inserted
+local count           -- counts items
+local e_cont          -- a receiver container entity
+local e_prov          -- a transmitter entity
+local inve_tx         -- unit number -> number of items in a transmitter
+local inve_rx         -- unit number -> number of items that can be inserted into a receiver
+local inventory       -- an entity's inventory
+local keys_prov       -- transmitter inventory keys
+local keys_requ       -- receiver inventory keys
+local n_empty_inve_rx -- total number of empty slots in receivers
+local n               -- an element of `inve_tx`
+local n_inve_tx       -- total number of items in transmitters
+local n_items_per_tx  -- the average number of items to be moved per transmitter
+local n_items_per_rx  -- the average number of items to be moved per receiver
+local n_item_inse     -- the number of items that has already been inserted into receivers
+local n_item_remo     -- the number of items that has already been removed from transmitters
+local n_item_rema     -- the number of items that still needs to be removed from transmitters
+local n_item_to_move  -- the number of items that needs to be moved in this network
+local n_tx            -- the number of transmitters with the current network id
+local n_tx_visi       -- the number of transmitters from which items have already been removed
+local n_rx            -- the number of receivers with the current network id
+local n_rx_visi       -- the number of receivers into which items have already been inserted
 local transmitter_un_array
 local receiver_un_array
-local signal_name
-local signal
+local filter
 local unit_number
 local on_nth_tick = function(event)
     -- move items between transmitter-receiver-pairs
@@ -760,128 +729,126 @@ local on_nth_tick = function(event)
             for _, net_id in ipairs(active_nets[tier]) do
                 -- all transmitter unit numbers with this network_id
                 transmitter_un_array = tx[tier].net_id_and_un[net_id]
-                n_prov = #transmitter_un_array
+                n_tx = #transmitter_un_array
 
                 -- all receiver unit numbers with this network_id
                 receiver_un_array = rx[tier].net_id_and_un[net_id]
-                n_requ = #receiver_un_array
+                n_rx = #receiver_un_array
 
-                -- the signal of all receivers with this network_id
+                -- the filter of all receivers with this network_id
                 unit_number = receiver_un_array[1]
-                signal = rx[tier].signal[unit_number]
+                filter = rx[tier].filter[unit_number]
 
-                if signal and signal.signal then
-                    signal_name = signal.signal.name
-
+                if filter then
                     -- count items in transmitters' inventories
-                    n_inve_prov = 0
-                    inve_prov = {}
+                    n_inve_tx = 0
+                    inve_tx = {}
                     for _, un in ipairs(transmitter_un_array) do
                         e_prov = tx[tier].un[un]
-                        count = e_prov.get_inventory(defines.inventory.item_main).get_item_count(signal_name)
-                        inve_prov[un] = count
-                        n_inve_prov = n_inve_prov + count
+                        count = e_prov.get_inventory(defines.inventory.item_main).get_item_count(filter)
+                        inve_tx[un] = count
+                        n_inve_tx = n_inve_tx + count
                     end
-                    keys_prov = keys_sorted_by_value(inve_prov)
+                    keys_prov = keys_sorted_by_value(inve_tx)
 
                     -- count how many items fit in receivers' inventories
-                    n_empty_inve_requ = 0
-                    inve_requ = {}
+                    n_empty_inve_rx = 0
+                    inve_rx = {}
                     for _, un in ipairs(receiver_un_array) do
-                        e_cont = rx[tier].container[un]
-                        count = e_cont.get_inventory(defines.inventory.item_main).get_insertable_count(signal_name)
-                        inve_requ[un] = count
-                        n_empty_inve_requ = n_empty_inve_requ + count
+                        e_cont = rx[tier].un[un]
+                        count = e_cont.get_inventory(defines.inventory.item_main).get_insertable_count(filter)
+                        inve_rx[un] = count
+                        n_empty_inve_rx = n_empty_inve_rx + count
                     end
-                    keys_requ = keys_sorted_by_value(inve_requ)
+                    keys_requ = keys_sorted_by_value(inve_rx)
 
-                    n_item_to_move = math.min(mod_state[tier].rate, n_inve_prov, n_empty_inve_requ)
+                    n_item_to_move = math.min(mod_state[tier].rate, n_inve_tx, n_empty_inve_rx)
                     if n_item_to_move > 0 then
-                        n_items_per_prov = math.floor(n_item_to_move / n_prov)
-                        n_items_per_requ = math.floor(n_item_to_move / n_requ)
+                        n_items_per_tx = math.floor(n_item_to_move / n_tx)
+                        n_items_per_rx = math.floor(n_item_to_move / n_rx)
 
                         -- remove items from transmitters
-                        n_prov_visi = 0
+                        n_tx_visi = 0
                         n_item_remo = 0
                         for _, k_un in ipairs(keys_prov) do
-                            n_prov_visi = n_prov_visi + 1
-                            n = inve_prov[k_un]
+                            n_tx_visi = n_tx_visi + 1
+                            n = inve_tx[k_un]
                             e_prov = tx[tier].un[k_un]
                             inventory = e_prov.get_inventory(defines.inventory.item_main)
-                            if n >= n_items_per_prov then
+                            if n >= n_items_per_tx then
                                 -- if there are enough items to remove, remove them
-                                if n_items_per_prov > 0 then
-                                    inventory.remove({ name = signal_name, count = n_items_per_prov })
+                                if n_items_per_tx > 0 then
+                                    inventory.remove({ name = filter, count = n_items_per_tx })
                                 end
-                                n_item_remo = n_item_remo + n_items_per_prov
+                                n_item_remo = n_item_remo + n_items_per_tx
                             else
                                 -- otherwise remove as much as possible and update the remaining
                                 -- number of items that need to be removed
 
-                                if n_prov == n_prov_visi then
+                                if n_tx == n_tx_visi then
                                     -- this is the last transmitter
                                     -- try to remove as much as possible to achieve the move goal
                                     n_item_rema = n_item_to_move - n_item_remo
                                     if n >= n_item_rema then
                                         if n_item_rema then
-                                            inventory.remove({ name = signal_name, count = n_item_rema })
+                                            inventory.remove({ name = filter, count = n_item_rema })
                                         end
                                     else
                                         if n > 0 then
-                                            inventory.remove({ name = signal_name, count = n })
+                                            inventory.remove({ name = filter, count = n })
                                         end
                                     end
                                 else
                                     -- Remove all items
                                     if n > 0 then
-                                        inventory.remove({ name = signal_name, count = n })
+                                        inventory.remove({ name = filter, count = n })
                                     end
                                     n_item_remo = n_item_remo + n
                                     -- and update the number of items that need to be removed from the remaining transmitters.
-                                    n_items_per_prov = math.floor((n_item_to_move - n_item_remo) / (n_prov - n_prov_visi))
+                                    n_items_per_tx = math.floor((n_item_to_move - n_item_remo) / (n_tx - n_tx_visi))
                                 end
                             end
                         end
 
                         -- insert items into receivers
-                        n_requ_visi = 0
+                        n_rx_visi = 0
                         n_item_inse = 0
                         for _, k_un in ipairs(keys_requ) do
-                            n_requ_visi = n_requ_visi + 1
-                            n = inve_requ[k_un]
-                            e_cont = rx[tier].container[k_un]
+                            n_rx_visi = n_rx_visi + 1
+                            n = inve_rx[k_un]
+                            e_cont = rx[tier].un[k_un]
                             inventory = e_cont.get_inventory(defines.inventory.item_main)
-                            if n >= n_items_per_requ then
+                            if n >= n_items_per_rx then
                                 -- if enough items can be inserted, insert them
-                                if n_items_per_requ > 0 then
-                                    inventory.insert({ name = signal_name, count = n_items_per_requ })
+                                if n_items_per_rx > 0 then
+                                    inventory.insert({ name = filter, count = n_items_per_rx })
                                 end
-                                n_item_inse = n_item_inse + n_items_per_requ
+                                n_item_inse = n_item_inse + n_items_per_rx
                             else
                                 -- otherwise insert as much as possible and update the remaining
                                 -- number of items that need to be inserted
 
-                                if n_requ == n_requ_visi then
+                                if n_rx == n_rx_visi then
                                     -- this is the last receiver
                                     -- try to insert as much as possible to achieve the move goal
                                     n_item_rema = n_item_to_move - n_item_inse
                                     if n >= n_item_rema then
                                         if n_item_rema > 0 then
-                                            inventory.insert({ name = signal_name, count = n_item_rema })
+                                            inventory.insert({ name = filter, count = n_item_rema })
                                         end
                                     else
                                         if n > 0 then
-                                            inventory.insert({ name = signal_name, count = n })
+                                            inventory.insert({ name = filter, count = n })
                                         end
                                     end
                                 else
                                     -- Fill receiver
                                     if n > 0 then
-                                        inventory.insert({ name = signal_name, count = n })
+                                        inventory.insert({ name = filter, count = n })
                                     end
                                     n_item_inse = n_item_inse + n
                                     -- and update the number of items that need to be inserted into the remaining receivers.
-                                    n_items_per_requ = math.floor((n_item_to_move - n_item_inse) / (n_requ - n_requ_visi))
+                                    n_items_per_rx = math.floor((n_item_to_move - n_item_inse) / (n_rx - n_rx_visi))
                                 end
                             end
                         end

@@ -26,8 +26,6 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * in debug mode, it should be possible to switch lamps on/off via a command; otherwise, the lamps should always be off
 * when mod entities are destroyed, should only the corresponding circuit network id tables be updated (instead of always calling update_network_ids())?
 * a cable connected to a provider or node should be able to be a curved cable
-* implement receiver either via buffer chest or via assembling machine
-* fix desync in multiplayer
 * can the collision box of the node be made smaller (such that it is similar to cables)?
 * node should connect to neighboring nodes
 * underground cables should be placeable onto cables

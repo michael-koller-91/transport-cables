@@ -1,5 +1,6 @@
 ## v0.1.3
 * Every level of the infinite research doubles the rate (up from times 1.1).
+* Receivers are now implemented as storage chests.
 
 ## v0.1.2
 * Rotating cables and underground cables disconnects them from old neighbors and connects them to new neighbors
