@@ -7,11 +7,12 @@ local commands = {
     print_on_research_finished = prefix .. "print-on-research-finished",
     print_set_rx_filter = prefix .. "print-set-rx-filter",
     print_update_net_id = prefix .. "print-update-net-id",
-    print_update_receiver_filters = prefix .. "print-update-receiver-filters"
+    print_update_receiver_filters = prefix .. "print-update-receiver-filters",
+    research_all_technologies = prefix .. "research-all-technologies"
 }
 
 local flags = {
-    add_debug_commands = true,
+    add_debug_commands = false,
     print_connect_lamps = true,
     print_on_research_finished = true,
     print_set_rx_filter = true,

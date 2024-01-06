@@ -3,11 +3,12 @@
 * Receivers are now containers with a custom GUI.
 * Fix a desync problem in multiplayer mode.
 * All transport cables entities can be upgraded via the upgrade planner.
-* Node connects to neighboring nodes.
+* Nodes connects to neighboring nodes.
 * The collision box of a node is smaller.
 * No (hidden) lamps turn on anymore.
 * How (curved) cables connect to neighboring (curved) cables is improved.
 * Circuit connector sprites are no longer drawn.
+* Underground cables connect to nodes.
 
 ## v0.1.2
 * Rotating cables and underground cables disconnects them from old neighbors and connects them to new neighbors

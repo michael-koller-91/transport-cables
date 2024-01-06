@@ -307,6 +307,20 @@ local underground_cable_connect_to_neighbors = function(entity, tier)
             connect_lamps(entity, entity_cable, tier)
         end
     end
+
+    -- connect to node north of underground_cable
+    position = moveposition(entity.position, entity.direction, 1)
+    local entity_node = game.surfaces[1].find_entity(names[tier].node, position)
+    if entity_node then
+        connect_lamps(entity, entity_node, tier)
+    end
+
+    -- connect to node south of underground_cable
+    position = moveposition(entity.position, entity.direction, -1)
+    entity_node = game.surfaces[1].find_entity(names[tier].node, position)
+    if entity_node then
+        connect_lamps(entity, entity_node, tier)
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -544,6 +558,8 @@ local on_console_command = function(command)
     elseif command.name == dbg.commands.print_update_receiver_filter then
         dbg.flags.print_update_receiver_filter = not dbg.flags.print_update_receiver_filter
         dbg.print("print_update_receiver_filter = " .. tostring(dbg.flags.print_update_receiver_filter))
+    elseif command.name == dbg.commands.research_all_technologies then
+        game.players[command.player_index].force.research_all_technologies()
     end
 end
 

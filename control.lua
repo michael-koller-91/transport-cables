@@ -10,6 +10,7 @@ if dbg.flags.add_debug_commands then
     commands.add_command(dbg.commands.print_set_rx_filter, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_update_receiver_filters, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_update_net_id, nil, lib.on_console_command)
+    commands.add_command(dbg.commands.research_all_technologies, nil, lib.on_console_command)
 end
 
 ---------------------------------------------------------------------------
