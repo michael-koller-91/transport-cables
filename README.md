@@ -22,16 +22,12 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 ## TODOs
 
 * write the how it works section
-* draw lamp circuit wires only in debug mode
-* in debug mode, it should be possible to switch lamps on/off via a command; otherwise, the lamps should always be off
 * when mod entities are destroyed, should only the corresponding circuit network id tables be updated (instead of always calling update_network_ids())?
 * a cable connected to a provider or node should be able to be a curved cable
 * can the collision box of the node be made smaller (such that it is similar to cables)?
-* node should connect to neighboring nodes
 * underground cables should be placeable onto cables
 * curved belts should only connect to neighbors facing in the same direction
 * rewrite the item distribution algorithm; for example, 31 receivers with a rate of 30 items / s is a problem
-* upgrade planner should work on cables, currently suggests belts
 * make sprites for receiver animation
 * make sprite for upgrade planner
 * fix straight vs curved cables connection edge cases

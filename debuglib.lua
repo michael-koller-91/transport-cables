@@ -5,6 +5,7 @@ local commands = {
     print_on = prefix .. "print-on",
     print_connect_lamps = prefix .. "print-connect-lamps",
     print_on_research_finished = prefix .. "print-on-research-finished",
+    print_set_rx_filter = prefix .. "print-set-rx-filter",
     print_update_net_id = prefix .. "print-update-net-id",
     print_update_receiver_filters = prefix .. "print-update-receiver-filters"
 }
@@ -13,6 +14,7 @@ local flags = {
     add_debug_commands = true,
     print_connect_lamps = true,
     print_on_research_finished = true,
+    print_set_rx_filter = true,
     print_update_net_id = true,
     print_update_receiver_filters = true
 }

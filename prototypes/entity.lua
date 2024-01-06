@@ -288,6 +288,7 @@ for tier = 1, tiers do
             }
         }
     }
+    entity.picture_on = table.deepcopy(entity.picture_off)
 
     data:extend({ entity })
 
@@ -551,12 +552,8 @@ for tier = 1, tiers do
     entity.destructible = false
     entity.minable = nil
     entity.operable = false
+    entity.fast_replaceable_group = "transport-cables"
     entity.energy_source = { type = "void" }
-    if debug_mode then
-        entity.selection_box = { { 0.0, 0.0 }, { 2.0, 2.0 } }
-    else
-        entity.selection_box = { { 0.0, 0.0 }, { 0.0, 0.0 } }
-    end
     entity.picture_off =
     {
         layers =
@@ -609,6 +606,22 @@ for tier = 1, tiers do
             }
         }
     }
+    if debug_mode then
+        entity.selection_box = { { 0.0, 0.0 }, { 2.0, 2.0 } }
+        entity.draw_circuit_wires = true
+        entity.always_on = true
+        entity.glow_size = 2
+        entity.light = { intensity = 0.5, size = 20, color = { r = 1.0, g = 1.0, b = 0.75 } }
+    else
+        entity.selection_box = { { 0.0, 0.0 }, { 0.0, 0.0 } }
+        entity.draw_circuit_wires = false
+        entity.always_on = false
+        entity.picture_on = table.deepcopy(entity.picture_off)
+        entity.glow_size = 0
+        entity.glow_color_intensity = 0
+        entity.light = { intensity = 0.0, size = 0, color = { r = 0.0, g = 0.0, b = 0.0 } }
+        entity.darkness_for_all_lamps_off = 0
+    end
 
     data:extend({ entity })
 end

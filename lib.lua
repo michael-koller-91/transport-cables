@@ -123,20 +123,23 @@ local get_rx_filter = function(receiver, tier)
     return rx[tier].filter[receiver.unit_number]
 end
 
----------------------------------------------------------------------------
 -- Set what the receiver entity `receiver` wants to receive.
 local set_rx_filter = function(receiver, elem_value, tier)
     rx[tier].filter[receiver.unit_number] = elem_value
+
+    if dbg.print_set_rx_filter then
+        dbg.print("set_rx_filter(): " .. tostring(elem_value))
+    end
 end
 
 ---------------------------------------------------------------------------
--- All receivers with the same network_id as `entity` get the filter of
--- `entity`.
-local set_rx_filter_in_same_network_as = function(entity, tier)
-    local net_id = rx[tier].net_id[entity.unit_number]
+-- All receivers with the same network_id as `receiver` get the filter of
+-- `receiver`.
+local set_rx_filter_in_same_network_as = function(receiver, tier)
+    local net_id = rx[tier].net_id[receiver.unit_number]
     if net_id and net_id > 0 then
         if rx[tier].net_id_and_un[net_id] then
-            local filter = get_rx_filter(entity, tier)
+            local filter = get_rx_filter(receiver, tier)
             for _, unit_number in ipairs(rx[tier].net_id_and_un[net_id]) do
                 set_rx_filter(rx[tier].un[unit_number], filter, tier)
             end
@@ -360,16 +363,37 @@ local on_built_entity = function(event)
         elseif entity.name == names[tier].node then
             create_lamp(entity, tier)
 
-            -- connect to neighboring cables if they are facing towards or away
-            -- from the node
+            -- connect to neighboring cables (if they are facing towards or away from the node)
+            -- and connect to neighboring nodes
             local position
             local direction
-            local entity_cable
+            local entity_neighbor
             for i = 0, 6, 2 do
                 -- rotate direction by i / 2 * 90°
                 direction = (entity.direction + i) % 8
                 position = moveposition(entity.position, direction, 1)
-                entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
+
+                -- neighboring cable
+                entity_neighbor = game.surfaces[1].find_entity(names[tier].cable, position)
+                if entity_neighbor then
+                    if entity_neighbor.direction == direction or entity_neighbor.direction == util.oppositedirection(direction) then
+                        connect_lamps(entity, entity_neighbor, tier)
+                    end
+                end
+
+                -- neighboring node
+                entity_neighbor = game.surfaces[1].find_entity(names[tier].node, position)
+                if entity_neighbor then
+                    connect_lamps(entity, entity_neighbor, tier)
+                end
+            end
+
+            -- connect to neighboring nodes
+            for i = 0, 6, 2 do
+                -- rotate direction by i / 2 * 90°
+                direction = (entity.direction + i) % 8
+                position = moveposition(entity.position, direction, 1)
+                entity_node = game.surfaces[1].find_entity(names[tier].node, position)
                 if entity_cable then
                     if (entity_cable.direction == direction) or (entity_cable.direction == util.oppositedirection(direction)) then
                         connect_lamps(entity, entity_cable, tier)
@@ -547,7 +571,9 @@ local on_gui_elem_changed = function(event)
 
     for tier = 1, tiers do
         if element.name == names[tier].gui_filter then
-            set_rx_filter(game.players[event.player_index].opened, event.element.elem_value, tier)
+            if get_rx_filter(game.players[event.player_index].opened, tier) ~= event.element.elem_value then
+                set_rx_filter(game.players[event.player_index].opened, event.element.elem_value, tier)
+            end
             return
         end
     end
@@ -580,17 +606,8 @@ local on_mined_entity = function(event)
     dbg.print("on_mined_entity(): entity.unit_number = " .. tostring(entity.unit_number))
 
     for tier = 1, tiers do
-        if entity.name == names[tier].transmitter then
+        if entity.name == names[tier].cable then
             destroy_lamp(entity, tier)
-
-            tx[tier].un[entity.unit_number] = nil
-
-            -- also destroy the displayed text
-            rendering.destroy(tx[tier].text_id[entity.unit_number])
-            tx[tier].text_id[entity.unit_number] = nil
-
-            -- and the ID
-            tx[tier].net_id[entity.unit_number] = nil
 
             net_id_update_scheduled[tier] = true
             return
@@ -601,6 +618,8 @@ local on_mined_entity = function(event)
             return
         elseif entity.name == names[tier].receiver then
             destroy_lamp(entity, tier)
+
+            dbg.print("to_be_upgraded = " .. tostring(entity.to_be_upgraded()))
 
             rx[tier].un[entity.unit_number] = nil
 
@@ -616,8 +635,17 @@ local on_mined_entity = function(event)
 
             net_id_update_scheduled[tier] = true
             return
-        elseif entity.name == names[tier].cable then
+        elseif entity.name == names[tier].transmitter then
             destroy_lamp(entity, tier)
+
+            tx[tier].un[entity.unit_number] = nil
+
+            -- also destroy the displayed text
+            rendering.destroy(tx[tier].text_id[entity.unit_number])
+            tx[tier].text_id[entity.unit_number] = nil
+
+            -- and the ID
+            tx[tier].net_id[entity.unit_number] = nil
 
             net_id_update_scheduled[tier] = true
             return

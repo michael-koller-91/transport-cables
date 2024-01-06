@@ -1,7 +1,10 @@
 ## v0.1.3
 * Every level of the infinite research doubles the rate (up from times 1.1).
-* Receivers are now implemented as iron chests with a custom GUI.
+* Receivers are now containers with a custom GUI.
 * Fix a desync problem in multiplayer mode.
+* All transport cables entities can be upgraded via the upgrade planner.
+* Node connects to neighboring nodes.
+* No lamps turn on anymore.
 
 ## v0.1.2
 * Rotating cables and underground cables disconnects them from old neighbors and connects them to new neighbors
