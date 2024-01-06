@@ -25,13 +25,11 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * when mod entities are destroyed, should only the corresponding circuit network id tables be updated (instead of always calling update_network_ids())?
 * a cable connected to a provider or node should be able to be a curved cable
 * can the collision box of the node be made smaller (such that it is similar to cables)?
-* underground cables should be placeable onto cables
+* if a pair of underground cables is placed on cables, can the cables between the undergrounds be deleted?
 * curved belts should only connect to neighbors facing in the same direction
 * rewrite the item distribution algorithm; for example, 31 receivers with a rate of 30 items / s is a problem
-* make sprites for receiver animation
-* make sprite for upgrade planner
 * fix straight vs curved cables connection edge cases
-* offset circuit wire connectors between different tiers
+* make empty circuit wire connector sprites
 
 ## Acknowledgement
 

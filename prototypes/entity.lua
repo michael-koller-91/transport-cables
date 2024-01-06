@@ -217,6 +217,9 @@ for tier = 1, tiers do
     if tier < tiers then
         entity.next_upgrade = prefix .. "cable-t" .. tostring(tier + 1)
     end
+    entity.icon = "__transport-cables__/sprites/icons/cable-t" .. tostring(tier) .. ".png"
+    entity.icon_size = 64
+    entity.icon_mipmaps = 4
     entity.belt_animation_set = get_belt_animation_set(tier)
     entity.connector_frame_sprites = get_transport_belt_connector_frame_sprites(tier)
     entity.operable = false
@@ -240,6 +243,9 @@ for tier = 1, tiers do
     if tier < tiers then
         entity.next_upgrade = prefix .. "node-t" .. tostring(tier + 1)
     end
+    entity.icon = "__transport-cables__/sprites/icons/node-t" .. tostring(tier) .. ".png"
+    entity.icon_size = 64
+    entity.icon_mipmaps = 4
     entity.picture_off = {
         layers = {
             {
@@ -309,6 +315,9 @@ for tier = 1, tiers do
     if tier < tiers then
         entity.next_upgrade = prefix .. "receiver-t" .. tostring(tier + 1)
     end
+    entity.icon = "__transport-cables__/sprites/icons/receiver-t" .. tostring(tier) .. ".png"
+    entity.icon_size = 64
+    entity.icon_mipmaps = 4
     entity.picture =
     {
         layers =
@@ -368,6 +377,9 @@ for tier = 1, tiers do
     if tier < tiers then
         entity.next_upgrade = prefix .. "transmitter-t" .. tostring(tier + 1)
     end
+    entity.icon = "__transport-cables__/sprites/icons/transmitter-t" .. tostring(tier) .. ".png"
+    entity.icon_size = 64
+    entity.icon_mipmaps = 4
     entity.picture = {
         layers =
         {
@@ -429,6 +441,9 @@ for tier = 1, tiers do
     if tier < tiers then
         entity.next_upgrade = prefix .. "underground-cable-t" .. tostring(tier + 1)
     end
+    entity.icon = "__transport-cables__/sprites/icons/underground-cable-t" .. tostring(tier) .. ".png"
+    entity.icon_size = 64
+    entity.icon_mipmaps = 4
     entity.structure = {
         direction_in = {
             sheet = {
