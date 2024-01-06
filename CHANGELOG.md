@@ -1,6 +1,6 @@
 ## v0.1.3
 * Every level of the infinite research doubles the rate (up from times 1.1).
-* Receivers are now implemented as storage chests.
+* Receivers are now implemented as iron chests with a custom GUI.
 * Fix a desync problem in multiplayer mode.
 
 ## v0.1.2

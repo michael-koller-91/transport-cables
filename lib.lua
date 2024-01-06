@@ -73,19 +73,6 @@ local moveposition = function(position, direction, distance)
 end
 
 ---------------------------------------------------------------------------
--- Store every receiver's filter in order to be able to detect a change
--- when the on_gui_closed event fires.
-local update_receiver_filters = function(tier)
-    for unit_number, entity in pairs(rx[tier].un) do
-        rx[tier].filter[unit_number] = entity.get_filter(1)
-    end
-
-    if dbg.flags.print_update_receiver_filters then
-        dbg.print("update_receiver_filters(): tier = " .. tostring(tier))
-    end
-end
-
----------------------------------------------------------------------------
 -- get the lamp associated with `entity`
 local get_lamp = function(entity, tier)
     return lamps[tier][entity.unit_number]
@@ -145,16 +132,15 @@ end
 ---------------------------------------------------------------------------
 -- All receivers with the same network_id as `entity` get the filter of
 -- `entity`.
-local set_receiver_filter_in_same_network_as = function(entity, tier)
+local set_rx_filter_in_same_network_as = function(entity, tier)
     local net_id = rx[tier].net_id[entity.unit_number]
     if net_id and net_id > 0 then
         if rx[tier].net_id_and_un[net_id] then
-            local filter = entity.get_filter(1)
+            local filter = get_rx_filter(entity, tier)
             for _, unit_number in ipairs(rx[tier].net_id_and_un[net_id]) do
-                rx[tier].un[unit_number].set_filter(1, filter)
+                set_rx_filter(rx[tier].un[unit_number], filter, tier)
             end
         end
-        update_receiver_filters(tier)
     end
 end
 
@@ -320,8 +306,19 @@ local create_gui = function(player, tier)
         gui = defines.relative_gui_type.container_gui,
         position = defines.relative_gui_position.right
     }
-    local frame = player.gui.relative.add({ type = "frame", name = names[tier].gui_frame, anchor = anchor, caption = { "Filter" } })
-    local button = frame.add { type = "choose-elem-button", name = names[tier].gui_filter, elem_type = "entity", elem_filters = { { filter = "flag", flag = "placeable-neutral" } } }
+    local frame = player.gui.relative.add({
+        type = "frame",
+        name = names[tier].gui_frame,
+        anchor = anchor,
+        caption = { "transport-cables.button-caption" }
+    })
+    local button = frame.add({
+        type = "choose-elem-button",
+        name = names[tier].gui_filter,
+        elem_type = "entity",
+        elem_filters = { { filter = "flag", flag = "placeable-neutral" } },
+        tooltip = { "transport-cables.button-tooltip" }
+    })
     local filter = get_rx_filter(player.opened, tier)
     if filter then
         button.elem_value = filter
@@ -350,6 +347,8 @@ local on_built_entity = function(event)
     if not entity or not entity.valid then
         return
     end
+    dbg.print("on_built_entity(): entity.name = " .. tostring(entity.name))
+    dbg.print("on_built_entity(): entity.unit_number = " .. tostring(entity.unit_number))
 
     for tier = 1, tiers do
         if entity.name == names[tier].cable then
@@ -419,8 +418,6 @@ local on_built_entity = function(event)
                     end
                 end
             end
-
-            update_receiver_filters(tier)
 
             net_id_update_scheduled[tier] = true
             return
@@ -516,7 +513,8 @@ end
 local on_entity_settings_pasted = function(event)
     for tier = 1, tiers do
         if event.source.name == names[tier].receiver and event.destination.name == names[tier].receiver then
-            set_receiver_filter_in_same_network_as(event.destination, tier)
+            set_rx_filter(event.destination, get_rx_filter(event.source, tier), tier)
+            set_rx_filter_in_same_network_as(event.destination, tier)
             return
         end
     end
@@ -532,7 +530,7 @@ local on_gui_closed = function(event)
 
     for tier = 1, tiers do
         if event.entity.name == names[tier].receiver then
-            set_receiver_filter_in_same_network_as(event.entity, tier)
+            set_rx_filter_in_same_network_as(event.entity, tier)
             destroy_gui(game.players[event.player_index], tier)
             return
         end
@@ -578,6 +576,8 @@ local on_mined_entity = function(event)
     if not entity or not entity.valid then
         return
     end
+    dbg.print("on_mined_entity(): entity.name = " .. tostring(entity.name))
+    dbg.print("on_mined_entity(): entity.unit_number = " .. tostring(entity.unit_number))
 
     for tier = 1, tiers do
         if entity.name == names[tier].transmitter then
