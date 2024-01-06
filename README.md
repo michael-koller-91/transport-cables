@@ -25,9 +25,8 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * when mod entities are destroyed, should only the corresponding circuit network id tables be updated (instead of always calling update_network_ids())?
 * can cables connected to a provider or node be curved cables?
 * if a pair of underground cables is placed on cables, can the cables between the undergrounds be deleted?
-* rewrite the item distribution algorithm; for example, 31 receivers with a rate of 30 items / s is a problem
-* make empty circuit wire connector sprites
 * is it possible to maintain the filter if an entity is upgraded?
+* rewrite the item distribution algorithm; for example, 31 receivers with a rate of 30 items / s is a problem
 
 ## Acknowledgement
 

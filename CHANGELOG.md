@@ -7,6 +7,7 @@
 * The collision box of a node is smaller.
 * No (hidden) lamps turn on anymore.
 * How (curved) cables connect to neighboring (curved) cables is improved.
+* Circuit connector sprites are no longer drawn.
 
 ## v0.1.2
 * Rotating cables and underground cables disconnects them from old neighbors and connects them to new neighbors

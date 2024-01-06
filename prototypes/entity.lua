@@ -622,15 +622,16 @@ for tier = 1, tiers do
             }
         }
     }
+    entity.circuit_wire_connection_point = nil
+    entity.circuit_connector_sprites = nil
+    entity.draw_circuit_wires = true
     if debug_mode then
         entity.selection_box = { { 0.0, 0.0 }, { 2.0, 2.0 } }
-        entity.draw_circuit_wires = true
         entity.always_on = true
         entity.glow_size = 2
         entity.light = { intensity = 0.5, size = 20, color = { r = 1.0, g = 1.0, b = 0.75 } }
     else
         entity.selection_box = { { 0.0, 0.0 }, { 0.0, 0.0 } }
-        entity.draw_circuit_wires = false
         entity.always_on = false
         entity.picture_on = table.deepcopy(entity.picture_off)
         entity.glow_size = 0

@@ -226,6 +226,9 @@ local cable_connect_to_neighbors = function(entity, tier)
                 if entity.direction == neighbor.direction then
                     connect_lamps(entity, neighbor, tier)
                 end
+                if entity.belt_shape ~= "straight" and entity.direction ~= util.oppositedirection(neighbor.direction) then
+                    connect_lamps(entity, neighbor, tier)
+                end
             end
         end
     end
@@ -514,11 +517,15 @@ end
 local on_console_command = function(command)
     if command.name == dbg.commands.print_off then
         dbg.flags.print_connect_lamps = false
+        dbg.flags.print_on_research_finished = false
+        dbg.flags.print_set_rx_filter = false
         dbg.flags.print_update_net_id = false
         dbg.flags.print_update_receiver_filter = false
         dbg.print("set all print flags false")
     elseif command.name == dbg.commands.print_on then
         dbg.flags.print_connect_lamps = true
+        dbg.flags.print_on_research_finished = true
+        dbg.flags.print_set_rx_filter = true
         dbg.flags.print_update_net_id = true
         dbg.flags.print_update_receiver_filter = true
         dbg.print("set all print flags true")
@@ -528,6 +535,9 @@ local on_console_command = function(command)
     elseif command.name == dbg.commands.print_on_research_finished then
         dbg.flags.print_on_research_finished = not dbg.flags.print_on_research_finished
         dbg.print("print_on_research_finished = " .. tostring(dbg.flags.print_on_research_finished))
+    elseif command.name == dbg.commands.print_set_rx_filter then
+        dbg.flags.print_set_rx_filter = not dbg.flags.print_set_rx_filter
+        dbg.print("print_set_rx_filter = " .. tostring(dbg.flags.print_set_rx_filter))
     elseif command.name == dbg.commands.print_update_net_id then
         dbg.flags.print_update_net_id = not dbg.flags.print_update_net_id
         dbg.print("print_update_net_id = " .. tostring(dbg.flags.print_update_net_id))
