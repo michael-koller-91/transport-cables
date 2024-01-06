@@ -21,6 +21,11 @@ script.on_event(defines.events.on_entity_settings_pasted, lib.on_entity_settings
 
 ---------------------------------------------------------------------------
 script.on_event(defines.events.on_gui_closed, lib.on_gui_closed)
+script.on_event(defines.events.on_gui_elem_changed, lib.on_gui_elem_changed)
+script.on_event(defines.events.on_gui_opened, lib.on_gui_opened)
+
+---------------------------------------------------------------------------
+script.on_event(defines.events.on_marked_for_deconstruction, lib.on_marked_for_deconstruction)
 
 ---------------------------------------------------------------------------
 script.on_event(defines.events.on_player_created, lib.on_player_created)
@@ -51,11 +56,11 @@ local transmitter_table = {
     un = {}             -- unit number -> entity
 }
 
--- The receiver's storage filter is called `filter`.
+-- What the receiver wants to receive is stored in `filter`.
 local receiver_table = {
     net_id = {},        -- unit number -> circuit network id
     net_id_and_un = {}, -- circuit network id -> (unit number -> entity)
-    filter = {},        -- unit number -> storage filter
+    filter = {},        -- unit number -> filter
     text_id = {},       -- unit number -> text id
     un = {}             -- unit number -> entity
 }
@@ -68,7 +73,6 @@ script.on_init(function()
     global.net_id_update_scheduled = {}
     global.receiver = {}
     global.transmitter = {}
-    global.force = game.create_force(lib.prefix .. "force")
 
     for tier = 1, lib.tiers do
         global.active_nets[tier] = {}

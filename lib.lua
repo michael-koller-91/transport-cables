@@ -7,7 +7,6 @@ local active_nets = {}
 local lamps = {} -- all lamps
 local rx = {}    -- all receivers
 local tx = {}    -- all transmitters
-local force      -- the force of the receiver
 local mod_state = {}
 
 ---------------------------------------------------------------------------
@@ -20,12 +19,15 @@ local prefix = "transport-cables:"
 local names = {}
 for tier = 1, tiers do
     names[tier] = {
+        cable = prefix .. "cable-t" .. tostring(tier),
         lamp = prefix .. "lamp-t" .. tostring(tier),
         node = prefix .. "node-t" .. tostring(tier),
-        transmitter = prefix .. "transmitter-t" .. tostring(tier),
         receiver = prefix .. "receiver-t" .. tostring(tier),
-        cable = prefix .. "cable-t" .. tostring(tier),
+        transmitter = prefix .. "transmitter-t" .. tostring(tier),
         underground_cable = prefix .. "underground-cable-t" .. tostring(tier),
+        --
+        gui_filter = prefix .. "filter-t" .. tostring(tier),
+        gui_frame = prefix .. "frame-t" .. tostring(tier)
     }
 end
 
@@ -108,7 +110,7 @@ local create_lamp = function(entity, tier)
     lamps[tier][entity.unit_number] = game.surfaces[1].create_entity {
         name = names[tier].lamp,
         position = entity.position,
-        force = 'player'
+        force = "player"
     }
 end
 
@@ -126,6 +128,18 @@ local destroy_lamp = function(entity, tier)
     local destroyed = lamps[tier][entity.unit_number].destroy()
     lamps[tier][entity.unit_number] = nil
     return destroyed
+end
+
+---------------------------------------------------------------------------
+-- Get what the receiver entity `receiver` wants to receive.
+local get_rx_filter = function(receiver, tier)
+    return rx[tier].filter[receiver.unit_number]
+end
+
+---------------------------------------------------------------------------
+-- Set what the receiver entity `receiver` wants to receive.
+local set_rx_filter = function(receiver, elem_value, tier)
+    rx[tier].filter[receiver.unit_number] = elem_value
 end
 
 ---------------------------------------------------------------------------
@@ -300,6 +314,36 @@ local underground_cable_connect_to_neighbors = function(entity, tier)
 end
 
 ---------------------------------------------------------------------------
+-- Create a choose-element-button next to the container gui.
+local create_gui = function(player, tier)
+    local anchor = {
+        gui = defines.relative_gui_type.container_gui,
+        position = defines.relative_gui_position.right
+    }
+    local frame = player.gui.relative.add({ type = "frame", name = names[tier].gui_frame, anchor = anchor, caption = { "Filter" } })
+    local button = frame.add { type = "choose-elem-button", name = names[tier].gui_filter, elem_type = "entity", elem_filters = { { filter = "flag", flag = "placeable-neutral" } } }
+    local filter = get_rx_filter(player.opened, tier)
+    if filter then
+        button.elem_value = filter
+    end
+end
+
+---------------------------------------------------------------------------
+local destroy_gui = function(player, tier)
+    if not player then
+        return
+    end
+
+    local frame = player.gui.relative[names[tier].gui_frame]
+
+    if not frame then
+        return
+    end
+
+    frame.destroy()
+end
+
+---------------------------------------------------------------------------
 local on_built_entity = function(event)
     local entity = event.created_entity
 
@@ -308,30 +352,17 @@ local on_built_entity = function(event)
     end
 
     for tier = 1, tiers do
-        if entity.name == names[tier].transmitter then
+        if entity.name == names[tier].cable then
+            create_lamp(entity, tier)
+            cable_connect_to_neighbors(entity, tier)
+
+            net_id_update_scheduled[tier] = true
+            return
+        elseif entity.name == names[tier].node then
             create_lamp(entity, tier)
 
-            tx[tier].un[entity.unit_number] = entity
-
-            -- default ID
-            tx[tier].net_id[entity.unit_number] = -1
-
-            -- display ID
-            tx[tier].text_id[entity.unit_number] = rendering.draw_text {
-                text = "ID: -1",
-                surface = game.surfaces[1],
-                target = entity,
-                target_offset = { -0.75, 0.25 },
-                color = {
-                    r = 1,
-                    g = 1,
-                    b = 1,
-                    a = 0.9
-                },
-                scale = 1.0
-            }
-
-            -- connect to cable north, east, south, west of transmitter if it is facing away from the transmitter
+            -- connect to neighboring cables if they are facing towards or away
+            -- from the node
             local position
             local direction
             local entity_cable
@@ -341,7 +372,7 @@ local on_built_entity = function(event)
                 position = moveposition(entity.position, direction, 1)
                 entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
                 if entity_cable then
-                    if entity_cable.direction == direction then
+                    if (entity_cable.direction == direction) or (entity_cable.direction == util.oppositedirection(direction)) then
                         connect_lamps(entity, entity_cable, tier)
                     end
                 end
@@ -350,8 +381,6 @@ local on_built_entity = function(event)
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].receiver then
-            entity.force = force
-
             create_lamp(entity, tier)
 
             local position
@@ -395,11 +424,30 @@ local on_built_entity = function(event)
 
             net_id_update_scheduled[tier] = true
             return
-        elseif entity.name == names[tier].node then
+        elseif entity.name == names[tier].transmitter then
             create_lamp(entity, tier)
 
-            -- connect to neighboring cables if they are facing towards or away
-            -- from the node
+            tx[tier].un[entity.unit_number] = entity
+
+            -- default ID
+            tx[tier].net_id[entity.unit_number] = -1
+
+            -- display ID
+            tx[tier].text_id[entity.unit_number] = rendering.draw_text {
+                text = "ID: -1",
+                surface = game.surfaces[1],
+                target = entity,
+                target_offset = { -0.75, 0.25 },
+                color = {
+                    r = 1,
+                    g = 1,
+                    b = 1,
+                    a = 0.9
+                },
+                scale = 1.0
+            }
+
+            -- connect to cable north, east, south, west of transmitter if it is facing away from the transmitter
             local position
             local direction
             local entity_cable
@@ -409,17 +457,11 @@ local on_built_entity = function(event)
                 position = moveposition(entity.position, direction, 1)
                 entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
                 if entity_cable then
-                    if (entity_cable.direction == direction) or (entity_cable.direction == util.oppositedirection(direction)) then
+                    if entity_cable.direction == direction then
                         connect_lamps(entity, entity_cable, tier)
                     end
                 end
             end
-
-            net_id_update_scheduled[tier] = true
-            return
-        elseif entity.name == names[tier].cable then
-            create_lamp(entity, tier)
-            cable_connect_to_neighbors(entity, tier)
 
             net_id_update_scheduled[tier] = true
             return
@@ -482,12 +524,49 @@ end
 
 ---------------------------------------------------------------------------
 local on_gui_closed = function(event)
-    if event.entity and event.entity.valid then
-        for tier = 1, tiers do
-            if event.entity.name == names[tier].receiver then
-                set_receiver_filter_in_same_network_as(event.entity, tier)
-                return
-            end
+    local entity = event.entity
+
+    if not entity or not entity.valid then
+        return
+    end
+
+    for tier = 1, tiers do
+        if event.entity.name == names[tier].receiver then
+            set_receiver_filter_in_same_network_as(event.entity, tier)
+            destroy_gui(game.players[event.player_index], tier)
+            return
+        end
+    end
+end
+
+---------------------------------------------------------------------------
+local on_gui_elem_changed = function(event)
+    local element = event.element
+
+    if not element then
+        return
+    end
+
+    for tier = 1, tiers do
+        if element.name == names[tier].gui_filter then
+            set_rx_filter(game.players[event.player_index].opened, event.element.elem_value, tier)
+            return
+        end
+    end
+end
+
+---------------------------------------------------------------------------
+local on_gui_opened = function(event)
+    local entity = event.entity
+
+    if not entity or not entity.valid then
+        return
+    end
+
+    for tier = 1, tiers do
+        if entity.name == names[tier].receiver then
+            create_gui(game.players[event.player_index], tier)
+            return
         end
     end
 end
@@ -570,10 +649,6 @@ end
 -- Initialize the GUI elements.
 local on_player_created = function(event)
     local player = game.players[event.player_index]
-
-    -- make friends with receiver
-    force.set_cease_fire(player.force, true)
-    force.set_friend(player.force, true)
 
     for tier = 1, tiers do
         net_id_update_scheduled[tier] = true
@@ -876,7 +951,6 @@ local initialize = function(global)
     lamps = global.lamps
     rx = global.receiver
     tx = global.transmitter
-    force = global.force
 end
 
 ---------------------------------------------------------------------------
@@ -887,6 +961,8 @@ return {
     on_console_command = on_console_command,
     on_entity_settings_pasted = on_entity_settings_pasted,
     on_gui_closed = on_gui_closed,
+    on_gui_elem_changed = on_gui_elem_changed,
+    on_gui_opened = on_gui_opened,
     on_mined_entity = on_mined_entity,
     on_mined_filter = on_mined_filter,
     on_nth_tick = on_nth_tick,

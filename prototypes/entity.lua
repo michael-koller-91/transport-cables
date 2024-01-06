@@ -295,22 +295,20 @@ for tier = 1, tiers do
     -- receiver
     --
     local entity_name = prefix .. "receiver-t" .. tostring(tier)
-    local entity = table.deepcopy(data.raw["logistic-container"]["logistic-chest-storage"])
+    local entity = table.deepcopy(data.raw["container"]["iron-chest"])
     entity.name = entity_name
     entity.minable = {
         mining_time = mining_time.receiver[tier],
         result = entity_name
     }
     entity.name = entity_name
-    entity.max_logistic_slots = 1
-    entity.render_not_in_network_icon = false
     entity.inventory_size = inventory_size.receiver[tier]
     entity.rotatable = false
     entity.fast_replaceable_group = "transport-cables"
     if tier < tiers then
         entity.next_upgrade = prefix .. "receiver-t" .. tostring(tier + 1)
     end
-    entity.animation =
+    entity.picture =
     {
         layers =
         {

@@ -38,23 +38,6 @@ for tier = 1, tiers do
     } })
 
     --
-    -- transmitter
-    --
-    entity_name = prefix .. "transmitter-t" .. tostring(tier)
-    data:extend({ {
-        type = "item",
-        name = entity_name,
-        icon = "__transport-cables__/sprites/icons/transmitter-t" .. tostring(tier) .. ".png",
-        icon_size = 64,
-        icon_mipmaps = 4,
-        place_result = entity_name,
-        group = "logistics",
-        subgroup = "transport-cables",
-        order = "d-t" .. tostring(tier),
-        stack_size = 50
-    } })
-
-    --
     -- receiver
     --
     entity_name = prefix .. "receiver-t" .. tostring(tier)
@@ -68,6 +51,23 @@ for tier = 1, tiers do
         group = "logistics",
         subgroup = "transport-cables",
         order = "e-t" .. tostring(tier),
+        stack_size = 50
+    } })
+
+    --
+    -- transmitter
+    --
+    entity_name = prefix .. "transmitter-t" .. tostring(tier)
+    data:extend({ {
+        type = "item",
+        name = entity_name,
+        icon = "__transport-cables__/sprites/icons/transmitter-t" .. tostring(tier) .. ".png",
+        icon_size = 64,
+        icon_mipmaps = 4,
+        place_result = entity_name,
+        group = "logistics",
+        subgroup = "transport-cables",
+        order = "d-t" .. tostring(tier),
         stack_size = 50
     } })
 
