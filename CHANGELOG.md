@@ -4,7 +4,9 @@
 * Fix a desync problem in multiplayer mode.
 * All transport cables entities can be upgraded via the upgrade planner.
 * Node connects to neighboring nodes.
-* No lamps turn on anymore.
+* The collision box of a node is smaller.
+* No (hidden) lamps turn on anymore.
+* How (curved) cables connect to neighboring (curved) cables is improved.
 
 ## v0.1.2
 * Rotating cables and underground cables disconnects them from old neighbors and connects them to new neighbors

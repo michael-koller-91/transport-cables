@@ -218,6 +218,10 @@ local cable_connect_to_neighbors = function(entity, tier)
                 if neighbor.belt_shape ~= "straight" and entity.direction ~= util.oppositedirection(neighbor.direction) then
                     connect_lamps(entity, neighbor, tier)
                 end
+                -- the entity is a curved cable and the neighbor is not facing in the opposite direction
+                if entity.belt_shape ~= "straight" and entity.direction ~= util.oppositedirection(neighbor.direction) then
+                    connect_lamps(entity, neighbor, tier)
+                end
             elseif neighbor.name == names[tier].underground_cable then
                 if entity.direction == neighbor.direction then
                     connect_lamps(entity, neighbor, tier)

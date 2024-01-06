@@ -243,6 +243,7 @@ for tier = 1, tiers do
     if tier < tiers then
         entity.next_upgrade = prefix .. "node-t" .. tostring(tier + 1)
     end
+    entity.collision_box = { { -0.10, -0.10 }, { 0.10, 0.10 } }
     entity.icon = "__transport-cables__/sprites/icons/node-t" .. tostring(tier) .. ".png"
     entity.icon_size = 64
     entity.icon_mipmaps = 4
