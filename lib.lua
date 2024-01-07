@@ -339,8 +339,7 @@ local create_gui = function(player, tier)
     local button = frame.add({
         type = "choose-elem-button",
         name = names[tier].gui_filter,
-        elem_type = "entity",
-        elem_filters = { { filter = "flag", flag = "placeable-neutral" } },
+        elem_type = "item",
         tooltip = { "transport-cables.button-tooltip" }
     })
     local filter = get_rx_filter(player.opened, tier)
@@ -823,7 +822,7 @@ local keys_sorted_by_value = function(t)
         table.insert(keys, key)
     end
 
-    table.sort(keys)
+    table.sort(keys) -- ascending order
 
     return keys
 end
@@ -839,158 +838,133 @@ local on_tick = function(event)
 end
 
 ---------------------------------------------------------------------------
-local count           -- counts items
-local e_cont          -- a receiver container entity
-local e_prov          -- a transmitter entity
-local inve_tx         -- unit number -> number of items in a transmitter
-local inve_rx         -- unit number -> number of items that can be inserted into a receiver
-local inventory       -- an entity's inventory
-local keys_prov       -- transmitter inventory keys
-local keys_requ       -- receiver inventory keys
-local n_empty_inve_rx -- total number of empty slots in receivers
-local n               -- an element of `inve_tx`
-local n_inve_tx       -- total number of items in transmitters
-local n_items_per_tx  -- the average number of items to be moved per transmitter
-local n_items_per_rx  -- the average number of items to be moved per receiver
-local n_item_inse     -- the number of items that has already been inserted into receivers
-local n_item_remo     -- the number of items that has already been removed from transmitters
-local n_item_rema     -- the number of items that still needs to be removed from transmitters
-local n_item_to_move  -- the number of items that needs to be moved in this network
-local n_tx            -- the number of transmitters with the current network id
-local n_tx_visi       -- the number of transmitters from which items have already been removed
-local n_rx            -- the number of receivers with the current network id
-local n_rx_visi       -- the number of receivers into which items have already been inserted
-local transmitter_un_array
-local receiver_un_array
-local filter
-local unit_number
+local get_inventory = function(entity)
+    return entity.get_inventory(defines.inventory.item_main)
+end
+
+local get_item_count = function(entity, item)
+    return get_inventory(entity).get_item_count(item)
+end
+
+local count                       -- counts items
+local count_tx                    -- unit number -> number of items in a transmitter
+local tx_un_array_sorted_by_count -- transmitter inventory keys
+local n_count_tx                  -- total number of items in transmitters
+local n_items_inserted            -- the number of items that has already been inserted into receivers
+local n_items_insertable          -- the number of items that can be inserted into the given receiver's inventory
+local n_items_per_tx              -- the average number of items to be moved per transmitter
+local n_items_per_rx              -- the average number of items to be moved per receiver
+local n_items_removable           -- the number of items that can be removed from the given transmitter's inventory
+local n_items_to_move             -- the number of items that needs to be moved in this network
+local n_items_to_remove           -- the number of items that need to be removed from transmitters
+local n_tx                        -- the number of transmitters with the current network id
+local n_rx                        -- the number of receivers with the current network id
+local rx_un_array                 -- array of all receivers with the current network id
+local tx_un_array                 -- array of all transmitters with the current network id
+local rx_inventory                -- a receiver's inventory
+local tx_inventory                -- a transmitter's inventory
+local filter                      -- the kind of item that should be moved in the current network
+local i
+local item_dividend
+local item_remainder
+local n_insert
+local n_remove
 local on_nth_tick = function(event)
     -- move items between transmitter-receiver-pairs
     for tier = 1, tiers do
         if item_transport_active[tier] then
             for _, net_id in ipairs(active_nets[tier]) do
                 -- all transmitter unit numbers with this network_id
-                transmitter_un_array = tx[tier].net_id_and_un[net_id]
-                n_tx = #transmitter_un_array
+                tx_un_array = tx[tier].net_id_and_un[net_id]
+                n_tx = #tx_un_array
 
                 -- all receiver unit numbers with this network_id
-                receiver_un_array = rx[tier].net_id_and_un[net_id]
-                n_rx = #receiver_un_array
+                rx_un_array = rx[tier].net_id_and_un[net_id]
+                n_rx = #rx_un_array
 
                 -- the filter of all receivers with this network_id
-                unit_number = receiver_un_array[1]
-                filter = rx[tier].filter[unit_number]
+                filter = rx[tier].filter[rx_un_array[1]]
 
                 if filter then
-                    -- count items in transmitters' inventories
-                    n_inve_tx = 0
-                    inve_tx = {}
-                    for _, un in ipairs(transmitter_un_array) do
-                        e_prov = tx[tier].un[un]
-                        count = e_prov.get_inventory(defines.inventory.item_main).get_item_count(filter)
-                        inve_tx[un] = count
-                        n_inve_tx = n_inve_tx + count
+                    -- Count the total number of items in all transmitters' inventories.
+                    n_count_tx = 0
+                    count_tx = {}
+                    for _, un in ipairs(tx_un_array) do
+                        count = get_item_count(tx[tier].un[un], filter)
+                        count_tx[un] = count
+                        n_count_tx = n_count_tx + count
                     end
-                    keys_prov = keys_sorted_by_value(inve_tx)
+                    -- Sort the transmitters ascendingly by their item count.
+                    tx_un_array_sorted_by_count = keys_sorted_by_value(count_tx)
 
-                    -- count how many items fit in receivers' inventories
-                    n_empty_inve_rx = 0
-                    inve_rx = {}
-                    for _, un in ipairs(receiver_un_array) do
-                        e_cont = rx[tier].un[un]
-                        count = e_cont.get_inventory(defines.inventory.item_main).get_insertable_count(filter)
-                        inve_rx[un] = count
-                        n_empty_inve_rx = n_empty_inve_rx + count
-                    end
-                    keys_requ = keys_sorted_by_value(inve_rx)
+                    -- Try to move `rate` many items unless there are not enough items in all transmitters combined.
+                    n_items_to_move = math.min(mod_state[tier].rate, n_count_tx)
 
-                    n_item_to_move = math.min(mod_state[tier].rate, n_inve_tx, n_empty_inve_rx)
-                    if n_item_to_move > 0 then
-                        n_items_per_tx = math.floor(n_item_to_move / n_tx)
-                        n_items_per_rx = math.floor(n_item_to_move / n_rx)
+                    if n_items_to_move > 0 then
+                        -- On average, insert this many items into every receiver.
+                        n_items_per_rx = n_items_to_move / n_rx
 
-                        -- remove items from transmitters
-                        n_tx_visi = 0
-                        n_item_remo = 0
-                        for _, k_un in ipairs(keys_prov) do
-                            n_tx_visi = n_tx_visi + 1
-                            n = inve_tx[k_un]
-                            e_prov = tx[tier].un[k_un]
-                            inventory = e_prov.get_inventory(defines.inventory.item_main)
-                            if n >= n_items_per_tx then
-                                -- if there are enough items to remove, remove them
-                                if n_items_per_tx > 0 then
-                                    inventory.remove({ name = filter, count = n_items_per_tx })
-                                end
-                                n_item_remo = n_item_remo + n_items_per_tx
+                        item_dividend = math.floor(n_items_per_rx)
+                        item_remainder = n_items_to_move % n_rx
+                        i = -1
+
+                        n_items_inserted = 0
+                        -- Try to give every receiver the necessary amount of items ...
+                        for _, un in ipairs(rx_un_array) do
+                            i = i + 1
+                            if i < item_remainder then
+                                n_insert = item_dividend + 1
                             else
-                                -- otherwise remove as much as possible and update the remaining
-                                -- number of items that need to be removed
+                                n_insert = item_dividend
+                            end
 
-                                if n_tx == n_tx_visi then
-                                    -- this is the last transmitter
-                                    -- try to remove as much as possible to achieve the move goal
-                                    n_item_rema = n_item_to_move - n_item_remo
-                                    if n >= n_item_rema then
-                                        if n_item_rema then
-                                            inventory.remove({ name = filter, count = n_item_rema })
-                                        end
-                                    else
-                                        if n > 0 then
-                                            inventory.remove({ name = filter, count = n })
-                                        end
-                                    end
-                                else
-                                    -- Remove all items
-                                    if n > 0 then
-                                        inventory.remove({ name = filter, count = n })
-                                    end
-                                    n_item_remo = n_item_remo + n
-                                    -- and update the number of items that need to be removed from the remaining transmitters.
-                                    n_items_per_tx = math.floor((n_item_to_move - n_item_remo) / (n_tx - n_tx_visi))
+                            rx_inventory = get_inventory(rx[tier].un[un])
+                            n_items_insertable = rx_inventory.get_insertable_count(filter)
+                            if n_items_insertable >= n_insert then
+                                -- ... if enough items can be inserted ...
+                                if n_insert > 0 then
+                                    rx_inventory.insert({ name = filter, count = n_insert })
+                                    n_items_inserted = n_items_inserted + n_insert
+                                end
+                            else
+                                -- ... and otherwise insert as many as possible.
+                                if n_items_insertable > 0 then
+                                    rx_inventory.insert({ name = filter, count = n_items_insertable })
+                                    n_items_inserted = n_items_inserted + n_items_insertable
                                 end
                             end
                         end
 
-                        -- insert items into receivers
-                        n_rx_visi = 0
-                        n_item_inse = 0
-                        for _, k_un in ipairs(keys_requ) do
-                            n_rx_visi = n_rx_visi + 1
-                            n = inve_rx[k_un]
-                            e_cont = rx[tier].un[k_un]
-                            inventory = e_cont.get_inventory(defines.inventory.item_main)
-                            if n >= n_items_per_rx then
-                                -- if enough items can be inserted, insert them
-                                if n_items_per_rx > 0 then
-                                    inventory.insert({ name = filter, count = n_items_per_rx })
-                                end
-                                n_item_inse = n_item_inse + n_items_per_rx
-                            else
-                                -- otherwise insert as much as possible and update the remaining
-                                -- number of items that need to be inserted
+                        -- On average, remove this many items from every transmitter.
+                        n_items_per_tx = n_items_inserted / n_tx
 
-                                if n_rx == n_rx_visi then
-                                    -- this is the last receiver
-                                    -- try to insert as much as possible to achieve the move goal
-                                    n_item_rema = n_item_to_move - n_item_inse
-                                    if n >= n_item_rema then
-                                        if n_item_rema > 0 then
-                                            inventory.insert({ name = filter, count = n_item_rema })
-                                        end
-                                    else
-                                        if n > 0 then
-                                            inventory.insert({ name = filter, count = n })
-                                        end
-                                    end
-                                else
-                                    -- Fill receiver
-                                    if n > 0 then
-                                        inventory.insert({ name = filter, count = n })
-                                    end
-                                    n_item_inse = n_item_inse + n
-                                    -- and update the number of items that need to be inserted into the remaining receivers.
-                                    n_items_per_rx = math.floor((n_item_to_move - n_item_inse) / (n_rx - n_rx_visi))
+                        item_dividend = math.floor(n_items_per_tx)
+                        item_remainder = n_items_inserted % n_tx
+                        i = -1
+
+                        n_items_to_remove = n_items_inserted
+                        -- Remove as many items as have been inserted from the transmitters ...
+                        for _, un in ipairs(tx_un_array_sorted_by_count) do
+                            i = i + 1
+                            if i < item_remainder then
+                                n_remove = item_dividend + 1
+                            else
+                                n_remove = item_dividend
+                            end
+
+                            tx_inventory = get_inventory(tx[tier].un[un])
+                            n_items_removable = tx_inventory.get_item_count(filter)
+                            if n_items_removable >= n_remove then
+                                -- ... if enough items can be removed ...
+                                if n_remove > 0 then
+                                    tx_inventory.remove({ name = filter, count = n_remove })
+                                    n_items_to_remove = n_items_to_remove - n_remove
+                                end
+                            else
+                                -- ... and otherwise remove as many as possible.
+                                if n_items_removable > 0 then
+                                    tx_inventory.remove({ name = filter, count = n_items_removable })
+                                    n_items_to_remove = n_items_to_remove - n_items_removable
                                 end
                             end
                         end

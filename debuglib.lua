@@ -12,7 +12,7 @@ local commands = {
 }
 
 local flags = {
-    add_debug_commands = false,
+    add_debug_commands = true,
     print_connect_lamps = true,
     print_on_research_finished = true,
     print_set_rx_filter = true,

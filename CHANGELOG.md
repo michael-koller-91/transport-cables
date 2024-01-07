@@ -3,7 +3,7 @@
 * Receivers are now containers with a custom GUI.
 * Fix a desync problem in multiplayer mode.
 * All transport cables entities can be upgraded via the upgrade planner.
-* Nodes connects to neighboring nodes.
+* Nodes connect to neighboring nodes.
 * The collision box of a node is smaller.
 * No (hidden) lamps turn on anymore.
 * How (curved) cables connect to neighboring (curved) cables is improved.
