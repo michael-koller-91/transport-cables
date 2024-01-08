@@ -40,7 +40,7 @@ end
 
 ---------------------------------------------------------------------------
 -- Move `distance` from `position` in `direction`, yielding a position vector.
-local moveposition = function(position, direction, distance)
+local function moveposition(position, direction, distance)
     distance = distance or 1
 
     if direction == defines.direction.north then
@@ -74,12 +74,12 @@ end
 
 ---------------------------------------------------------------------------
 -- get the lamp associated with `entity`
-local get_lamp = function(entity, tier)
+local function get_lamp(entity, tier)
     return lamps[tier][entity.unit_number]
 end
 
 -- connect the two lamps associated with `source_entity` and `target_entity`
-local connect_lamps = function(source_entity, target_entity, tier)
+local function connect_lamps(source_entity, target_entity, tier)
     if source_entity.type ~= "entity-ghost" and target_entity.type ~= "entity-ghost" then
         get_lamp(source_entity, tier).connect_neighbour {
             wire = wire,
@@ -93,7 +93,7 @@ local connect_lamps = function(source_entity, target_entity, tier)
 end
 
 -- create a lamp and associated it with `entity`
-local create_lamp = function(entity, tier)
+local function create_lamp(entity, tier)
     lamps[tier][entity.unit_number] = game.surfaces[1].create_entity {
         name = names[tier].lamp,
         position = entity.position,
@@ -102,7 +102,7 @@ local create_lamp = function(entity, tier)
 end
 
 -- disconnect the circuit connections associated with `entity`'s lamp
-local disconnect_lamps = function(entity, tier)
+local function disconnect_lamps(entity, tier)
     get_lamp(entity, tier).disconnect_neighbour(wire)
 
     if dbg.flags.print_connect_lamps then
@@ -111,7 +111,7 @@ local disconnect_lamps = function(entity, tier)
 end
 
 -- destroy the lamp associated with `entity`
-local destroy_lamp = function(entity, tier)
+local function destroy_lamp(entity, tier)
     local destroyed = lamps[tier][entity.unit_number].destroy()
     lamps[tier][entity.unit_number] = nil
     return destroyed
@@ -119,12 +119,12 @@ end
 
 ---------------------------------------------------------------------------
 -- Get what the receiver entity `receiver` wants to receive.
-local get_rx_filter = function(receiver, tier)
+local function get_rx_filter(receiver, tier)
     return rx[tier].filter[receiver.unit_number]
 end
 
 -- Set what the receiver entity `receiver` wants to receive.
-local set_rx_filter = function(receiver, elem_value, tier)
+local function set_rx_filter(receiver, elem_value, tier)
     rx[tier].filter[receiver.unit_number] = elem_value
 
     if dbg.print_set_rx_filter then
@@ -135,7 +135,7 @@ end
 ---------------------------------------------------------------------------
 -- All receivers with the same network_id as `receiver` get the filter of
 -- `receiver`.
-local set_rx_filter_in_same_network_as = function(receiver, tier)
+local function set_rx_filter_in_same_network_as(receiver, tier)
     local net_id = rx[tier].net_id[receiver.unit_number]
     if net_id and net_id > 0 then
         if rx[tier].net_id_and_un[net_id] then
@@ -150,7 +150,7 @@ end
 ---------------------------------------------------------------------------
 -- Store the circuit network id of all transmitters and receivers. Also, find
 -- transmitters and receivers with the same circuit network id.
-local update_net_id = function(tier)
+local function update_net_id(tier)
     local circuit_network
     local net_id
 
@@ -159,6 +159,7 @@ local update_net_id = function(tier)
     active_nets[tier] = {}
     tx[tier].net_id_and_un = {}
     rx[tier].net_id_and_un = {}
+    rx[tier].net_id_and_priority = {}
 
     -- store network_id of all transmitters
     for unit_number, entity in pairs(tx[tier].un) do
@@ -187,6 +188,10 @@ local update_net_id = function(tier)
             -- collect all receivers with the same network_id
             rx[tier].net_id_and_un[net_id] = rx[tier].net_id_and_un[net_id] or {}
             table.insert(rx[tier].net_id_and_un[net_id], unit_number)
+
+            -- reset the priority
+            rx[tier].net_id_and_priority[net_id] = rx[tier].net_id_and_priority[net_id] or {}
+            rx[tier].net_id_and_priority[net_id][unit_number] = 0
         end
     end
 
@@ -206,7 +211,7 @@ end
 
 ---------------------------------------------------------------------------
 -- Connect a cable to suitable neighbors.
-local cable_connect_to_neighbors = function(entity, tier)
+local function cable_connect_to_neighbors(entity, tier)
     -- connect to neighboring cables
     for _, val in pairs(entity.belt_neighbours) do
         for _, neighbor in ipairs(val) do
@@ -264,7 +269,7 @@ end
 
 ---------------------------------------------------------------------------
 -- Connect an underground cable to suitable neighbors.
-local underground_cable_connect_to_neighbors = function(entity, tier)
+local function underground_cable_connect_to_neighbors(entity, tier)
     -- connect to neighboring underground_cable
     if entity.neighbours then
         connect_lamps(entity, entity.neighbours, tier)
@@ -325,7 +330,7 @@ end
 
 ---------------------------------------------------------------------------
 -- Create a choose-element-button next to the container gui.
-local create_gui = function(player, tier)
+local function create_gui(player, tier)
     local anchor = {
         gui = defines.relative_gui_type.container_gui,
         position = defines.relative_gui_position.right
@@ -346,10 +351,14 @@ local create_gui = function(player, tier)
     if filter then
         button.elem_value = filter
     end
+    frame.add({
+        type = "label",
+        caption = tostring(mod_state[tier].rate) .. " / s"
+    })
 end
 
 ---------------------------------------------------------------------------
-local destroy_gui = function(player, tier)
+local function destroy_gui(player, tier)
     if not player then
         return
     end
@@ -364,7 +373,7 @@ local destroy_gui = function(player, tier)
 end
 
 ---------------------------------------------------------------------------
-local on_built_entity = function(event)
+local function on_built_entity(event)
     local entity = event.created_entity
 
     if not entity or not entity.valid then
@@ -527,7 +536,7 @@ for tier = 1, tiers do
 end
 
 ---------------------------------------------------------------------------
-local on_console_command = function(command)
+local function on_console_command(command)
     if command.name == dbg.commands.print_off then
         dbg.flags.print_connect_lamps = false
         dbg.flags.print_on_research_finished = false
@@ -563,7 +572,7 @@ local on_console_command = function(command)
 end
 
 ---------------------------------------------------------------------------
-local on_entity_settings_pasted = function(event)
+local function on_entity_settings_pasted(event)
     for tier = 1, tiers do
         if event.source.name == names[tier].receiver and event.destination.name == names[tier].receiver then
             set_rx_filter(event.destination, get_rx_filter(event.source, tier), tier)
@@ -574,7 +583,7 @@ local on_entity_settings_pasted = function(event)
 end
 
 ---------------------------------------------------------------------------
-local on_gui_closed = function(event)
+local function on_gui_closed(event)
     local entity = event.entity
 
     if not entity or not entity.valid then
@@ -591,7 +600,7 @@ local on_gui_closed = function(event)
 end
 
 ---------------------------------------------------------------------------
-local on_gui_elem_changed = function(event)
+local function on_gui_elem_changed(event)
     local element = event.element
 
     if not element then
@@ -609,7 +618,7 @@ local on_gui_elem_changed = function(event)
 end
 
 ---------------------------------------------------------------------------
-local on_gui_opened = function(event)
+local function on_gui_opened(event)
     local entity = event.entity
 
     if not entity or not entity.valid then
@@ -625,7 +634,7 @@ local on_gui_opened = function(event)
 end
 
 ---------------------------------------------------------------------------
-local on_mined_entity = function(event)
+local function on_mined_entity(event)
     local entity = event.entity
 
     if not entity or not entity.valid then
@@ -703,35 +712,15 @@ for tier = 1, tiers do
 end
 
 ---------------------------------------------------------------------------
--- Initialize the GUI elements.
-local on_player_created = function(event)
-    local player = game.players[event.player_index]
-
+local function on_player_created(event)
     for tier = 1, tiers do
         net_id_update_scheduled[tier] = true
-    end
-
-    if mod_state[1].rate > 0 then
-        player.gui.top.add { type = "label", name = "t1", caption = "Tier 1: " .. tostring(mod_state[1].rate) .. " items / s." }
-    else
-        player.gui.top.add { type = "label", name = "t1", caption = "" }
-    end
-    if mod_state[2].rate > 30 then
-        player.gui.top.add { type = "label", name = "t2", caption = "| Tier 2: " .. tostring(mod_state[2].rate) .. " items / s." }
-    else
-        player.gui.top.add { type = "label", name = "t2", caption = "" }
-    end
-    if mod_state[3].rate > 75 then
-        player.gui.top.add { type = "label", name = "t3", caption = "| Tier 3: " .. tostring(mod_state[3].rate) .. " items / s." }
-    else
-        player.gui.top.add { type = "label", name = "t3", caption = "" }
     end
 end
 
 ---------------------------------------------------------------------------
--- Whenever a technology is researched, increment the item rate and display the
--- updated value.
-local on_research_finished = function(event)
+-- Whenever a technology is researched, increment the item rate.
+local function on_research_finished(event)
     local research = event.research
 
     if dbg.flags.print_on_research_finished then
@@ -760,32 +749,10 @@ local on_research_finished = function(event)
     then
         mod_state[3].rate = math.ceil(mod_state[3].rate * rate_increment_factor)
     end
-
-    for _, player in pairs(game.players) do
-        if research.name == prefix .. "t1"
-            or research.name == prefix .. "t1-speed"
-        then
-            player.gui.top["t1"].caption = "Tier 1: " .. tostring(mod_state[1].rate) .. " items / s."
-        end
-        if research.name == prefix .. "t2"
-            or research.name == prefix .. "t2-speed1"
-            or research.name == prefix .. "t2-speed2"
-        then
-            player.gui.top["t2"].caption = "| Tier 2: " .. tostring(mod_state[2].rate) .. " items / s."
-        end
-        if research.name == prefix .. "t3"
-            or research.name == prefix .. "t3-speed1"
-            or research.name == prefix .. "t3-speed2"
-            or research.name == prefix .. "t3-speed3"
-            or research.name == prefix .. "t3-infinite-speed"
-        then
-            player.gui.top["t3"].caption = "| Tier 3: " .. tostring(mod_state[3].rate) .. " items / s."
-        end
-    end
 end
 
 ---------------------------------------------------------------------------
-local on_rotated_entity = function(event)
+local function on_rotated_entity(event)
     local entity = event.entity
 
     if not entity or not entity.valid then
@@ -816,7 +783,7 @@ local on_rotated_entity = function(event)
 end
 
 ---------------------------------------------------------------------------
-local keys_sorted_by_value = function(t)
+local function keys_sorted_by_value(t)
     local keys = {}
     for key in pairs(t) do
         table.insert(keys, key)
@@ -828,7 +795,7 @@ local keys_sorted_by_value = function(t)
 end
 
 ---------------------------------------------------------------------------
-local on_tick = function(event)
+local function on_tick(event)
     for tier = 1, tiers do
         if net_id_update_scheduled[tier] then
             net_id_update_scheduled[tier] = false
@@ -838,12 +805,35 @@ local on_tick = function(event)
 end
 
 ---------------------------------------------------------------------------
-local get_inventory = function(entity)
+local function get_inventory(entity)
     return entity.get_inventory(defines.inventory.item_main)
 end
 
-local get_item_count = function(entity, item)
+local function get_item_count(entity, item)
     return get_inventory(entity).get_item_count(item)
+end
+
+-- Iterate over the key-value-pairs of the table `t` such that the values
+-- appear in descending order.
+local function pairs_by_value(t)
+    local a = {}
+    for n in pairs(t) do
+        table.insert(a, n)
+    end
+    table.sort(a, function(k1, k2)
+        return t[k1] > t[k2]
+    end)
+    local i = 0
+    local function iter()
+        i = i + 1
+        if a[i] == nil then
+            return nil
+        else
+            -- dbg.print(string.format("un = %4i, priority = %2.5f", a[i], t[a[i]]))
+            return a[i], t[a[i]]
+        end
+    end
+    return iter
 end
 
 local count                       -- counts items
@@ -859,8 +849,9 @@ local n_items_to_move             -- the number of items that needs to be moved 
 local n_items_to_remove           -- the number of items that need to be removed from transmitters
 local n_tx                        -- the number of transmitters with the current network id
 local n_rx                        -- the number of receivers with the current network id
-local rx_un_array                 -- array of all receivers with the current network id
-local tx_un_array                 -- array of all transmitters with the current network id
+local rx_priority_array           -- array of all receiver priorities with the current network id
+local rx_un_array                 -- array of all receiver unit numbers with the current network id
+local tx_un_array                 -- array of all transmitter unit numbers with the current network id
 local rx_inventory                -- a receiver's inventory
 local tx_inventory                -- a transmitter's inventory
 local filter                      -- the kind of item that should be moved in the current network
@@ -869,7 +860,7 @@ local item_dividend
 local item_remainder
 local n_insert
 local n_remove
-local on_nth_tick = function(event)
+local function on_nth_tick(event)
     -- move items between transmitter-receiver-pairs
     for tier = 1, tiers do
         if item_transport_active[tier] then
@@ -882,89 +873,96 @@ local on_nth_tick = function(event)
                 rx_un_array = rx[tier].net_id_and_un[net_id]
                 n_rx = #rx_un_array
 
-                -- the filter of all receivers with this network_id
-                filter = rx[tier].filter[rx_un_array[1]]
+                -- all receiver priorities with this network_id
+                rx_priority_array = rx[tier].net_id_and_priority[net_id]
 
-                if filter then
-                    -- Count the total number of items in all transmitters' inventories.
-                    n_count_tx = 0
-                    count_tx = {}
-                    for _, un in ipairs(tx_un_array) do
-                        count = get_item_count(tx[tier].un[un], filter)
-                        count_tx[un] = count
-                        n_count_tx = n_count_tx + count
-                    end
-                    -- Sort the transmitters ascendingly by their item count.
-                    tx_un_array_sorted_by_count = keys_sorted_by_value(count_tx)
+                if rx_priority_array then
+                    -- the filter of all receivers with this network_id
+                    filter = rx[tier].filter[rx_un_array[1]]
 
-                    -- Try to move `rate` many items unless there are not enough items in all transmitters combined.
-                    n_items_to_move = math.min(mod_state[tier].rate, n_count_tx)
-
-                    if n_items_to_move > 0 then
-                        -- On average, insert this many items into every receiver.
-                        n_items_per_rx = n_items_to_move / n_rx
-
-                        item_dividend = math.floor(n_items_per_rx)
-                        item_remainder = n_items_to_move % n_rx
-                        i = -1
-
-                        n_items_inserted = 0
-                        -- Try to give every receiver the necessary amount of items ...
-                        for _, un in ipairs(rx_un_array) do
-                            i = i + 1
-                            if i < item_remainder then
-                                n_insert = item_dividend + 1
-                            else
-                                n_insert = item_dividend
-                            end
-
-                            rx_inventory = get_inventory(rx[tier].un[un])
-                            n_items_insertable = rx_inventory.get_insertable_count(filter)
-                            if n_items_insertable >= n_insert then
-                                -- ... if enough items can be inserted ...
-                                if n_insert > 0 then
-                                    rx_inventory.insert({ name = filter, count = n_insert })
-                                    n_items_inserted = n_items_inserted + n_insert
-                                end
-                            else
-                                -- ... and otherwise insert as many as possible.
-                                if n_items_insertable > 0 then
-                                    rx_inventory.insert({ name = filter, count = n_items_insertable })
-                                    n_items_inserted = n_items_inserted + n_items_insertable
-                                end
-                            end
+                    if filter then
+                        -- Count the total number of items in all transmitters' inventories.
+                        n_count_tx = 0
+                        count_tx = {}
+                        for _, un in ipairs(tx_un_array) do
+                            count = get_item_count(tx[tier].un[un], filter)
+                            count_tx[un] = count
+                            n_count_tx = n_count_tx + count
                         end
+                        -- Sort the transmitters ascendingly by their item count.
+                        tx_un_array_sorted_by_count = keys_sorted_by_value(count_tx)
 
-                        -- On average, remove this many items from every transmitter.
-                        n_items_per_tx = n_items_inserted / n_tx
+                        -- Try to move `rate` many items unless there are not enough items in all transmitters combined.
+                        n_items_to_move = math.min(mod_state[tier].rate, n_count_tx)
 
-                        item_dividend = math.floor(n_items_per_tx)
-                        item_remainder = n_items_inserted % n_tx
-                        i = -1
+                        if n_items_to_move > 0 then
+                            -- On average, insert this many items into every receiver.
+                            n_items_per_rx = n_items_to_move / n_rx
 
-                        n_items_to_remove = n_items_inserted
-                        -- Remove as many items as have been inserted from the transmitters ...
-                        for _, un in ipairs(tx_un_array_sorted_by_count) do
-                            i = i + 1
-                            if i < item_remainder then
-                                n_remove = item_dividend + 1
-                            else
-                                n_remove = item_dividend
+                            item_dividend = math.floor(n_items_per_rx)
+                            item_remainder = n_items_to_move % n_rx
+                            i = -1
+
+                            n_items_inserted = 0
+                            -- Try to give every receiver the necessary amount of items ...
+                            for un, _ in pairs_by_value(rx_priority_array) do
+                                i = i + 1
+                                if i < item_remainder then
+                                    n_insert = item_dividend + 1
+                                else
+                                    n_insert = item_dividend
+                                end
+
+                                rx_inventory = get_inventory(rx[tier].un[un])
+                                n_items_insertable = rx_inventory.get_insertable_count(filter)
+                                if n_items_insertable >= n_insert then
+                                    -- ... if enough items can be inserted ...
+                                    if n_insert > 0 then
+                                        rx_inventory.insert({ name = filter, count = n_insert })
+                                        n_items_inserted = n_items_inserted + n_insert
+                                    end
+                                else
+                                    -- ... and otherwise insert as many as possible.
+                                    if n_items_insertable > 0 then
+                                        rx_inventory.insert({ name = filter, count = n_items_insertable })
+                                        n_items_inserted = n_items_inserted + n_items_insertable
+                                    end
+                                end
+                                -- update the priority
+                                rx_priority_array[un] = rx_priority_array[un] - n_insert + n_items_per_rx
                             end
 
-                            tx_inventory = get_inventory(tx[tier].un[un])
-                            n_items_removable = tx_inventory.get_item_count(filter)
-                            if n_items_removable >= n_remove then
-                                -- ... if enough items can be removed ...
-                                if n_remove > 0 then
-                                    tx_inventory.remove({ name = filter, count = n_remove })
-                                    n_items_to_remove = n_items_to_remove - n_remove
+                            -- On average, remove this many items from every transmitter.
+                            n_items_per_tx = n_items_inserted / n_tx
+
+                            item_dividend = math.floor(n_items_per_tx)
+                            item_remainder = n_items_inserted % n_tx
+                            i = -1
+
+                            n_items_to_remove = n_items_inserted
+                            -- Remove as many items as have been inserted from the transmitters ...
+                            for _, un in ipairs(tx_un_array_sorted_by_count) do
+                                i = i + 1
+                                if i < item_remainder then
+                                    n_remove = item_dividend + 1
+                                else
+                                    n_remove = item_dividend
                                 end
-                            else
-                                -- ... and otherwise remove as many as possible.
-                                if n_items_removable > 0 then
-                                    tx_inventory.remove({ name = filter, count = n_items_removable })
-                                    n_items_to_remove = n_items_to_remove - n_items_removable
+
+                                tx_inventory = get_inventory(tx[tier].un[un])
+                                n_items_removable = tx_inventory.get_item_count(filter)
+                                if n_items_removable >= n_remove then
+                                    -- ... if enough items can be removed ...
+                                    if n_remove > 0 then
+                                        tx_inventory.remove({ name = filter, count = n_remove })
+                                        n_items_to_remove = n_items_to_remove - n_remove
+                                    end
+                                else
+                                    -- ... and otherwise remove as many as possible.
+                                    if n_items_removable > 0 then
+                                        tx_inventory.remove({ name = filter, count = n_items_removable })
+                                        n_items_to_remove = n_items_to_remove - n_items_removable
+                                    end
                                 end
                             end
                         end
@@ -976,7 +974,7 @@ local on_nth_tick = function(event)
 end
 
 ---------------------------------------------------------------------------
-local initialize = function(global)
+local function initialize(global)
     active_nets = global.active_nets
     mod_state = global.mod_state
     net_id_update_scheduled = global.net_id_update_scheduled

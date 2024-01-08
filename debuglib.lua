@@ -20,7 +20,7 @@ local flags = {
     print_update_receiver_filters = true
 }
 
-local print_to_players = function(str)
+local function print_to_players(str)
     for _, player in pairs(game.players) do
         player.print(str)
     end

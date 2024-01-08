@@ -52,7 +52,7 @@ end
 -- helper functions
 --
 ---------------------------------------------------------------------------
-local get_belt_animation_set = function(tier)
+local function get_belt_animation_set(tier)
     return {
         animation_set = {
             filename = "__transport-cables__/sprites/entities/lr-cable-t" .. tostring(tier) .. ".png",
@@ -75,7 +75,7 @@ local get_belt_animation_set = function(tier)
 end
 
 ---------------------------------------------------------------------------
-local get_belt_frame_connector_template_frame_main = function(tier)
+local function get_belt_frame_connector_template_frame_main(tier)
     return {
         sheet =
         {
@@ -91,7 +91,7 @@ local get_belt_frame_connector_template_frame_main = function(tier)
         }
     }
 end
-local get_belt_frame_connector_template_back_patch = function(tier)
+local function get_belt_frame_connector_template_back_patch(tier)
     return {
         sheet =
         {
@@ -107,7 +107,7 @@ local get_belt_frame_connector_template_back_patch = function(tier)
         }
     }
 end
-local get_belt_frame_connector_template_frame_shadow = function(tier)
+local function get_belt_frame_connector_template_frame_shadow(tier)
     return
     {
         sheet =
@@ -126,7 +126,7 @@ local get_belt_frame_connector_template_frame_shadow = function(tier)
         }
     }
 end
-local get_belt_frame_connector_template_frame_main_scanner = function(tier)
+local function get_belt_frame_connector_template_frame_main_scanner(tier)
     return util.draw_as_glow
         {
             filename = "__transport-cables__/sprites/entities/hr-cable-circuit-frame-main-scanner-t" .. tostring(tier) .. ".png",
@@ -139,7 +139,7 @@ local get_belt_frame_connector_template_frame_main_scanner = function(tier)
             width = 22
         }
 end
-local get_transport_belt_connector_frame_sprites = function(tier)
+local function get_transport_belt_connector_frame_sprites(tier)
     return {
         frame_main = get_belt_frame_connector_template_frame_main(tier),
         frame_shadow = get_belt_frame_connector_template_frame_shadow(tier),

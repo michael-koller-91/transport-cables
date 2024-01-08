@@ -61,11 +61,12 @@ local transmitter_table = {
 
 -- What the receiver wants to receive is stored in `filter`.
 local receiver_table = {
-    net_id = {},        -- unit number -> circuit network id
-    net_id_and_un = {}, -- circuit network id -> (unit number -> entity)
-    filter = {},        -- unit number -> filter
-    text_id = {},       -- unit number -> text id
-    un = {}             -- unit number -> entity
+    net_id = {},              -- unit number -> circuit network id
+    net_id_and_un = {},       -- circuit network id -> array(unit number)
+    net_id_and_priority = {}, -- unit_number -> item distribution priority
+    filter = {},              -- unit number -> filter
+    text_id = {},             -- unit number -> text id
+    un = {}                   -- unit number -> entity
 }
 
 ---------------------------------------------------------------------------
@@ -87,7 +88,7 @@ script.on_init(function()
     end
 
     -- `rate` is by one `rate_increment` smaller than what the first research grants
-    global.mod_state[2].rate = 30
+    global.mod_state[2].rate = 4
     global.mod_state[3].rate = 75
 
     lib.initialize(global)
