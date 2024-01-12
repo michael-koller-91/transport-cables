@@ -5,7 +5,8 @@ local lib = require("lib")
 if dbg.flags.add_debug_commands then
     commands.add_command(dbg.commands.print_off, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_on, nil, lib.on_console_command)
-    commands.add_command(dbg.commands.print_connect_lamps, nil, lib.on_console_command)
+    commands.add_command(dbg.commands.print_connect_proxies, nil, lib.on_console_command)
+    commands.add_command(dbg.commands.print_gui, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_on_research_finished, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_set_rx_filter, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_update_receiver_filters, nil, lib.on_console_command)
@@ -72,7 +73,7 @@ local receiver_table = {
 ---------------------------------------------------------------------------
 script.on_init(function()
     global.active_nets = {}
-    global.lamps = {}
+    global.proxies = {}
     global.mod_state = {}
     global.net_id_update_scheduled = {}
     global.receiver = {}
@@ -80,7 +81,7 @@ script.on_init(function()
 
     for tier = 1, lib.tiers do
         global.active_nets[tier] = {}
-        global.lamps[tier] = {}
+        global.proxies[tier] = {}
         global.mod_state[tier] = { rate = 0 }
         global.net_id_update_scheduled[tier] = true
         global.receiver[tier] = table.deepcopy(receiver_table)

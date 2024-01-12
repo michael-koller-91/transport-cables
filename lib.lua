@@ -4,9 +4,9 @@ require("util")
 ---------------------------------------------------------------------------
 -- globals
 local active_nets = {}
-local lamps = {} -- all lamps
-local rx = {}    -- all receivers
-local tx = {}    -- all transmitters
+local proxies = {} -- all proxies
+local rx = {}      -- all receivers
+local tx = {}      -- all transmitters
 local mod_state = {}
 
 ---------------------------------------------------------------------------
@@ -20,6 +20,7 @@ local names = {}
 for tier = 1, tiers do
     names[tier] = {
         cable = prefix .. "cable-t" .. tostring(tier),
+        container = prefix .. "container-t" .. tostring(tier),
         lamp = prefix .. "lamp-t" .. tostring(tier),
         node = prefix .. "node-t" .. tostring(tier),
         receiver = prefix .. "receiver-t" .. tostring(tier),
@@ -73,48 +74,67 @@ local function moveposition(position, direction, distance)
 end
 
 ---------------------------------------------------------------------------
--- get the lamp associated with `entity`
-local function get_lamp(entity, tier)
-    return lamps[tier][entity.unit_number]
+-- Get the proxy associated with `entity`.
+local function get_proxy(entity, tier)
+    return proxies[tier][entity.unit_number]
 end
 
--- connect the two lamps associated with `source_entity` and `target_entity`
-local function connect_lamps(source_entity, target_entity, tier)
+-- Connect the two proxies associated with `source_entity` and `target_entity`.
+local function connect_proxies(source_entity, target_entity, tier)
     if source_entity.type ~= "entity-ghost" and target_entity.type ~= "entity-ghost" then
-        get_lamp(source_entity, tier).connect_neighbour {
+        get_proxy(source_entity, tier).connect_neighbour {
             wire = wire,
-            target_entity = get_lamp(target_entity, tier)
+            target_entity = get_proxy(target_entity, tier)
         }
 
-        if dbg.flags.print_connect_lamps then
-            dbg.print("connect_lamps(): " .. source_entity.name .. " < == > " .. target_entity.name)
+        if dbg.flags.print_connect_proxies then
+            dbg.print("connect_proxies(): " .. source_entity.name .. " < == > " .. target_entity.name)
         end
     end
 end
 
--- create a lamp and associated it with `entity`
+-- Destroy the proxy associated with `entity`.
+local function destroy_lamp(entity, tier)
+    if proxies[tier][entity.unit_number] then
+        local destroyed = proxies[tier][entity.unit_number].destroy()
+        proxies[tier][entity.unit_number] = nil
+        return destroyed
+    end
+end
+
+-- Disconnect the circuit connections associated with `entity`'s proxy.
+local function disconnect_proxies(entity, tier)
+    get_proxy(entity, tier).disconnect_neighbour(wire)
+
+    if dbg.flags.print_connect_proxies then
+        dbg.print("disconnect_proxies(): " .. entity.name)
+    end
+end
+
+---------------------------------------------------------------------------
+-- Create a container and associated it with the receiver entity `receiver`.
+local function create_container(receiver, tier)
+    local found = game.surfaces[1].find_entity(names[tier].container, receiver.position)
+    if found then
+        dbg.print("create_container(): found a container | proxies[tier][entity.unit_number] = " ..
+            tostring(proxies[tier][receiver.unit_number]))
+        return found
+    end
+    proxies[tier][receiver.unit_number] = game.surfaces[1].create_entity {
+        name = names[tier].container,
+        position = receiver.position,
+        force = "player"
+    }
+    return proxies[tier][receiver.unit_number]
+end
+
+-- Create a lamp and associated it with `entity`.
 local function create_lamp(entity, tier)
-    lamps[tier][entity.unit_number] = game.surfaces[1].create_entity {
+    proxies[tier][entity.unit_number] = game.surfaces[1].create_entity {
         name = names[tier].lamp,
         position = entity.position,
         force = "player"
     }
-end
-
--- disconnect the circuit connections associated with `entity`'s lamp
-local function disconnect_lamps(entity, tier)
-    get_lamp(entity, tier).disconnect_neighbour(wire)
-
-    if dbg.flags.print_connect_lamps then
-        dbg.print("disconnect_lamps(): " .. entity.name)
-    end
-end
-
--- destroy the lamp associated with `entity`
-local function destroy_lamp(entity, tier)
-    local destroyed = lamps[tier][entity.unit_number].destroy()
-    lamps[tier][entity.unit_number] = nil
-    return destroyed
 end
 
 ---------------------------------------------------------------------------
@@ -126,6 +146,8 @@ end
 -- Set what the receiver entity `receiver` wants to receive.
 local function set_rx_filter(receiver, elem_value, tier)
     rx[tier].filter[receiver.unit_number] = elem_value
+    local cb = get_proxy(receiver, tier).get_control_behavior()
+    cb.set_signal(1, { signal = { type = "item", name = elem_value }, count = 1 })
 
     if dbg.print_set_rx_filter then
         dbg.print("set_rx_filter(): " .. tostring(elem_value))
@@ -163,7 +185,7 @@ local function update_net_id(tier)
 
     -- store network_id of all transmitters
     for unit_number, entity in pairs(tx[tier].un) do
-        circuit_network = get_lamp(entity, tier).get_circuit_network(wire)
+        circuit_network = get_proxy(entity, tier).get_circuit_network(wire)
         if circuit_network then
             net_id = circuit_network.network_id
 
@@ -178,20 +200,24 @@ local function update_net_id(tier)
 
     -- store network_id of all receivers
     for unit_number, entity in pairs(rx[tier].un) do
-        circuit_network = get_lamp(entity, tier).get_circuit_network(wire)
-        if circuit_network then
-            net_id = circuit_network.network_id
+        local proxy = get_proxy(entity, tier)
+        if proxy then
+            circuit_network = proxy.get_circuit_network(wire)
+            -- circuit_network = get_proxy(entity, tier).get_circuit_network(wire)
+            if circuit_network then
+                net_id = circuit_network.network_id
 
-            rx[tier].net_id[unit_number] = net_id
-            rendering.set_text(rx[tier].text_id[unit_number], "ID: " .. tostring(net_id))
+                rx[tier].net_id[unit_number] = net_id
+                rendering.set_text(rx[tier].text_id[unit_number], "ID: " .. tostring(net_id))
 
-            -- collect all receivers with the same network_id
-            rx[tier].net_id_and_un[net_id] = rx[tier].net_id_and_un[net_id] or {}
-            table.insert(rx[tier].net_id_and_un[net_id], unit_number)
+                -- collect all receivers with the same network_id
+                rx[tier].net_id_and_un[net_id] = rx[tier].net_id_and_un[net_id] or {}
+                table.insert(rx[tier].net_id_and_un[net_id], unit_number)
 
-            -- reset the priority
-            rx[tier].net_id_and_priority[net_id] = rx[tier].net_id_and_priority[net_id] or {}
-            rx[tier].net_id_and_priority[net_id][unit_number] = 0
+                -- reset the priority
+                rx[tier].net_id_and_priority[net_id] = rx[tier].net_id_and_priority[net_id] or {}
+                rx[tier].net_id_and_priority[net_id][unit_number] = 0
+            end
         end
     end
 
@@ -217,22 +243,22 @@ local function cable_connect_to_neighbors(entity, tier)
         for _, neighbor in ipairs(val) do
             if neighbor.name == names[tier].cable then
                 if entity.direction == neighbor.direction then
-                    connect_lamps(entity, neighbor, tier)
+                    connect_proxies(entity, neighbor, tier)
                 end
                 -- the neighbor is a curved cable not facing in the opposite direction
                 if neighbor.belt_shape ~= "straight" and entity.direction ~= util.oppositedirection(neighbor.direction) then
-                    connect_lamps(entity, neighbor, tier)
+                    connect_proxies(entity, neighbor, tier)
                 end
                 -- the entity is a curved cable and the neighbor is not facing in the opposite direction
                 if entity.belt_shape ~= "straight" and entity.direction ~= util.oppositedirection(neighbor.direction) then
-                    connect_lamps(entity, neighbor, tier)
+                    connect_proxies(entity, neighbor, tier)
                 end
             elseif neighbor.name == names[tier].underground_cable then
                 if entity.direction == neighbor.direction then
-                    connect_lamps(entity, neighbor, tier)
+                    connect_proxies(entity, neighbor, tier)
                 end
                 if entity.belt_shape ~= "straight" and entity.direction ~= util.oppositedirection(neighbor.direction) then
-                    connect_lamps(entity, neighbor, tier)
+                    connect_proxies(entity, neighbor, tier)
                 end
             end
         end
@@ -242,28 +268,28 @@ local function cable_connect_to_neighbors(entity, tier)
     local position = moveposition(entity.position, entity.direction, 1)
     local receiver = game.surfaces[1].find_entity(names[tier].receiver, position)
     if receiver then
-        connect_lamps(entity, receiver, tier)
+        connect_proxies(entity, receiver, tier)
     end
 
     -- connect to transmitter south of cable
     position = moveposition(entity.position, entity.direction, -1)
     local transmitter = game.surfaces[1].find_entity(names[tier].transmitter, position)
     if transmitter then
-        connect_lamps(entity, transmitter, tier)
+        connect_proxies(entity, transmitter, tier)
     end
 
     -- connect to node north of cable
     position = moveposition(entity.position, entity.direction, 1)
     local entity_node = game.surfaces[1].find_entity(names[tier].node, position)
     if entity_node then
-        connect_lamps(entity, entity_node, tier)
+        connect_proxies(entity, entity_node, tier)
     end
 
     -- connect to node south of cable
     position = moveposition(entity.position, entity.direction, -1)
     entity_node = game.surfaces[1].find_entity(names[tier].node, position)
     if entity_node then
-        connect_lamps(entity, entity_node, tier)
+        connect_proxies(entity, entity_node, tier)
     end
 end
 
@@ -272,7 +298,7 @@ end
 local function underground_cable_connect_to_neighbors(entity, tier)
     -- connect to neighboring underground_cable
     if entity.neighbours then
-        connect_lamps(entity, entity.neighbours, tier)
+        connect_proxies(entity, entity.neighbours, tier)
     end
 
     -- connect to underground_cable north of underground_cable if it is facing in the same direction
@@ -280,7 +306,7 @@ local function underground_cable_connect_to_neighbors(entity, tier)
     local entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
     if entity_cable then
         if entity_cable.direction == entity.direction then
-            connect_lamps(entity, entity_cable, tier)
+            connect_proxies(entity, entity_cable, tier)
         end
     end
 
@@ -289,7 +315,7 @@ local function underground_cable_connect_to_neighbors(entity, tier)
     entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
     if entity_cable then
         if entity_cable.direction == entity.direction then
-            connect_lamps(entity, entity_cable, tier)
+            connect_proxies(entity, entity_cable, tier)
         end
     end
 
@@ -299,7 +325,7 @@ local function underground_cable_connect_to_neighbors(entity, tier)
     entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
     if entity_cable then
         if entity_cable.direction ~= util.oppositedirection(entity.direction) then
-            connect_lamps(entity, entity_cable, tier)
+            connect_proxies(entity, entity_cable, tier)
         end
     end
 
@@ -309,7 +335,7 @@ local function underground_cable_connect_to_neighbors(entity, tier)
     entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
     if entity_cable then
         if entity_cable.direction == entity.direction then
-            connect_lamps(entity, entity_cable, tier)
+            connect_proxies(entity, entity_cable, tier)
         end
     end
 
@@ -317,14 +343,14 @@ local function underground_cable_connect_to_neighbors(entity, tier)
     position = moveposition(entity.position, entity.direction, 1)
     local entity_node = game.surfaces[1].find_entity(names[tier].node, position)
     if entity_node then
-        connect_lamps(entity, entity_node, tier)
+        connect_proxies(entity, entity_node, tier)
     end
 
     -- connect to node south of underground_cable
     position = moveposition(entity.position, entity.direction, -1)
     entity_node = game.surfaces[1].find_entity(names[tier].node, position)
     if entity_node then
-        connect_lamps(entity, entity_node, tier)
+        connect_proxies(entity, entity_node, tier)
     end
 end
 
@@ -406,26 +432,27 @@ local function on_built_entity(event)
                 entity_neighbor = game.surfaces[1].find_entity(names[tier].cable, position)
                 if entity_neighbor then
                     if entity_neighbor.direction == direction or entity_neighbor.direction == util.oppositedirection(direction) then
-                        connect_lamps(entity, entity_neighbor, tier)
+                        connect_proxies(entity, entity_neighbor, tier)
                     end
                 end
 
                 -- neighboring node
                 entity_neighbor = game.surfaces[1].find_entity(names[tier].node, position)
                 if entity_neighbor then
-                    connect_lamps(entity, entity_neighbor, tier)
+                    connect_proxies(entity, entity_neighbor, tier)
                 end
             end
 
             -- connect to neighboring nodes
+            local entity_node
             for i = 0, 6, 2 do
                 -- rotate direction by i / 2 * 90°
                 direction = (entity.direction + i) % 8
                 position = moveposition(entity.position, direction, 1)
                 entity_node = game.surfaces[1].find_entity(names[tier].node, position)
-                if entity_cable then
-                    if (entity_cable.direction == direction) or (entity_cable.direction == util.oppositedirection(direction)) then
-                        connect_lamps(entity, entity_cable, tier)
+                if entity_node then
+                    if (entity_node.direction == direction) or (entity_node.direction == util.oppositedirection(direction)) then
+                        connect_proxies(entity, entity_node, tier)
                     end
                 end
             end
@@ -433,7 +460,10 @@ local function on_built_entity(event)
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].receiver then
-            create_lamp(entity, tier)
+            local proxy = create_container(entity, tier)
+            if not proxy then
+                entity.destroy()
+            end
 
             local position
 
@@ -467,7 +497,7 @@ local function on_built_entity(event)
                 entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
                 if entity_cable then
                     if entity_cable.direction == util.oppositedirection(direction) then
-                        connect_lamps(entity, entity_cable, tier)
+                        connect_proxies(entity, entity_cable, tier)
                     end
                 end
             end
@@ -508,7 +538,7 @@ local function on_built_entity(event)
                 entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
                 if entity_cable then
                     if entity_cable.direction == direction then
-                        connect_lamps(entity, entity_cable, tier)
+                        connect_proxies(entity, entity_cable, tier)
                     end
                 end
             end
@@ -538,22 +568,27 @@ end
 ---------------------------------------------------------------------------
 local function on_console_command(command)
     if command.name == dbg.commands.print_off then
-        dbg.flags.print_connect_lamps = false
+        dbg.flags.print_connect_proxies = false
+        dbg.flags.print_gui = false
         dbg.flags.print_on_research_finished = false
         dbg.flags.print_set_rx_filter = false
         dbg.flags.print_update_net_id = false
         dbg.flags.print_update_receiver_filter = false
         dbg.print("set all print flags false")
     elseif command.name == dbg.commands.print_on then
-        dbg.flags.print_connect_lamps = true
+        dbg.flags.print_connect_proxies = true
+        dbg.flags.print_gui = true
         dbg.flags.print_on_research_finished = true
         dbg.flags.print_set_rx_filter = true
         dbg.flags.print_update_net_id = true
         dbg.flags.print_update_receiver_filter = true
         dbg.print("set all print flags true")
-    elseif command.name == dbg.commands.print_connect_lamps then
-        dbg.flags.print_connect_lamps = not dbg.flags.print_connect_lamps
-        dbg.print("print_connect_lamps = " .. tostring(dbg.flags.print_connect_lamps))
+    elseif command.name == dbg.commands.print_connect_proxies then
+        dbg.flags.print_connect_proxies = not dbg.flags.print_connect_proxies
+        dbg.print("print_connect_proxies = " .. tostring(dbg.flags.print_connect_proxies))
+    elseif command.name == dbg.commands.print_gui then
+        dbg.flags.print_gui = not dbg.flags.print_gui
+        dbg.print("print_gui = " .. tostring(dbg.flags.print_gui))
     elseif command.name == dbg.commands.print_on_research_finished then
         dbg.flags.print_on_research_finished = not dbg.flags.print_on_research_finished
         dbg.print("print_on_research_finished = " .. tostring(dbg.flags.print_on_research_finished))
@@ -590,8 +625,12 @@ local function on_gui_closed(event)
         return
     end
 
+    if dbg.print_gui then
+        dbg.print("on_gui_opened(): entity.name = " .. tostring(entity.name))
+    end
+
     for tier = 1, tiers do
-        if event.entity.name == names[tier].receiver then
+        if event.entity.name == names[tier].container then
             set_rx_filter_in_same_network_as(event.entity, tier)
             destroy_gui(game.players[event.player_index], tier)
             return
@@ -625,8 +664,16 @@ local function on_gui_opened(event)
         return
     end
 
+    if dbg.print_gui then
+        dbg.print("on_gui_opened(): entity.name = " .. tostring(entity.name))
+    end
+
     for tier = 1, tiers do
         if entity.name == names[tier].receiver then
+            -- don't show the receiver GUI - switch to the container GUI
+            game.players[event.player_index].opened = get_proxy(entity, tier)
+            return
+        elseif entity.name == names[tier].container then
             create_gui(game.players[event.player_index], tier)
             return
         end
@@ -761,18 +808,18 @@ local function on_rotated_entity(event)
 
     for tier = 1, tiers do
         if entity.name == names[tier].cable then
-            disconnect_lamps(entity, tier)
+            disconnect_proxies(entity, tier)
             cable_connect_to_neighbors(entity, tier)
 
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].underground_cable then
-            disconnect_lamps(entity, tier)
+            disconnect_proxies(entity, tier)
             underground_cable_connect_to_neighbors(entity, tier)
 
             -- also make the neighboring underground cable react
             if entity.neighbours then
-                disconnect_lamps(entity.neighbours, tier)
+                disconnect_proxies(entity.neighbours, tier)
                 underground_cable_connect_to_neighbors(entity.neighbours, tier)
             end
 
@@ -978,7 +1025,7 @@ local function initialize(global)
     active_nets = global.active_nets
     mod_state = global.mod_state
     net_id_update_scheduled = global.net_id_update_scheduled
-    lamps = global.lamps
+    proxies = global.proxies
     rx = global.receiver
     tx = global.transmitter
 end

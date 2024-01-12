@@ -29,6 +29,7 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * rewrite the item distribution algorithm; for example, 31 receivers with a rate of 30 items / s is a problem
 * node should connect to everything
 * save item transport is active in global?
+* allow container bar and store its status in combinator slot
 
 ## Acknowledgement
 

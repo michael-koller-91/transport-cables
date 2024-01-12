@@ -2,7 +2,7 @@ require("util")
 
 local prefix = "transport-cables:"
 local tiers = 3
-local debug_mode = false
+local debug_mode = true
 
 local inventory_size = { transmitter = {}, receiver = {} }
 inventory_size.transmitter[1] = 16
@@ -303,15 +303,15 @@ for tier = 1, tiers do
     -- receiver
     --
     local entity_name = prefix .. "receiver-t" .. tostring(tier)
-    local entity = table.deepcopy(data.raw["container"]["iron-chest"])
+    local entity = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"])
     entity.name = entity_name
     entity.minable = {
         mining_time = mining_time.receiver[tier],
         result = entity_name
     }
     entity.name = entity_name
-    entity.inventory_size = inventory_size.receiver[tier]
     entity.rotatable = false
+    entity.item_slot_count = 1
     entity.fast_replaceable_group = "transport-cables"
     if tier < tiers then
         entity.next_upgrade = prefix .. "receiver-t" .. tostring(tier + 1)
@@ -559,9 +559,31 @@ for tier = 1, tiers do
     data:extend({ entity })
 
     --
-    -- helper entity
+    -- proxy entities
     --
     ---------------------------------------------------------------------------
+    local entity_name = prefix .. "container-t" .. tostring(tier)
+    local entity = table.deepcopy(data.raw["container"]["iron-chest"])
+    entity.name = entity_name
+    entity.destructible = true
+    entity.minable = nil
+    entity.operable = false
+    entity.enable_inventory_bar = false
+    entity.inventory_size = inventory_size.receiver[tier]
+    entity.fast_replaceable_group = "transport-cables"
+    entity.circuit_wire_connection_point = nil
+    entity.circuit_connector_sprites = nil
+    entity.draw_circuit_wires = true
+    entity.draw_copper_wires = false
+    entity.rotatable = false
+    if debug_mode then
+        entity.selection_box = { { 0.0, 0.0 }, { 2.0, 2.0 } }
+    else
+        entity.selectable_in_game = false
+    end
+
+    data:extend({ entity })
+
     local entity_name = prefix .. "lamp-t" .. tostring(tier)
     local entity = table.deepcopy(data.raw["lamp"]["small-lamp"])
     entity.name = entity_name
@@ -625,13 +647,14 @@ for tier = 1, tiers do
     entity.circuit_wire_connection_point = nil
     entity.circuit_connector_sprites = nil
     entity.draw_circuit_wires = true
+    entity.draw_copper_wires = false
     if debug_mode then
         entity.selection_box = { { 0.0, 0.0 }, { 2.0, 2.0 } }
         entity.always_on = true
         entity.glow_size = 2
         entity.light = { intensity = 0.5, size = 20, color = { r = 1.0, g = 1.0, b = 0.75 } }
     else
-        entity.selection_box = { { 0.0, 0.0 }, { 0.0, 0.0 } }
+        entity.selectable_in_game = false
         entity.always_on = false
         entity.picture_on = table.deepcopy(entity.picture_off)
         entity.glow_size = 0
