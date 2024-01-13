@@ -1,6 +1,7 @@
 local prefix = "transport-cables-"
 
 local commands = {
+    combinator_selectale = prefix .. "combinator-selectable",
     print_off = prefix .. "print-off",
     print_on = prefix .. "print-on",
     print_connect_proxies = prefix .. "print-connect-proxies",
@@ -14,6 +15,7 @@ local commands = {
 
 local flags = {
     add_debug_commands = true,
+    combinator_selectale = true,
     print_connect_proxies = true,
     print_gui = true,
     print_on_research_finished = true,

@@ -3,6 +3,7 @@ local lib = require("lib")
 
 ---------------------------------------------------------------------------
 if dbg.flags.add_debug_commands then
+    commands.add_command(dbg.commands.combinator_selectale, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_off, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_on, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_connect_proxies, nil, lib.on_console_command)
@@ -79,7 +80,7 @@ script.on_init(function()
     global.receiver = {}
     global.transmitter = {}
 
-    for tier = 1, lib.tiers do
+    for tier = 1, lib.n_tiers do
         global.active_nets[tier] = {}
         global.proxies[tier] = {}
         global.mod_state[tier] = { rate = 0 }

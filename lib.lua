@@ -10,14 +10,14 @@ local tx = {}      -- all transmitters
 local mod_state = {}
 
 ---------------------------------------------------------------------------
-local tiers = 3
+local n_tiers = 3
 local wire = defines.wire_type.red
 local rate_increment = 15       -- whenever a research is finished, the item transport rate is increased by this amount
 local rate_increment_factor = 2 -- whenever the infinite research is finished, multiply the item transport rate by this amount
 
 local prefix = "transport-cables:"
 local names = {}
-for tier = 1, tiers do
+for tier = 1, n_tiers do
     names[tier] = {
         cable = prefix .. "cable-t" .. tostring(tier),
         container = prefix .. "container-t" .. tostring(tier),
@@ -35,7 +35,7 @@ end
 local net_id_update_scheduled = {} -- is an update of the network ids necessary?
 
 local item_transport_active = {}   -- are there any rx/tx pairs between which items need to be transported?
-for tier = 1, tiers do
+for tier = 1, n_tiers do
     item_transport_active[tier] = false
 end
 
@@ -49,23 +49,17 @@ local function moveposition(position, direction, distance)
             x = position.x,
             y = position.y - distance
         }
-    end
-
-    if direction == defines.direction.south then
+    elseif direction == defines.direction.south then
         return {
             x = position.x,
             y = position.y + distance
         }
-    end
-
-    if direction == defines.direction.east then
+    elseif direction == defines.direction.east then
         return {
             x = position.x + distance,
             y = position.y
         }
-    end
-
-    if direction == defines.direction.west then
+    elseif direction == defines.direction.west then
         return {
             x = position.x - distance,
             y = position.y
@@ -94,7 +88,7 @@ local function connect_proxies(source_entity, target_entity, tier)
 end
 
 -- Destroy the proxy associated with `entity`.
-local function destroy_lamp(entity, tier)
+local function destroy_proxy(entity, tier)
     if proxies[tier][entity.unit_number] then
         local destroyed = proxies[tier][entity.unit_number].destroy()
         proxies[tier][entity.unit_number] = nil
@@ -104,7 +98,10 @@ end
 
 -- Disconnect the circuit connections associated with `entity`'s proxy.
 local function disconnect_proxies(entity, tier)
-    get_proxy(entity, tier).disconnect_neighbour(wire)
+    local proxy = get_proxy(entity, tier)
+    if proxy then
+        proxy.disconnect_neighbour(wire)
+    end
 
     if dbg.flags.print_connect_proxies then
         dbg.print("disconnect_proxies(): " .. entity.name)
@@ -112,14 +109,16 @@ local function disconnect_proxies(entity, tier)
 end
 
 ---------------------------------------------------------------------------
--- Create a container and associated it with the receiver entity `receiver`.
+-- Create a container and associate it with `entity`.
 local function create_container(receiver, tier)
+    -- If there already is a container, do not createa new one ...
     local found = game.surfaces[1].find_entity(names[tier].container, receiver.position)
     if found then
-        dbg.print("create_container(): found a container | proxies[tier][entity.unit_number] = " ..
-            tostring(proxies[tier][receiver.unit_number]))
+        proxies[tier][receiver.unit_number] = found
         return found
     end
+
+    -- ... otherwise create one.
     proxies[tier][receiver.unit_number] = game.surfaces[1].create_entity {
         name = names[tier].container,
         position = receiver.position,
@@ -128,7 +127,7 @@ local function create_container(receiver, tier)
     return proxies[tier][receiver.unit_number]
 end
 
--- Create a lamp and associated it with `entity`.
+-- Create a lamp and associate it with `entity`.
 local function create_lamp(entity, tier)
     proxies[tier][entity.unit_number] = game.surfaces[1].create_entity {
         name = names[tier].lamp,
@@ -138,23 +137,38 @@ local function create_lamp(entity, tier)
 end
 
 ---------------------------------------------------------------------------
--- Get what the receiver entity `receiver` wants to receive.
-local function get_rx_filter(receiver, tier)
-    return rx[tier].filter[receiver.unit_number]
+-- Get what the receiver wants to receive.
+local function get_rx_filter(container, tier)
+    return rx[tier].filter[container.unit_number]
 end
 
--- Set what the receiver entity `receiver` wants to receive.
-local function set_rx_filter(receiver, elem_value, tier)
-    rx[tier].filter[receiver.unit_number] = elem_value
-    local cb = get_proxy(receiver, tier).get_control_behavior()
-    cb.set_signal(1, { signal = { type = "item", name = elem_value }, count = 1 })
+-- Set what the receiver wants to receive.
+local function set_rx_filter_from_container(container, elem_value, tier)
+    rx[tier].filter[container.unit_number] = elem_value
+
+    -- the filter needs to be set for the combinator
+    local combinator = game.surfaces[1].find_entity(names[tier].receiver, container.position)
+    if combinator then
+        local cb = combinator.get_control_behavior()
+        cb.set_signal(1, { signal = { type = "item", name = elem_value }, count = 1 })
+    end
 
     if dbg.print_set_rx_filter then
-        dbg.print("set_rx_filter(): " .. tostring(elem_value))
+        dbg.print("set_rx_filter_from_container(): elem_value = " .. tostring(elem_value))
     end
 end
 
----------------------------------------------------------------------------
+local function set_rx_filter(combinator, elem_value, tier)
+    rx[tier].filter[get_proxy(combinator, tier).unit_number] = elem_value
+
+    local cb = combinator.get_control_behavior()
+    cb.set_signal(1, { signal = { type = "item", name = elem_value }, count = 1 })
+
+    if dbg.print_set_rx_filter then
+        dbg.print("set_rx_filter(): elem_value = " .. tostring(elem_value))
+    end
+end
+
 -- All receivers with the same network_id as `receiver` get the filter of
 -- `receiver`.
 local function set_rx_filter_in_same_network_as(receiver, tier)
@@ -408,7 +422,7 @@ local function on_built_entity(event)
     dbg.print("on_built_entity(): entity.name = " .. tostring(entity.name))
     dbg.print("on_built_entity(): entity.unit_number = " .. tostring(entity.unit_number))
 
-    for tier = 1, tiers do
+    for tier = 1, n_tiers do
         if entity.name == names[tier].cable then
             create_lamp(entity, tier)
             cable_connect_to_neighbors(entity, tier)
@@ -557,7 +571,7 @@ end
 
 ---------------------------------------------------------------------------
 local on_built_filter = {}
-for tier = 1, tiers do
+for tier = 1, n_tiers do
     table.insert(on_built_filter, { filter = "name", name = names[tier].cable })
     table.insert(on_built_filter, { filter = "name", name = names[tier].node })
     table.insert(on_built_filter, { filter = "name", name = names[tier].transmitter })
@@ -567,7 +581,10 @@ end
 
 ---------------------------------------------------------------------------
 local function on_console_command(command)
-    if command.name == dbg.commands.print_off then
+    if command.name == dbg.commands.combinator_selectale then
+        dbg.flags.combinator_selectale = not dbg.flags.combinator_selectale
+        dbg.print("combinator_selectale = " .. tostring(dbg.flags.combinator_selectale))
+    elseif command.name == dbg.commands.print_off then
         dbg.flags.print_connect_proxies = false
         dbg.flags.print_gui = false
         dbg.flags.print_on_research_finished = false
@@ -608,9 +625,9 @@ end
 
 ---------------------------------------------------------------------------
 local function on_entity_settings_pasted(event)
-    for tier = 1, tiers do
+    for tier = 1, n_tiers do
         if event.source.name == names[tier].receiver and event.destination.name == names[tier].receiver then
-            set_rx_filter(event.destination, get_rx_filter(event.source, tier), tier)
+            set_rx_filter_from_container(event.destination, get_rx_filter(event.source, tier), tier)
             set_rx_filter_in_same_network_as(event.destination, tier)
             return
         end
@@ -626,10 +643,10 @@ local function on_gui_closed(event)
     end
 
     if dbg.print_gui then
-        dbg.print("on_gui_opened(): entity.name = " .. tostring(entity.name))
+        dbg.print("on_gui_closed(): entity.name = " .. tostring(entity.name))
     end
 
-    for tier = 1, tiers do
+    for tier = 1, n_tiers do
         if event.entity.name == names[tier].container then
             set_rx_filter_in_same_network_as(event.entity, tier)
             destroy_gui(game.players[event.player_index], tier)
@@ -646,10 +663,10 @@ local function on_gui_elem_changed(event)
         return
     end
 
-    for tier = 1, tiers do
+    for tier = 1, n_tiers do
         if element.name == names[tier].gui_filter then
             if get_rx_filter(game.players[event.player_index].opened, tier) ~= event.element.elem_value then
-                set_rx_filter(game.players[event.player_index].opened, event.element.elem_value, tier)
+                set_rx_filter_from_container(game.players[event.player_index].opened, event.element.elem_value, tier)
             end
             return
         end
@@ -668,10 +685,12 @@ local function on_gui_opened(event)
         dbg.print("on_gui_opened(): entity.name = " .. tostring(entity.name))
     end
 
-    for tier = 1, tiers do
+    for tier = 1, n_tiers do
         if entity.name == names[tier].receiver then
-            -- don't show the receiver GUI - switch to the container GUI
-            game.players[event.player_index].opened = get_proxy(entity, tier)
+            if not dbg.flags.combinator_selectale then
+                -- don't show the receiver GUI - switch to the container GUI
+                game.players[event.player_index].opened = get_proxy(entity, tier)
+            end
             return
         elseif entity.name == names[tier].container then
             create_gui(game.players[event.player_index], tier)
@@ -690,19 +709,19 @@ local function on_mined_entity(event)
     dbg.print("on_mined_entity(): entity.name = " .. tostring(entity.name))
     dbg.print("on_mined_entity(): entity.unit_number = " .. tostring(entity.unit_number))
 
-    for tier = 1, tiers do
+    for tier = 1, n_tiers do
         if entity.name == names[tier].cable then
-            destroy_lamp(entity, tier)
+            destroy_proxy(entity, tier)
 
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].node then
-            destroy_lamp(entity, tier)
+            destroy_proxy(entity, tier)
 
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].receiver then
-            destroy_lamp(entity, tier)
+            destroy_proxy(entity, tier)
 
             dbg.print("to_be_upgraded = " .. tostring(entity.to_be_upgraded()))
 
@@ -721,7 +740,7 @@ local function on_mined_entity(event)
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].transmitter then
-            destroy_lamp(entity, tier)
+            destroy_proxy(entity, tier)
 
             tx[tier].un[entity.unit_number] = nil
 
@@ -735,7 +754,7 @@ local function on_mined_entity(event)
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].underground_cable then
-            destroy_lamp(entity, tier)
+            destroy_proxy(entity, tier)
 
             net_id_update_scheduled[tier] = true
             return
@@ -750,7 +769,7 @@ end
 
 ---------------------------------------------------------------------------
 local on_mined_filter = {}
-for tier = 1, tiers do
+for tier = 1, n_tiers do
     table.insert(on_mined_filter, { filter = "name", name = names[tier].cable })
     table.insert(on_mined_filter, { filter = "name", name = names[tier].node })
     table.insert(on_mined_filter, { filter = "name", name = names[tier].transmitter })
@@ -760,7 +779,7 @@ end
 
 ---------------------------------------------------------------------------
 local function on_player_created(event)
-    for tier = 1, tiers do
+    for tier = 1, n_tiers do
         net_id_update_scheduled[tier] = true
     end
 end
@@ -806,7 +825,7 @@ local function on_rotated_entity(event)
         return
     end
 
-    for tier = 1, tiers do
+    for tier = 1, n_tiers do
         if entity.name == names[tier].cable then
             disconnect_proxies(entity, tier)
             cable_connect_to_neighbors(entity, tier)
@@ -843,7 +862,7 @@ end
 
 ---------------------------------------------------------------------------
 local function on_tick(event)
-    for tier = 1, tiers do
+    for tier = 1, n_tiers do
         if net_id_update_scheduled[tier] then
             net_id_update_scheduled[tier] = false
             update_net_id(tier)
@@ -909,7 +928,7 @@ local n_insert
 local n_remove
 local function on_nth_tick(event)
     -- move items between transmitter-receiver-pairs
-    for tier = 1, tiers do
+    for tier = 1, n_tiers do
         if item_transport_active[tier] then
             for _, net_id in ipairs(active_nets[tier]) do
                 -- all transmitter unit numbers with this network_id
@@ -1048,5 +1067,5 @@ return {
     on_rotated_entity = on_rotated_entity,
     on_tick = on_tick,
     prefix = prefix,
-    tiers = tiers
+    n_tiers = n_tiers
 }
