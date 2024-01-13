@@ -7,6 +7,7 @@ if dbg.flags.add_debug_commands then
     commands.add_command(dbg.commands.print_off, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_on, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_connect_proxies, nil, lib.on_console_command)
+    commands.add_command(dbg.commands.print_create_container, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_gui, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_on_research_finished, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_set_rx_filter, nil, lib.on_console_command)

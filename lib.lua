@@ -114,6 +114,9 @@ local function create_container(receiver, tier)
     -- If there already is a container, do not createa new one ...
     local found = game.surfaces[1].find_entity(names[tier].container, receiver.position)
     if found then
+        if dbg.flags.print_create_container then
+            dbg.print("create_container(): found.unit_number = " .. tostring(found.unit_number))
+        end
         proxies[tier][receiver.unit_number] = found
         return found
     end
@@ -124,6 +127,10 @@ local function create_container(receiver, tier)
         position = receiver.position,
         force = "player"
     }
+    if dbg.flags.print_create_container then
+        dbg.print("create_container(): container.unit_number = " ..
+            tostring(proxies[tier][receiver.unit_number].unit_number))
+    end
     return proxies[tier][receiver.unit_number]
 end
 
@@ -139,6 +146,15 @@ end
 ---------------------------------------------------------------------------
 -- Get what the receiver wants to receive.
 local function get_rx_filter(container, tier)
+    -- see if the combinator has a signal
+    local combinator = game.surfaces[1].find_entity(names[tier].receiver, container.position)
+    local signal = combinator.get_control_behavior().get_signal(1)
+    if signal and signal.signal then
+        rx[tier].filter[container.unit_number] = signal.signal.name
+    else
+        rx[tier].filter[container.unit_number] = nil
+    end
+
     return rx[tier].filter[container.unit_number]
 end
 
