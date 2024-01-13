@@ -31,7 +31,8 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * what happens when a node is placed next to a (curved) cable?
 * player vs player-creation
 * update locale: what connects to what
-* is the filter variable still necessary?
+* is it necessary to have n_tiers many entries in variables like proxies? can we avoid passing tier to almost every function? store the tier like net_id and use a get_tier function?
+* make the names lookup better; probably something like `names.nodes[name_string] = true` and then `if names.nodes[entiy.name] then`; maybe even `names.nodes[name_string] = tier`?
 
 ## Acknowledgement
 

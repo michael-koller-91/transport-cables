@@ -319,7 +319,6 @@ for tier = 1, tiers do
     entity.icon = "__transport-cables__/sprites/icons/receiver-t" .. tostring(tier) .. ".png"
     entity.icon_size = 64
     entity.icon_mipmaps = 4
-    table.insert(entity.flags, "hide-alt-info")
     entity.sprites =
     {
         layers =
@@ -382,6 +381,7 @@ for tier = 1, tiers do
     entity.icon = "__transport-cables__/sprites/icons/transmitter-t" .. tostring(tier) .. ".png"
     entity.icon_size = 64
     entity.icon_mipmaps = 4
+    table.insert(entity.flags, "hide-alt-info")
     entity.picture = {
         layers =
         {

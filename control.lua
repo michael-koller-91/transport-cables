@@ -62,12 +62,10 @@ local transmitter_table = {
     un = {}             -- unit number -> entity
 }
 
--- What the receiver wants to receive is stored in `filter`.
 local receiver_table = {
     net_id = {},              -- unit number -> circuit network id
     net_id_and_un = {},       -- circuit network id -> array(unit number)
     net_id_and_priority = {}, -- unit_number -> item distribution priority
-    filter = {},              -- unit number -> filter
     text_id = {},             -- unit number -> text id
     un = {}                   -- unit number -> entity
 }
@@ -77,15 +75,16 @@ script.on_init(function()
     global.active_nets = {}
     global.proxies = {}
     global.mod_state = {}
-    global.net_id_update_scheduled = {}
+    global.network_update_scheduled = {}
+    global.network_update_scheduled_for_id = {}
     global.receiver = {}
     global.transmitter = {}
 
     for tier = 1, lib.n_tiers do
         global.active_nets[tier] = {}
-        global.proxies[tier] = {}
         global.mod_state[tier] = { rate = 0 }
-        global.net_id_update_scheduled[tier] = true
+        global.network_update_scheduled[tier] = true
+        global.network_update_scheduled_for_id[tier] = 0
         global.receiver[tier] = table.deepcopy(receiver_table)
         global.transmitter[tier] = table.deepcopy(transmitter_table)
     end
