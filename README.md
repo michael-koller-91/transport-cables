@@ -31,6 +31,7 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * what happens when a node is placed next to a (curved) cable?
 * player vs player-creation
 * update locale: what connects to what
+* is the filter variable still necessary?
 
 ## Acknowledgement
 

@@ -70,9 +70,19 @@ local function moveposition(position, direction, distance)
 end
 
 ---------------------------------------------------------------------------
--- Get the proxy associated with `entity`.
-local function get_proxy(entity, tier)
-    return proxies[tier][entity.unit_number]
+local function get_inventory(entity)
+    return entity.get_inventory(defines.inventory.item_main)
+end
+
+---------------------------------------------------------------------------
+-- Get the proxy associated with `identifier`. The argument `identifier` is
+-- either be a unit_number or an entity.
+local function get_proxy(identifier, tier)
+    if type(identifier) == "number" then
+        return proxies[tier][identifier]
+    else
+        return proxies[tier][identifier.unit_number]
+    end
 end
 
 -- Connect the two proxies associated with `source_entity` and `target_entity`.
@@ -139,8 +149,8 @@ local function create_container(receiver, force, tier)
                 force = force
             }
             -- copy items from old container to new container
-            local new_inventory = proxies[tier][receiver.unit_number].get_inventory(defines.inventory.item_main)
-            local old_inventory = old_container.get_inventory(defines.inventory.item_main)
+            local new_inventory = get_inventory(proxies[tier][receiver.unit_number])
+            local old_inventory = get_inventory(old_container)
             for name, count in pairs(old_inventory.get_contents()) do
                 new_inventory.insert({ name = name, count = count })
             end
@@ -179,8 +189,10 @@ local function get_rx_filter(container, tier)
     local signal = combinator.get_control_behavior().get_signal(slot_filter)
     if signal and signal.signal then
         rx[tier].filter[container.unit_number] = signal.signal.name
+        return signal.signal.name
     else
         rx[tier].filter[container.unit_number] = nil
+        return nil
     end
 
     return rx[tier].filter[container.unit_number]
@@ -265,7 +277,6 @@ local function update_net_id(tier)
         local proxy = get_proxy(entity, tier)
         if proxy then
             circuit_network = proxy.get_circuit_network(wire)
-            -- circuit_network = get_proxy(entity, tier).get_circuit_network(wire)
             if circuit_network then
                 net_id = circuit_network.network_id
 
@@ -919,8 +930,8 @@ local function on_tick(event)
 end
 
 ---------------------------------------------------------------------------
-local function get_inventory(entity)
-    return entity.get_inventory(defines.inventory.item_main)
+local function get_inventory_rx(entity, tier)
+    return get_inventory(get_proxy(entity, tier))
 end
 
 local function get_item_count(entity, item)
@@ -992,7 +1003,7 @@ local function on_nth_tick(event)
 
                 if rx_priority_array then
                     -- the filter of all receivers with this network_id
-                    filter = rx[tier].filter[rx_un_array[1]]
+                    filter = get_rx_filter(get_proxy(rx_un_array[1], tier), tier)
 
                     if filter then
                         -- Count the total number of items in all transmitters' inventories.
@@ -1021,13 +1032,12 @@ local function on_nth_tick(event)
                             -- Try to give every receiver the necessary amount of items ...
                             for un, _ in pairs_by_value(rx_priority_array) do
                                 i = i + 1
+                                n_insert = item_dividend
                                 if i < item_remainder then
                                     n_insert = item_dividend + 1
-                                else
-                                    n_insert = item_dividend
                                 end
 
-                                rx_inventory = get_inventory(rx[tier].un[un])
+                                rx_inventory = get_inventory_rx(rx[tier].un[un], tier)
                                 n_items_insertable = rx_inventory.get_insertable_count(filter)
                                 if n_items_insertable >= n_insert then
                                     -- ... if enough items can be inserted ...
