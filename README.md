@@ -26,10 +26,12 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * can cables connected to a provider or node be curved cables?
 * if a pair of underground cables is placed on cables, can the cables between the undergrounds be deleted?
 * is it possible to maintain the filter if an entity is upgraded?
-* rewrite the item distribution algorithm; for example, 31 receivers with a rate of 30 items / s is a problem
-* node should connect to everything
 * save item transport is active in global?
 * allow container bar and store its status in combinator slot
+* node should connect to (almost) everything
+* what happens when a node is placed next to a (curved) cable?
+* player vs player-creation
+* prevent container destruction if it receiver is upgraded
 
 ## Acknowledgement
 

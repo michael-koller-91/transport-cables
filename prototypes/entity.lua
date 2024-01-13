@@ -576,6 +576,7 @@ for tier = 1, tiers do
     entity.draw_circuit_wires = true
     entity.draw_copper_wires = false
     entity.rotatable = false
+    table.insert(entity.flags, "hide-alt-info")
     entity.picture =
     {
         layers =
