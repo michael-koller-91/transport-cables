@@ -11,9 +11,11 @@ local mod_state = {}
 
 ---------------------------------------------------------------------------
 local n_tiers = 3
-local wire = defines.wire_type.red
 local rate_increment = 15       -- whenever a research is finished, the item transport rate is increased by this amount
 local rate_increment_factor = 2 -- whenever the infinite research is finished, multiply the item transport rate by this amount
+local slot_bar = 2
+local slot_filter = 1
+local wire = defines.wire_type.red
 
 local prefix = "transport-cables:"
 local names = {}
@@ -110,22 +112,48 @@ end
 
 ---------------------------------------------------------------------------
 -- Create a container and associate it with `entity`.
-local function create_container(receiver, tier)
-    -- If there already is a container, do not createa new one ...
+local function create_container(receiver, force, tier)
+    -- If there already is a container, do not create a new one.
     local found = game.surfaces[1].find_entity(names[tier].container, receiver.position)
     if found then
         if dbg.flags.print_create_container then
-            dbg.print("create_container(): found.unit_number = " .. tostring(found.unit_number))
+            dbg.print("create_container(): found.unit_number = " ..
+                tostring(found.unit_number) .. tostring(", tier = ") .. tostring(tier))
         end
         proxies[tier][receiver.unit_number] = found
         return found
+    end
+
+    -- If an upgrade happened, there is a container of a previous tier.
+    if tier > 1 then
+        local old_container = game.surfaces[1].find_entity(names[tier - 1].container, receiver.position)
+        if old_container then
+            if dbg.flags.print_create_container then
+                dbg.print("create_container(): old_container.unit_number = " ..
+                    tostring(old_container.unit_number) .. tostring(", tier = ") .. tostring(tier - 1))
+            end
+            proxies[tier - 1][receiver.unit_number] = nil
+            proxies[tier][receiver.unit_number] = game.surfaces[1].create_entity {
+                name = names[tier].container,
+                position = receiver.position,
+                force = force
+            }
+            -- copy items from old container to new container
+            local new_inventory = proxies[tier][receiver.unit_number].get_inventory(defines.inventory.item_main)
+            local old_inventory = old_container.get_inventory(defines.inventory.item_main)
+            for name, count in pairs(old_inventory.get_contents()) do
+                new_inventory.insert({ name = name, count = count })
+            end
+            old_container.destroy()
+            return proxies[tier][receiver.unit_number]
+        end
     end
 
     -- ... otherwise create one.
     proxies[tier][receiver.unit_number] = game.surfaces[1].create_entity {
         name = names[tier].container,
         position = receiver.position,
-        force = "player"
+        force = force
     }
     if dbg.flags.print_create_container then
         dbg.print("create_container(): container.unit_number = " ..
@@ -135,11 +163,11 @@ local function create_container(receiver, tier)
 end
 
 -- Create a lamp and associate it with `entity`.
-local function create_lamp(entity, tier)
+local function create_lamp(entity, force, tier)
     proxies[tier][entity.unit_number] = game.surfaces[1].create_entity {
         name = names[tier].lamp,
         position = entity.position,
-        force = "player"
+        force = force
     }
 end
 
@@ -148,7 +176,7 @@ end
 local function get_rx_filter(container, tier)
     -- see if the combinator has a signal
     local combinator = game.surfaces[1].find_entity(names[tier].receiver, container.position)
-    local signal = combinator.get_control_behavior().get_signal(1)
+    local signal = combinator.get_control_behavior().get_signal(slot_filter)
     if signal and signal.signal then
         rx[tier].filter[container.unit_number] = signal.signal.name
     else
@@ -166,7 +194,11 @@ local function set_rx_filter_from_container(container, elem_value, tier)
     local combinator = game.surfaces[1].find_entity(names[tier].receiver, container.position)
     if combinator then
         local cb = combinator.get_control_behavior()
-        cb.set_signal(1, { signal = { type = "item", name = elem_value }, count = 1 })
+        if elem_value then
+            cb.set_signal(slot_filter, { signal = { type = "item", name = elem_value }, count = 1 })
+        else
+            cb.set_signal(slot_filter, nil)
+        end
     end
 
     if dbg.print_set_rx_filter then
@@ -435,18 +467,18 @@ local function on_built_entity(event)
     if not entity or not entity.valid then
         return
     end
-    dbg.print("on_built_entity(): entity.name = " .. tostring(entity.name))
-    dbg.print("on_built_entity(): entity.unit_number = " .. tostring(entity.unit_number))
+
+    local force = game.players[event.player_index].force
 
     for tier = 1, n_tiers do
         if entity.name == names[tier].cable then
-            create_lamp(entity, tier)
+            create_lamp(entity, force, tier)
             cable_connect_to_neighbors(entity, tier)
 
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].node then
-            create_lamp(entity, tier)
+            create_lamp(entity, force, tier)
 
             -- connect to neighboring cables (if they are facing towards or away from the node)
             -- and connect to neighboring nodes
@@ -490,7 +522,7 @@ local function on_built_entity(event)
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].receiver then
-            local proxy = create_container(entity, tier)
+            local proxy = create_container(entity, force, tier)
             if not proxy then
                 entity.destroy()
             end
@@ -535,7 +567,7 @@ local function on_built_entity(event)
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].transmitter then
-            create_lamp(entity, tier)
+            create_lamp(entity, force, tier)
 
             tx[tier].un[entity.unit_number] = entity
 
@@ -576,7 +608,7 @@ local function on_built_entity(event)
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].underground_cable then
-            create_lamp(entity, tier)
+            create_lamp(entity, force, tier)
             underground_cable_connect_to_neighbors(entity, tier)
 
             net_id_update_scheduled[tier] = true
@@ -722,8 +754,6 @@ local function on_mined_entity(event)
     if not entity or not entity.valid then
         return
     end
-    dbg.print("on_mined_entity(): entity.name = " .. tostring(entity.name))
-    dbg.print("on_mined_entity(): entity.unit_number = " .. tostring(entity.unit_number))
 
     for tier = 1, n_tiers do
         if entity.name == names[tier].cable then
@@ -737,9 +767,10 @@ local function on_mined_entity(event)
             net_id_update_scheduled[tier] = true
             return
         elseif entity.name == names[tier].receiver then
-            destroy_proxy(entity, tier)
-
-            dbg.print("to_be_upgraded = " .. tostring(entity.to_be_upgraded()))
+            -- keep the container if the entity is to be upgraded
+            if not entity.to_be_upgraded() then
+                destroy_proxy(entity, tier)
+            end
 
             rx[tier].un[entity.unit_number] = nil
 
@@ -751,6 +782,7 @@ local function on_mined_entity(event)
             rx[tier].net_id[entity.unit_number] = nil
 
             -- and the filter
+            -- TODO: use set_rx_filter instead?
             rx[tier].filter[entity.unit_number] = nil
 
             net_id_update_scheduled[tier] = true

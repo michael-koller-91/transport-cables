@@ -1,8 +1,9 @@
 ## v0.1.4
-* Receivers can be copied via ctrl+c without losing their set filter.
-* Receivers can be stored in blueprints without losing their set filter.
-* Receivers can be upgraded without losing their set filter.
-* Alt-view shows the filter of the receiver.
+* Receivers can be copied via ctrl+c without losing their set filters.
+* Receivers can be stored in blueprints without losing their set filters.
+* Receivers can be upgraded without losing their set filters.
+* Receivers can be upgraded without losing their contents.
+* Alt-view shows the contents of the receiver.
 
 ## v0.1.3
 * Every level of the infinite research doubles the rate (up from times 1.1).

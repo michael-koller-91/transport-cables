@@ -311,7 +311,7 @@ for tier = 1, tiers do
     }
     entity.name = entity_name
     entity.rotatable = false
-    entity.item_slot_count = 1
+    entity.item_slot_count = 2
     entity.fast_replaceable_group = "transport-cables"
     if tier < tiers then
         entity.next_upgrade = prefix .. "receiver-t" .. tostring(tier + 1)
@@ -319,6 +319,7 @@ for tier = 1, tiers do
     entity.icon = "__transport-cables__/sprites/icons/receiver-t" .. tostring(tier) .. ".png"
     entity.icon_size = 64
     entity.icon_mipmaps = 4
+    table.insert(entity.flags, "hide-alt-info")
     entity.sprites =
     {
         layers =
@@ -576,7 +577,6 @@ for tier = 1, tiers do
     entity.draw_circuit_wires = true
     entity.draw_copper_wires = false
     entity.rotatable = false
-    table.insert(entity.flags, "hide-alt-info")
     entity.picture =
     {
         layers =
