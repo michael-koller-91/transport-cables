@@ -2,7 +2,7 @@ require("util")
 
 local prefix = "transport-cables:"
 local tiers = 3
-local debug_mode = true
+local debug_mode = false
 
 local inventory_size = { transmitter = {}, receiver = {} }
 inventory_size.transmitter[1] = 16
@@ -319,7 +319,7 @@ for tier = 1, tiers do
     entity.icon = "__transport-cables__/sprites/icons/receiver-t" .. tostring(tier) .. ".png"
     entity.icon_size = 64
     entity.icon_mipmaps = 4
-    entity.picture =
+    entity.sprites =
     {
         layers =
         {
@@ -576,6 +576,46 @@ for tier = 1, tiers do
     entity.draw_circuit_wires = true
     entity.draw_copper_wires = false
     entity.rotatable = false
+    entity.picture =
+    {
+        layers =
+        {
+            {
+                filename = "__transport-cables__/sprites/entities/lr-receiver-t" .. tostring(tier) .. ".png",
+                priority = "extra-high",
+                width = 32,
+                height = 32,
+                shift = util.by_pixel(0, 0),
+                hr_version =
+                {
+                    filename = "__transport-cables__/sprites/entities/hr-receiver-t" .. tostring(tier) .. ".png",
+                    priority = "extra-high",
+                    width = 64,
+                    height = 64,
+                    shift = util.by_pixel(0, 0),
+                    scale = 0.5
+                }
+            },
+            {
+                filename = "__transport-cables__/sprites/entities/lr-receiver-t" .. tostring(tier) .. "-shadow.png",
+                priority = "extra-high",
+                width = 32,
+                height = 32,
+                shift = util.by_pixel(0, 0),
+                draw_as_shadow = true,
+                hr_version =
+                {
+                    filename = "__transport-cables__/sprites/entities/hr-receiver-t" .. tostring(tier) .. "-shadow.png",
+                    priority = "extra-high",
+                    width = 64,
+                    height = 64,
+                    shift = util.by_pixel(0, 0),
+                    draw_as_shadow = true,
+                    scale = 0.5
+                }
+            }
+        }
+    }
     if debug_mode then
         entity.selection_box = { { 0.0, 0.0 }, { 2.0, 2.0 } }
     else

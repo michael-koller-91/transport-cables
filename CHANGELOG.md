@@ -1,3 +1,7 @@
+## v0.1.4
+* Receivers can be copied via ctrl+c without losing their set filter.
+* Receivers can be stored in blueprints without losing their set filter.
+
 ## v0.1.3
 * Every level of the infinite research doubles the rate (up from times 1.1).
 * Receivers are now containers with a custom GUI.

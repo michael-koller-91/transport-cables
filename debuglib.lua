@@ -16,7 +16,7 @@ local commands = {
 
 local flags = {
     add_debug_commands = true,
-    combinator_selectale = true,
+    combinator_selectale = false,
     print_connect_proxies = true,
     print_create_container = true,
     print_gui = true,
