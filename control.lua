@@ -8,11 +8,11 @@ if dbg.flags.add_debug_commands then
     commands.add_command(dbg.commands.print_on, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_connect_proxies, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_create_container, nil, lib.on_console_command)
+    commands.add_command(dbg.commands.print_net_id, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_gui, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_on_research_finished, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_set_rx_filter, nil, lib.on_console_command)
     commands.add_command(dbg.commands.print_update_receiver_filters, nil, lib.on_console_command)
-    commands.add_command(dbg.commands.print_update_net_id, nil, lib.on_console_command)
     commands.add_command(dbg.commands.research_all_technologies, nil, lib.on_console_command)
 end
 
@@ -75,16 +75,16 @@ script.on_init(function()
     global.active_nets = {}
     global.proxies = {}
     global.mod_state = {}
+    global.network_update_data = {}
     global.network_update_scheduled = {}
-    global.network_update_scheduled_for_id = {}
     global.receiver = {}
     global.transmitter = {}
 
     for tier = 1, lib.n_tiers do
         global.active_nets[tier] = {}
         global.mod_state[tier] = { rate = 0 }
+        global.network_update_data[tier] = {}
         global.network_update_scheduled[tier] = true
-        global.network_update_scheduled_for_id[tier] = 0
         global.receiver[tier] = table.deepcopy(receiver_table)
         global.transmitter[tier] = table.deepcopy(transmitter_table)
     end
