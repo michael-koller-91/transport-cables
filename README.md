@@ -33,8 +33,22 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * update locale: what connects to what
 * is it necessary to have n_tiers many entries in variables like proxies? can we avoid passing tier to almost every function? store the tier like net_id and use a get_tier function?
 * make the names lookup better; probably something like `names.nodes[name_string] = true` and then `if names.nodes[entiy.name] then`; maybe even `names.nodes[name_string] = tier`?
+* there should be two `get_rx_filter`: one for containers and one of combinators
 
 ## Acknowledgement
 
 I would like to thank my friend Patze (aka Ma§endefekt) for all the discussions around the mod
 and for being the alpha and beta tester!
+
+## What needs to be tested before a release
+
+* build a receiver; set a filter
+    * check if alt-mode shows the filter
+    * ctrl+c to copy the receiver; paste it; check if the pasted receiver has the filter set
+    * ctrl+shift+c to make a blueprint of the receiver; check if there is only one entity in the blueprint
+    * build the blueprint; check if the built receiver has the filter set
+    * ghost-build the blueprint; use pipette on the ghost and build the receiver; check if it has the filter set
+    * change the filter of one of the receivers; copy-paste the new filter with shift+rightclick and shift+leftclick; check if new filter is pasted
+* build a rx-tx-pair; set a filter; build another receiver and also connect it to the transmitter; check if the new receiver's filter is set
+    * remove the filter of one of the two receivers; check if the other receiver's filter is also removed
+    * set a filter for one of the two receivers; check if the other receiver's filter is also set

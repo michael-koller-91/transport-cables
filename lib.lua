@@ -244,7 +244,7 @@ end
 -- `container`.
 local function set_rx_filter_in_same_network_as(container, tier)
     if dbg.flags.print_set_rx_filter then
-        dbg.print("set_rx_filter_in_same_network_as(): rx[tier].net_id =", true)
+        dbg.print("set_rx_filter_in_same_network_as(): rx[" .. tostring(tier) .. "].net_id =", true)
         dbg.block(rx[tier].net_id)
     end
 
@@ -266,27 +266,39 @@ local function update_net_id(tier)
     local circuit_network
     local filter
     local net_id
-    local un_need_filter_update = {}
-
-    --if rx[tier].net_id_and_un[network_update_scheduled_for_id[tier]] then
-    --    local un = rx[tier].net_id_and_un[network_update_scheduled_for_id[tier]][1]
-    --    if rx[tier].net_id[un] == network_update_scheduled_for_id[tier] then
-    --        filter = get_rx_filter(rx[tier].un[un], tier)
-    --    else
-    --        un = rx[tier].net_id_and_un[network_update_scheduled_for_id[tier]][2]
-    --        if un then
-    --            filter = get_rx_filter(rx[tier].un[un], tier)
-    --        end
-    --    end
-
-    --    dbg.print("update filter: " .. tostring(filter))
-    --end
+    local new_net_id
 
     if dbg.flags.print_net_id then
-        dbg.print("update_net_id(): rx[tier].un =", true)
-        dbg.block(rx[tier].un)
-        dbg.print("update_net_id(): tx[tier].un =")
-        dbg.block(tx[tier].un)
+        dbg.print("update_net_id(): rx[" .. tostring(tier) .. "].un =", true)
+        for unit_number, _ in pairs(rx[tier].un) do
+            dbg.print("\tun = " .. tostring(unit_number))
+        end
+
+        dbg.print("update_net_id(): tx[" .. tostring(tier) .. "].un =")
+        for unit_number, _ in pairs(tx[tier].un) do
+            dbg.print("\tun = " .. tostring(unit_number))
+        end
+    end
+
+    -- If an entity has been built, some receivers might have gotten a new network_id and need their filters updated.
+    if network_update_data[tier].built then
+        local built_net_id = get_net_id(network_update_data[tier].proxy)
+        -- Only if other receivers with network_id = `built_net_id` exist does it make sense to update a filter.
+        if rx[tier].net_id_and_un[built_net_id] then
+            -- Get the filter of one of the receivers with network_id = `built_net_id`.
+            filter = get_rx_filter(get_proxy(rx[tier].net_id_and_un[built_net_id][1]), tier)
+            -- Find all receivers which have a new network_id ...
+            for un, n_id in pairs(rx[tier].net_id) do
+                -- Compare a receiver's (potentially old) network_id with its (potentially new) network_id.
+                if n_id ~= built_net_id then
+                    new_net_id = get_net_id(get_proxy(un))
+                    if built_net_id == new_net_id then
+                        -- ... and update their filter if that is the case.
+                        set_rx_filter(rx[tier].un[un], filter)
+                    end
+                end
+            end
+        end
     end
 
     item_transport_active[tier] = false
@@ -319,15 +331,7 @@ local function update_net_id(tier)
             if circuit_network then
                 net_id = circuit_network.network_id
 
-                --if net_id ~= rx[tier].net_id[unit_number] and rx[tier].net_id[unit_number] ~= network_update_scheduled_for_id[tier] then
-                --    table.insert(un_need_filter_update, unit_number)
-                --    dbg.print("un_need_filter_update")
-                --    set_rx_filter(entity, filter)
-                --end
-
                 rx[tier].net_id[unit_number] = net_id
-
-                dbg.print("update_net_id(): net_id = " .. tostring(net_id))
                 rendering.set_text(rx[tier].text_id[unit_number], "ID: " .. tostring(net_id))
 
                 -- collect all receivers with the same network_id
@@ -340,7 +344,7 @@ local function update_net_id(tier)
 
                 -- find transmitters and receivers with the same network_id
                 if tx[tier].net_id_and_un[net_id] then
-                    table.insert(active_nets[tier], net_id)
+                    active_nets[tier][net_id] = true
                     item_transport_active[tier] = true
                 end
             end
@@ -348,6 +352,23 @@ local function update_net_id(tier)
     end
 
     if dbg.flags.print_net_id then
+        dbg.print("update_net_id(): rx[" .. tostring(tier) .. "].net_id =")
+        for unit_number, net_id in pairs(rx[tier].net_id) do
+            dbg.print("\tun = " .. tostring(unit_number) .. " | net_id = " .. tostring(net_id))
+        end
+
+        dbg.print("update_net_id(): tx[" .. tostring(tier) .. "].net_id =")
+        for unit_number, net_id in pairs(tx[tier].net_id) do
+            dbg.print("\tun = " .. tostring(unit_number) .. " | net_id = " .. tostring(net_id))
+        end
+
+        dbg.print("update_net_id(): active_nets[" .. tostring(tier) .. "] =")
+        local str = "\tun = "
+        for net_id, _ in pairs(active_nets[tier]) do
+            str = str .. tostring(net_id) .. ", "
+        end
+        dbg.print(str)
+
         dbg.print("update_net_id(): item_transport_active[" ..
             tostring(tier) .. "] = " .. tostring(item_transport_active[tier]))
     end
@@ -1066,7 +1087,7 @@ local function on_nth_tick(event)
     -- move items between transmitter-receiver-pairs
     for tier = 1, n_tiers do
         if item_transport_active[tier] then
-            for _, net_id in ipairs(active_nets[tier]) do
+            for net_id, _ in pairs(active_nets[tier]) do
                 -- all transmitter unit numbers with this network_id
                 tx_un_array = tx[tier].net_id_and_un[net_id]
                 n_tx = #tx_un_array
