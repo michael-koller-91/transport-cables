@@ -186,6 +186,11 @@ def gen_underground(pixels, thickness, tier_frame_thickness, tier, down=True, up
 def make_base_cable(pixels_x, pixels_y, yellow_line_offset):
     arr = np.zeros((pixels_y, 3 * pixels_x, 3), dtype=np.uint8)
     arr[:, :, :] = 100
+    # x = np.arange(3 * pixels_x) * 2 * np.pi / yellow_line_offset
+    # s = np.round(pixels_y // 5 * np.sin(x)).astype("int")
+    # for c, i in enumerate(s):
+    #     arr[pixels_y // 2 + i, c, 0] = 255
+    #     arr[pixels_y // 2 + i, c, 1] = 255
     arr[pixels_y // 7 : -pixels_y // 7, ::yellow_line_offset, 0] = 255
     arr[pixels_y // 7 : -pixels_y // 7, ::yellow_line_offset, 1] = 255
     arr[pixels_y // 7 : -pixels_y // 7, 1::yellow_line_offset, 0] = 255

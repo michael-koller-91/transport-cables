@@ -363,7 +363,7 @@ local function update_net_id(tier)
         end
 
         dbg.print("update_net_id(): active_nets[" .. tostring(tier) .. "] =")
-        local str = "\tun = "
+        local str = "\tnet_id = "
         for net_id, _ in pairs(active_nets[tier]) do
             str = str .. tostring(net_id) .. ", "
         end
