@@ -34,6 +34,7 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * make the names lookup better; probably something like `names.nodes[name_string] = true` and then `if names.nodes[entiy.name] then`; maybe even `names.nodes[name_string] = tier`?
 * there should be two `get_rx_filter`: one for containers and one of combinators
 * setting a filter should trigger an item transport
+* can receivers be made pastable onto other receivers?
 
 ## Acknowledgement
 
@@ -52,6 +53,7 @@ The expected result is written in italics.
     * build the blueprint; _the built receiver has the filter set_
     * ghost-build the blueprint; use pipette on the ghost and build the receiver; _it has the filter set_
     * change the filter of one of the receivers; copy-paste the new filter with shift+rightclick and shift+leftclick; _new filter is pasted_
+
 
 #### setting filters
 * build a rx-tx-pair; set a filter; build another receiver and also connect it to the transmitter; _the new receiver's filter is set_
