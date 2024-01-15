@@ -11,7 +11,8 @@ local commands = {
     print_on_research_finished = prefix .. "print-on-research-finished",
     print_set_rx_filter = prefix .. "print-set-rx-filter",
     print_update_receiver_filters = prefix .. "print-update-receiver-filters",
-    research_all_technologies = prefix .. "research-all-technologies"
+    research_all_technologies = prefix .. "research-all-technologies",
+    set_rate = prefix .. "set-rate"
 }
 
 local flags = {

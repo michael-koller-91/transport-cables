@@ -764,6 +764,13 @@ local function on_console_command(command)
         dbg.print("print_update_receiver_filter = " .. tostring(dbg.flags.print_update_receiver_filter))
     elseif command.name == dbg.commands.research_all_technologies then
         game.players[command.player_index].force.research_all_technologies()
+    elseif command.name == dbg.commands.set_rate then
+        if command.parameter then
+            local p_tier = tonumber(string.sub(command.parameter, 1, 1))
+            local p_rate = tonumber(string.sub(command.parameter, 3, string.len(command.parameter)))
+            dbg.print("set rate[" .. tostring(p_tier) .. "] = " .. tostring(p_rate))
+            mod_state[p_tier].rate = p_rate
+        end
     end
 end
 
