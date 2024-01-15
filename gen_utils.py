@@ -191,10 +191,10 @@ def make_base_cable(pixels_x, pixels_y, yellow_line_offset):
     # for c, i in enumerate(s):
     #     arr[pixels_y // 2 + i, c, 0] = 255
     #     arr[pixels_y // 2 + i, c, 1] = 255
-    arr[pixels_y // 7 : -pixels_y // 7, ::yellow_line_offset, 0] = 255
-    arr[pixels_y // 7 : -pixels_y // 7, ::yellow_line_offset, 1] = 255
-    arr[pixels_y // 7 : -pixels_y // 7, 1::yellow_line_offset, 0] = 255
-    arr[pixels_y // 7 : -pixels_y // 7, 1::yellow_line_offset, 1] = 255
+    arr[pixels_y // 3 : -pixels_y // 3, ::yellow_line_offset, 0] = 255
+    arr[pixels_y // 3 : -pixels_y // 3, ::yellow_line_offset, 1] = 255
+    arr[pixels_y // 3 : -pixels_y // 3, 1::yellow_line_offset, 0] = 255
+    arr[pixels_y // 3 : -pixels_y // 3, 1::yellow_line_offset, 1] = 255
     arr[pixels_y // 5 : -pixels_y // 5, 4::yellow_line_offset, 0] = 255
     arr[pixels_y // 5 : -pixels_y // 5, 4::yellow_line_offset, 1] = 255
     arr[pixels_y // 5 : -pixels_y // 5, 5::yellow_line_offset, 0] = 255
