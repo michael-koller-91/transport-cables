@@ -44,6 +44,7 @@ and for being the alpha and beta tester!
 
 The expected result is written in italics.
 
+#### copying and pasting
 * build a receiver; set a filter
     * _alt-mode shows the filter_
     * ctrl+c to copy the receiver; paste it; _the pasted receiver has the filter set_
@@ -51,9 +52,17 @@ The expected result is written in italics.
     * build the blueprint; _the built receiver has the filter set_
     * ghost-build the blueprint; use pipette on the ghost and build the receiver; _it has the filter set_
     * change the filter of one of the receivers; copy-paste the new filter with shift+rightclick and shift+leftclick; _new filter is pasted_
+
+#### setting filters
 * build a rx-tx-pair; set a filter; build another receiver and also connect it to the transmitter; _the new receiver's filter is set_
     * remove the filter of one of the two receivers; _the other receiver's filter is also removed_
     * set a filter for one of the two receivers; _the other receiver's filter is also set_
+
+#### upgrading
+
+#### triggering item transports
+
+#### connecting entities
 * build a cable (cable 1) facing north
     * build a cable (cable 2) directly north of cable 1 also facing north; _it connects to cable 1_
     * build a node (node 1) directly north of cable 2; _it connects to cable 2_

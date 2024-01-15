@@ -17,22 +17,26 @@ max_distance[1] = 5
 max_distance[2] = 7
 max_distance[3] = 9
 
+local m_time
+if debug_mode then
+    m_time = 0.01
+end
 local mining_time = { cable = {}, node = {}, transmitter = {}, receiver = {}, underground_cable = {} }
-mining_time.cable[1] = 0.01
-mining_time.cable[2] = 0.01
-mining_time.cable[3] = 0.01
-mining_time.node[1] = 0.01
-mining_time.node[2] = 0.01
-mining_time.node[3] = 0.01
-mining_time.transmitter[1] = 0.01
-mining_time.transmitter[2] = 0.01
-mining_time.transmitter[3] = 0.01
-mining_time.receiver[1] = 0.01
-mining_time.receiver[2] = 0.01
-mining_time.receiver[3] = 0.01
-mining_time.underground_cable[1] = 0.01
-mining_time.underground_cable[2] = 0.01
-mining_time.underground_cable[3] = 0.01
+mining_time.cable[1] = m_time or 0.1
+mining_time.cable[2] = m_time or 0.1
+mining_time.cable[3] = m_time or 0.1
+mining_time.node[1] = m_time or 0.1
+mining_time.node[2] = m_time or 0.1
+mining_time.node[3] = m_time or 0.1
+mining_time.transmitter[1] = m_time or 0.1
+mining_time.transmitter[2] = m_time or 0.1
+mining_time.transmitter[3] = m_time or 0.1
+mining_time.receiver[1] = m_time or 0.1
+mining_time.receiver[2] = m_time or 0.1
+mining_time.receiver[3] = m_time or 0.1
+mining_time.underground_cable[1] = m_time or 0.1
+mining_time.underground_cable[2] = m_time or 0.1
+mining_time.underground_cable[3] = m_time or 0.1
 
 local speed = 1e-8                     -- this makes the belt speed tooltip say 0.0 items / s
 local animation_speed_coefficient = {} -- cable animation speed (depends on `speed`)

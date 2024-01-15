@@ -37,11 +37,6 @@ end
 local network_update_scheduled = {} -- is an update of the network ids necessary?
 local network_update_data = {}      -- data collected when the update is triggered
 
-local item_transport_active = {}    -- are there any rx-tx-pairs between which items need to be transported?
-for tier = 1, n_tiers do
-    item_transport_active[tier] = false
-end
-
 ---------------------------------------------------------------------------
 -- Move `distance` from `position` in `direction`, yielding a position vector.
 local function moveposition(position, direction, distance)
@@ -301,8 +296,6 @@ local function update_net_id(tier)
         end
     end
 
-    item_transport_active[tier] = false
-
     active_nets[tier] = {}
     tx[tier].net_id_and_un = {}
     rx[tier].net_id_and_un = {}
@@ -345,7 +338,6 @@ local function update_net_id(tier)
                 -- find transmitters and receivers with the same network_id
                 if tx[tier].net_id_and_un[net_id] then
                     active_nets[tier][net_id] = true
-                    item_transport_active[tier] = true
                 end
             end
         end
@@ -368,9 +360,6 @@ local function update_net_id(tier)
             str = str .. tostring(net_id) .. ", "
         end
         dbg.print(str)
-
-        dbg.print("update_net_id(): item_transport_active[" ..
-            tostring(tier) .. "] = " .. tostring(item_transport_active[tier]))
     end
 end
 
@@ -1093,7 +1082,6 @@ local n_remove
 local function on_nth_tick(event)
     -- move items between transmitter-receiver-pairs
     for tier = 1, n_tiers do
-        if item_transport_active[tier] then
             for net_id, _ in pairs(active_nets[tier]) do
                 -- all transmitter unit numbers with this network_id
                 tx_un_array = tx[tier].net_id_and_un[net_id]
@@ -1199,7 +1187,6 @@ local function on_nth_tick(event)
                 end
             end
         end
-    end
 end
 
 ---------------------------------------------------------------------------
