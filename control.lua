@@ -74,10 +74,11 @@ local receiver_table = {
 ---------------------------------------------------------------------------
 script.on_init(function()
     global.active_nets = {}
-    global.proxies = {}
+    global.cable_connection_update = {}
     global.mod_state = {}
     global.network_update_data = {}
     global.network_update_scheduled = {}
+    global.proxies = {}
     global.receiver = {}
     global.transmitter = {}
 

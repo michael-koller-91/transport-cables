@@ -34,12 +34,18 @@ for tier = 1, n_tiers do
     }
 end
 
-local network_update_scheduled = {} -- is an update of the network ids necessary?
 local network_update_data = {}      -- data collected when the update is triggered
+local network_update_scheduled = {} -- is an update of the network ids necessary?
+
+-- When a cable which is connected to another cable (a neighbor) is destroyed, the neighbor might get new neighbors
+-- (for example, the neighbor might have been curved and is now straight). But this happens only after the cable
+-- has been destroyed. So an update needs to be scheduled on_mined_entity but it cannot be made directly.
+-- A similar case can occur when a cable is built and its neighbor turns from curved to straight.
+local cable_connection_update = {}
 
 ---------------------------------------------------------------------------
 -- Move `distance` from `position` in `direction`, yielding a position vector.
-local function moveposition(position, direction, distance)
+local function move_position(position, direction, distance)
     distance = distance or 1
 
     if direction == defines.direction.north then
@@ -63,6 +69,10 @@ local function moveposition(position, direction, distance)
             y = position.y
         }
     end
+end
+
+local function equal_position(position1, position2)
+    return position1.x == position2.x and position1.y == position2.y
 end
 
 ---------------------------------------------------------------------------
@@ -365,6 +375,7 @@ end
 
 ---------------------------------------------------------------------------
 -- Connect a cable to suitable neighbors.
+-- Note: A curved cable's direction is the direction of its front part.
 local function cable_connect_to_neighbors(entity, tier)
     -- connect to neighboring cables
     for _, val in pairs(entity.belt_neighbours) do
@@ -372,19 +383,24 @@ local function cable_connect_to_neighbors(entity, tier)
             if neighbor.name == names[tier].cable then
                 if entity.direction == neighbor.direction then
                     connect_proxies(entity, neighbor)
-                end
-                -- the neighbor is a curved cable not facing in the opposite direction
-                if neighbor.belt_shape ~= "straight" and entity.direction ~= util.oppositedirection(neighbor.direction) then
+                elseif entity.direction ~= util.oppositedirection(neighbor.direction)
+                    and equal_position(move_position(neighbor.position, neighbor.direction), entity.position)
+                    and entity.belt_shape ~= "straight" then
+                    -- entity is in front of neighbor
+
                     connect_proxies(entity, neighbor)
-                end
-                -- the entity is a curved cable and the neighbor is not facing in the opposite direction
-                if entity.belt_shape ~= "straight" and entity.direction ~= util.oppositedirection(neighbor.direction) then
+                elseif entity.direction ~= util.oppositedirection(neighbor.direction)
+                    and equal_position(move_position(entity.position, entity.direction), neighbor.position)
+                    and neighbor.belt_shape ~= "straight" then
+                    -- neighbor is in front of entity and curved
+
                     connect_proxies(entity, neighbor)
                 end
             elseif neighbor.name == names[tier].underground_cable then
                 if entity.direction == neighbor.direction then
                     connect_proxies(entity, neighbor)
                 end
+
                 if entity.belt_shape ~= "straight" and entity.direction ~= util.oppositedirection(neighbor.direction) then
                     connect_proxies(entity, neighbor)
                 end
@@ -393,28 +409,28 @@ local function cable_connect_to_neighbors(entity, tier)
     end
 
     -- connect to receiver north of cable
-    local position = moveposition(entity.position, entity.direction, 1)
+    local position = move_position(entity.position, entity.direction, 1)
     local receiver = game.surfaces[1].find_entity(names[tier].receiver, position)
     if receiver then
         connect_proxies(entity, receiver)
     end
 
     -- connect to transmitter south of cable
-    position = moveposition(entity.position, entity.direction, -1)
+    position = move_position(entity.position, entity.direction, -1)
     local transmitter = game.surfaces[1].find_entity(names[tier].transmitter, position)
     if transmitter then
         connect_proxies(entity, transmitter)
     end
 
     -- connect to node north of cable
-    position = moveposition(entity.position, entity.direction, 1)
+    position = move_position(entity.position, entity.direction, 1)
     local entity_node = game.surfaces[1].find_entity(names[tier].node, position)
     if entity_node then
         connect_proxies(entity, entity_node)
     end
 
     -- connect to node south of cable
-    position = moveposition(entity.position, entity.direction, -1)
+    position = move_position(entity.position, entity.direction, -1)
     entity_node = game.surfaces[1].find_entity(names[tier].node, position)
     if entity_node then
         connect_proxies(entity, entity_node)
@@ -430,7 +446,7 @@ local function underground_cable_connect_to_neighbors(entity, tier)
     end
 
     -- connect to underground_cable north of underground_cable if it is facing in the same direction
-    local position = moveposition(entity.position, entity.direction, 1)
+    local position = move_position(entity.position, entity.direction, 1)
     local entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
     if entity_cable then
         if entity_cable.direction == entity.direction then
@@ -439,7 +455,7 @@ local function underground_cable_connect_to_neighbors(entity, tier)
     end
 
     -- connect to underground_cable south of underground_cable if it is facing in the same direction
-    position = moveposition(entity.position, entity.direction, -1)
+    position = move_position(entity.position, entity.direction, -1)
     entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
     if entity_cable then
         if entity_cable.direction == entity.direction then
@@ -449,7 +465,7 @@ local function underground_cable_connect_to_neighbors(entity, tier)
 
     -- connect to cable north of underground_cable if it is not facing towards
     -- the underground_cable
-    position = moveposition(entity.position, entity.direction, 1)
+    position = move_position(entity.position, entity.direction, 1)
     entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
     if entity_cable then
         if entity_cable.direction ~= util.oppositedirection(entity.direction) then
@@ -459,7 +475,7 @@ local function underground_cable_connect_to_neighbors(entity, tier)
 
     -- connect to cable south of underground_cable if it is facing in the
     -- same direction
-    position = moveposition(entity.position, entity.direction, -1)
+    position = move_position(entity.position, entity.direction, -1)
     entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
     if entity_cable then
         if entity_cable.direction == entity.direction then
@@ -468,14 +484,14 @@ local function underground_cable_connect_to_neighbors(entity, tier)
     end
 
     -- connect to node north of underground_cable
-    position = moveposition(entity.position, entity.direction, 1)
+    position = move_position(entity.position, entity.direction, 1)
     local entity_node = game.surfaces[1].find_entity(names[tier].node, position)
     if entity_node then
         connect_proxies(entity, entity_node)
     end
 
     -- connect to node south of underground_cable
-    position = moveposition(entity.position, entity.direction, -1)
+    position = move_position(entity.position, entity.direction, -1)
     entity_node = game.surfaces[1].find_entity(names[tier].node, position)
     if entity_node then
         connect_proxies(entity, entity_node)
@@ -550,6 +566,13 @@ local function on_built_entity(event)
 
             cable_connect_to_neighbors(entity, tier)
 
+            local belt_neighbors = entity.belt_neighbours
+            if belt_neighbors then
+                cable_connection_update.belt_neighbors = belt_neighbors
+                cable_connection_update.scheduled = true
+                cable_connection_update.tier = tier
+            end
+
             network_update_scheduled[tier] = true
             network_update_data[tier] = { proxy = proxy, built = true }
             return
@@ -567,7 +590,7 @@ local function on_built_entity(event)
             for i = 0, 6, 2 do
                 -- rotate direction by i / 2 * 90°
                 direction = (entity.direction + i) % 8
-                position = moveposition(entity.position, direction, 1)
+                position = move_position(entity.position, direction, 1)
 
                 -- neighboring cable
                 entity_neighbor = game.surfaces[1].find_entity(names[tier].cable, position)
@@ -589,7 +612,7 @@ local function on_built_entity(event)
             for i = 0, 6, 2 do
                 -- rotate direction by i / 2 * 90°
                 direction = (entity.direction + i) % 8
-                position = moveposition(entity.position, direction, 1)
+                position = move_position(entity.position, direction, 1)
                 entity_node = game.surfaces[1].find_entity(names[tier].node, position)
                 if entity_node then
                     if (entity_node.direction == direction) or (entity_node.direction == util.oppositedirection(direction)) then
@@ -635,7 +658,7 @@ local function on_built_entity(event)
             for i = 0, 6, 2 do
                 -- rotate direction by i / 2 * 90°
                 direction = (entity.direction + i) % 8
-                position = moveposition(entity.position, direction, 1)
+                position = move_position(entity.position, direction, 1)
                 entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
                 if entity_cable then
                     if entity_cable.direction == util.oppositedirection(direction) then
@@ -680,7 +703,7 @@ local function on_built_entity(event)
             for i = 0, 6, 2 do
                 -- rotate direction by i / 2 * 90°
                 direction = (entity.direction + i) % 8
-                position = moveposition(entity.position, direction, 1)
+                position = move_position(entity.position, direction, 1)
                 entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
                 if entity_cable then
                     if entity_cable.direction == direction then
@@ -857,6 +880,13 @@ local function on_mined_entity(event)
             local proxy = get_proxy(entity)
             network_update_data[tier] = { proxy = proxy, mined = true }
 
+            local belt_neighbors = entity.belt_neighbours
+            if belt_neighbors then
+                cable_connection_update.belt_neighbors = belt_neighbors
+                cable_connection_update.scheduled = true
+                cable_connection_update.tier = tier
+            end
+
             destroy_proxy(entity, proxy)
 
             network_update_scheduled[tier] = true
@@ -1024,6 +1054,16 @@ local function on_tick(event)
         if network_update_scheduled[tier] then
             network_update_scheduled[tier] = false
             update_net_id(tier)
+        end
+    end
+
+    if cable_connection_update.scheduled then
+        cable_connection_update.scheduled = false
+        for _, val in pairs(cable_connection_update.belt_neighbors) do
+            for _, neighbor in ipairs(val) do
+                disconnect_proxies(neighbor)
+                cable_connect_to_neighbors(neighbor, cable_connection_update.tier)
+            end
         end
     end
 end
@@ -1197,9 +1237,10 @@ end
 ---------------------------------------------------------------------------
 local function initialize(global)
     active_nets = global.active_nets
+    cable_connection_update = global.cable_connection_update
     mod_state = global.mod_state
-    network_update_scheduled = global.network_update_scheduled
     network_update_data = global.network_update_data
+    network_update_scheduled = global.network_update_scheduled
     proxies = global.proxies
     rx = global.receiver
     tx = global.transmitter

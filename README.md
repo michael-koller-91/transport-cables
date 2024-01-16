@@ -52,6 +52,8 @@ Place entities next to one another and observe whether they are connected.
 
 * a cable
     * build cables in various orientations and positions around the cable; _the cable only connects to the other cables when it makes sense_
+    * build five cables facing north in positions 1, 4, 2, 5, 8 (imagine a num pad); rotate the cable in position 4; _it never connects to the cable in position 5 but stays connected to the cable in position 1_
+    * build a zig-zag; _the cable connect to one another_
     * a node in front of it; _the cable is connected to it_
     * a node behind it; _the cable is connected to it_
     * a receiver in front of it; _the cable is connected to it_
