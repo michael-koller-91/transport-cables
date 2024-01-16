@@ -25,7 +25,6 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * when mod entities are destroyed, should only the corresponding circuit network id tables be updated (instead of always calling update_network_ids())?
 * can cables connected to a provider or node be curved cables?
 * if a pair of underground cables is placed on cables, can the cables between the undergrounds be deleted?
-* save item transport is active in global?
 * allow container bar and store its status in combinator slot
 * node should connect to (almost) everything
 * what happens when a node is placed next to a (curved) cable?
@@ -43,7 +42,56 @@ and for being the alpha and beta tester!
 
 ## What needs to be tested before a release
 
+The following subsections describe tests.
 The expected result is written in italics.
+A rx-tx-pair is a receiver connected to a transmitter and in addition the transmitter has an infinite source of iron plates
+and the receiver has an infinite sink and no filter set yet.
+
+#### connecting entities
+Place entities next to one another and observe whether they are connected.
+
+* a cable
+    * build cables in various orientations and positions around the cable; _the cable only connects to the other cables when it makes sense_
+    * a node in front of it; _the cable is connected to it_
+    * a node behind it; _the cable is connected to it_
+    * a receiver in front of it; _the cable is connected to it_
+    * a receiver behind it; _the cable is not connected to it_
+    * a transmitter in front of it; _the cable is not connected to it_
+    * a transmitter behind it; _the cable is connected to it_
+    * an underground cable pair; _the cable only connects to an underground cable when it makes sense_
+* a node
+    * a cable facing away; _the node is connected to it_
+    * a cable facing toward it; _the node is connected to it_
+    * a node; _the node is connected to it_
+    * a receiver; _the node is connected to it_
+    * a transmitter; _the node is connected to it_
+    * an underground cable (going underground) facing away; _the node is connected to it_
+    * rotate the underground cable; _the receiver is not connected to it_
+    * an underground cable (coming out) facing toward it; _the receiver is connected to it_
+    * rotate the underground cable; _the receiver is not connected to it_
+* a receiver
+    * a cable facing away; _the receiver is not connected to it_
+    * a cable facing toward it; _the receiver is connected to it_
+    * a node; _the receiver is connected to it_
+    * a receiver; _the receiver is not connected to it_
+    * a transmitter; _the receiver is not connected to it_
+    * an underground cable (going underground) facing away; _the receiver is not connected to it_
+    * rotate the underground cable; _the receiver is not connected to it_
+    * an underground cable (coming out) facing toward it; _the receiver is connected to it_
+    * rotate the underground cable; _the receiver is not connected to it_
+* a transmitter
+    * a cable facing away; _the transmitter is connected to it_
+    * a cable facing toward it; _the transmitter is not connected to it_
+    * a node; _the transmitter is connected to it_
+    * a receiver; _the transmitter is not connected to it_
+    * an underground cable (going underground) facing away; _the transmitter is connected to it_
+    * rotate the underground cable; _the receiver is not connected to it_
+    * an underground cable (coming out) facing toward it; _the transmitter is not connected to it_
+    * rotate the underground cable; _the transmitter is not connected to it_
+* an underground cable pair
+    * _the underground cables are connected_
+    * build cables in various orientations and positions around the cable; _the underground cable only connects to the other cables when it makes sense_
+    * build underground cables in various orientations and positions around the cable; _the underground cable only connects to the other underground cables when it makes sense_
 
 #### copying and pasting
 * build a receiver; set a filter
@@ -54,30 +102,34 @@ The expected result is written in italics.
     * ghost-build the blueprint; use pipette on the ghost and build the receiver; _it has the filter set_
     * change the filter of one of the receivers; copy-paste the new filter with shift+rightclick and shift+leftclick; _new filter is pasted_
 
-
 #### setting filters
 * build a rx-tx-pair; set a filter; build another receiver and also connect it to the transmitter; _the new receiver's filter is set_
     * remove the filter of one of the two receivers; _the other receiver's filter is also removed_
     * set a filter for one of the two receivers; _the other receiver's filter is also set_
 
-#### upgrading
-
 #### triggering item transports
+* build a rx-tx-pair; set the item transport rate to 4
+    * _there is no item transport_
+    * set the receiver filter to copper plates; _there is no item transport_
+    * set the receiver filter to iron plates; _4 iron plates are transported per second_
+    * set the receiver filter to no filter; _there is no item transport_
+    * set the receiver filter to iron plates; _4 iron plates are transported per second_
+    * connect another receiver; _each receiver receives 2 iron plates per second_
+    * set one receiver filter to no filter; _there is no item transport_
+    * set one receiver filter to copper plates; _there is no item transport_
+    * set one receiver filter to iron plates; _each receiver receives 2 iron plates per second_
+    * connect two more receivers; set the receiver filter to no filter; _there is no item transport
+    * build another not connected receiver; set its filter to iron plates; _there is no item transport_
+    * use shift+rightclick and shift+leftclick to copy the filter setting to one of the four connected receivers; _each receiver receives 1 iron plate per second_
+    * connect another receiver; _4 of the 5 receivers receiver 1 iron plate per second, one receiver receives nothing; the role of each receiver changes every second such that all receivers on average receive the same amount of iron plates_
 
-#### connecting entities
-* build a cable (cable 1) facing north
-    * build a cable (cable 2) directly north of cable 1 also facing north; _it connects to cable 1_
-    * build a node (node 1) directly north of cable 2; _it connects to cable 2_
-    * build a node (node 2) directly south of cable 1; _it connects to cable 1_
-    * build a node (node 3) directly west of cable 1; _it does not connect to cable 1_
-    * build a node (node 4) directly south of node 2; _it connects to node 2_
-* build a cable (cable 1) facing north
-    * build an underground cable (underground 1) directly north of cable 1 also facing north; _it connects to cable 1_
-    * build the other end of underground 1 (underground 2) at maximum distance; _it connects to underground 1_
-    * build a cable (cable 2) directly north of underground 1; _it does not connect to underground 1_
-    * build a cable (cable 3) directly south of underground 2; _it does not connect to underground 2_
-    * remove cable 2; remove cable 3
-    * build a node (node 1) directly north of underground 1; _it does not connect to underground 1_
-    * build a node (node 2) directly south of underground 2; _it does not connect to underground 2_
-    * remove node 1; remove node 2
-    * repeat the same with receivers and transmitters; _they do not connect to underground 1 or underground 2_
+#### upgrading
+* build a tier-1-receiver
+    * upgrade it via the upgrade planner; _it becomes a tier-2-receiver_
+    * upgrade it via the upgrade planner; _it becomes a tier-3-receiver_
+* build a tier-1-receiver; set the receiver filter to iron plates
+    * upgrade it via the upgrade planner; _it becomes a tier-2-receiver and the filter is still iron plates_
+    * upgrade it via the upgrade planner; _it becomes a tier-3-receiver and the filter is still iron plates_
+* build a tier-1-receiver; put some items in it
+    * upgrade it via the upgrade planner; _it becomes a tier-2-receiver and the items are still in it_
+    * upgrade it via the upgrade planner; _it becomes a tier-3-receiver and the items are still in it_
