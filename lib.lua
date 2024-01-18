@@ -448,39 +448,31 @@ local function underground_cable_connect_to_neighbors(entity, tier)
     -- connect to underground_cable north of underground_cable if it is facing in the same direction
     local position = move_position(entity.position, entity.direction, 1)
     local entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
-    if entity_cable then
-        if entity_cable.direction == entity.direction then
-            connect_proxies(entity, entity_cable)
-        end
+    if entity_cable and entity_cable.direction == entity.direction then
+        connect_proxies(entity, entity_cable)
     end
 
     -- connect to underground_cable south of underground_cable if it is facing in the same direction
     position = move_position(entity.position, entity.direction, -1)
     entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
-    if entity_cable then
-        if entity_cable.direction == entity.direction then
-            connect_proxies(entity, entity_cable)
-        end
+    if entity_cable and entity_cable.direction == entity.direction then
+        connect_proxies(entity, entity_cable)
     end
 
     -- connect to cable north of underground_cable if it is not facing towards
     -- the underground_cable
     position = move_position(entity.position, entity.direction, 1)
     entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
-    if entity_cable then
-        if entity_cable.direction ~= util.oppositedirection(entity.direction) then
-            connect_proxies(entity, entity_cable)
-        end
+    if entity_cable and entity_cable.direction ~= util.oppositedirection(entity.direction) and entity.belt_to_ground_type == "output" then
+        connect_proxies(entity, entity_cable)
     end
 
     -- connect to cable south of underground_cable if it is facing in the
     -- same direction
     position = move_position(entity.position, entity.direction, -1)
     entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
-    if entity_cable then
-        if entity_cable.direction == entity.direction then
-            connect_proxies(entity, entity_cable)
-        end
+    if entity_cable and entity_cable.direction == entity.direction then
+        connect_proxies(entity, entity_cable)
     end
 
     -- connect to node north of underground_cable
