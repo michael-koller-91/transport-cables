@@ -432,7 +432,7 @@ local function cable_connect_to_neighbors(entity, tier)
     -- connect to node south of cable
     position = move_position(entity.position, entity.direction, -1)
     entity_node = game.surfaces[1].find_entity(names[tier].node, position)
-    if entity_node then
+    if entity_node and entity.belt_shape == "straight" then
         connect_proxies(entity, entity_node)
     end
 end
@@ -486,15 +486,29 @@ local function underground_cable_connect_to_neighbors(entity, tier)
     -- connect to node north of underground_cable
     position = move_position(entity.position, entity.direction, 1)
     local entity_node = game.surfaces[1].find_entity(names[tier].node, position)
-    if entity_node then
+    if entity_node and entity.belt_to_ground_type == "output" then
         connect_proxies(entity, entity_node)
     end
 
     -- connect to node south of underground_cable
     position = move_position(entity.position, entity.direction, -1)
     entity_node = game.surfaces[1].find_entity(names[tier].node, position)
-    if entity_node then
+    if entity_node and entity.belt_to_ground_type == "input" then
         connect_proxies(entity, entity_node)
+    end
+
+    -- connect to receiver north of underground cable
+    position = move_position(entity.position, entity.direction, 1)
+    local receiver = game.surfaces[1].find_entity(names[tier].receiver, position)
+    if receiver and entity.belt_to_ground_type == "output" then
+        connect_proxies(entity, receiver)
+    end
+
+    -- connect to transmitter south of cable
+    position = move_position(entity.position, entity.direction, -1)
+    local transmitter = game.surfaces[1].find_entity(names[tier].transmitter, position)
+    if transmitter and entity.belt_to_ground_type == "input" then
+        connect_proxies(entity, transmitter)
     end
 end
 
@@ -667,6 +681,19 @@ local function on_built_entity(event)
                 end
             end
 
+            -- connect to underground cable north, east, south, west of receiver if it is facing towards the receiver and an output
+            for i = 0, 6, 2 do
+                -- rotate direction by i / 2 * 90°
+                direction = (entity.direction + i) % 8
+                position = move_position(entity.position, direction, 1)
+                entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
+                if entity_cable and entity_cable.belt_to_ground_type == "output" then
+                    if entity_cable.direction == util.oppositedirection(direction) then
+                        connect_proxies(entity, entity_cable)
+                    end
+                end
+            end
+
             network_update_scheduled[tier] = true
             network_update_data[tier] = { proxy = proxy, built = true }
             return
@@ -706,6 +733,19 @@ local function on_built_entity(event)
                 position = move_position(entity.position, direction, 1)
                 entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
                 if entity_cable then
+                    if entity_cable.direction == direction then
+                        connect_proxies(entity, entity_cable)
+                    end
+                end
+            end
+
+            -- connect to underground cable north, east, south, west of transmitter if it is facing away from the transmitter and an input
+            for i = 0, 6, 2 do
+                -- rotate direction by i / 2 * 90°
+                direction = (entity.direction + i) % 8
+                position = move_position(entity.position, direction, 1)
+                entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
+                if entity_cable and entity_cable.belt_to_ground_type == "input" then
                     if entity_cable.direction == direction then
                         connect_proxies(entity, entity_cable)
                     end
