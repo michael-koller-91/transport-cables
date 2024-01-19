@@ -22,8 +22,8 @@ def gen_node(pixels, thickness, tier_frame_thickness, tier):
     arr = zeros_rgb(pixels, pixels)
 
     # yellow square
-    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 0] = 255
-    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 1] = 255
+    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 0] = 225
+    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 1] = 225
 
     # gray line going up
     arr[: p_2 - t, p_2 - t : p_2 + t, :] = 100
@@ -32,16 +32,16 @@ def gen_node(pixels, thickness, tier_frame_thickness, tier):
     for l in range(4):
         # facing down
         o = t_2 + l - 1
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 255
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 255
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 225
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 225
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 225
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 225
         # facing up
         o = p_2 - 2 * t + (3 - l)
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 255
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 255
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 225
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 225
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 225
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 225
 
     # add the other three gray lines via rotation
     sub_arr = arr
@@ -67,7 +67,9 @@ def gen_receiver(pixels, thickness, tier_frame_thickness, tier):
     arr = zeros_rgb(pixels, pixels)
 
     # blue square
-    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 2] = 255
+    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 0] = 20
+    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 1] = 20
+    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 2] = 200
 
     # gray line going up
     arr[: p_2 - t, p_2 - t : p_2 + t, :] = 100
@@ -76,16 +78,16 @@ def gen_receiver(pixels, thickness, tier_frame_thickness, tier):
     for l in range(4):
         # facing down
         o = t_2 + l - 1
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 255
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 255
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 225
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 225
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 225
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 225
         # facing down
         o = p_2 - 2 * t + l
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 255
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 255
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 225
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 225
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 225
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 225
 
     # add the other three gray lines via rotation
     sub_arr = arr
@@ -110,7 +112,9 @@ def gen_transmitter(pixels, thickness, tier_frame_thickness, tier):
     arr = zeros_rgb(pixels, pixels)
 
     # red square
-    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 0] = 255
+    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 0] = 200
+    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 1] = 20
+    arr[p_2 - t : p_2 + t, p_2 - t : p_2 + t, 2] = 20
 
     # gray line going up
     arr[: p_2 - t, p_2 - t : p_2 + t, :] = 100
@@ -119,16 +123,16 @@ def gen_transmitter(pixels, thickness, tier_frame_thickness, tier):
     for l in range(4):
         # facing up
         o = t_2 + (3 - l) - 1
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 255
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 255
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 225
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 225
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 225
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 225
         # facing up
         o = p_2 - 2 * t + (3 - l)
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 255
-        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 255
-        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 255
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = 225
+        arr[o, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 1] = 225
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 0] = 225
+        arr[o, p_2 + t_2 - (l - 1) * 2 : p_2 + t_2 - (l - 2) * 2, 1] = 225
 
     # add the other three gray lines via rotation
     sub_arr = arr
@@ -163,7 +167,7 @@ def gen_underground(pixels, thickness, tier_frame_thickness, tier, down=True, up
             100 - k * 20
         )
         for l in range(4):
-            col = 255 - k * 60
+            col = 225 - k * 60
             if down:
                 r = (1 + k * 2) * offset - 2 + l
                 arr[r, p_2 - t_2 + (l - 2) * 2 : p_2 - t_2 + (l - 1) * 2, 0] = col
@@ -189,20 +193,20 @@ def make_base_cable(pixels_x, pixels_y, yellow_line_offset):
     # x = np.arange(3 * pixels_x) * 2 * np.pi / yellow_line_offset
     # s = np.round(pixels_y // 5 * np.sin(x)).astype("int")
     # for c, i in enumerate(s):
-    #     arr[pixels_y // 2 + i, c, 0] = 255
-    #     arr[pixels_y // 2 + i, c, 1] = 255
-    arr[pixels_y // 3 : -pixels_y // 3, ::yellow_line_offset, 0] = 255
-    arr[pixels_y // 3 : -pixels_y // 3, ::yellow_line_offset, 1] = 255
-    arr[pixels_y // 3 : -pixels_y // 3, 1::yellow_line_offset, 0] = 255
-    arr[pixels_y // 3 : -pixels_y // 3, 1::yellow_line_offset, 1] = 255
-    arr[pixels_y // 5 : -pixels_y // 5, 4::yellow_line_offset, 0] = 255
-    arr[pixels_y // 5 : -pixels_y // 5, 4::yellow_line_offset, 1] = 255
-    arr[pixels_y // 5 : -pixels_y // 5, 5::yellow_line_offset, 0] = 255
-    arr[pixels_y // 5 : -pixels_y // 5, 5::yellow_line_offset, 1] = 255
-    arr[pixels_y // 3 : -pixels_y // 3, 8::yellow_line_offset, 0] = 255
-    arr[pixels_y // 3 : -pixels_y // 3, 8::yellow_line_offset, 1] = 255
-    arr[pixels_y // 3 : -pixels_y // 3, 9::yellow_line_offset, 0] = 255
-    arr[pixels_y // 3 : -pixels_y // 3, 9::yellow_line_offset, 1] = 255
+    #     arr[pixels_y // 2 + i, c, 0] = 225
+    #     arr[pixels_y // 2 + i, c, 1] = 225
+    arr[pixels_y // 3 : -pixels_y // 3, ::yellow_line_offset, 0] = 225
+    arr[pixels_y // 3 : -pixels_y // 3, ::yellow_line_offset, 1] = 225
+    arr[pixels_y // 3 : -pixels_y // 3, 1::yellow_line_offset, 0] = 225
+    arr[pixels_y // 3 : -pixels_y // 3, 1::yellow_line_offset, 1] = 225
+    arr[pixels_y // 5 : -pixels_y // 5, 4::yellow_line_offset, 0] = 225
+    arr[pixels_y // 5 : -pixels_y // 5, 4::yellow_line_offset, 1] = 225
+    arr[pixels_y // 5 : -pixels_y // 5, 5::yellow_line_offset, 0] = 225
+    arr[pixels_y // 5 : -pixels_y // 5, 5::yellow_line_offset, 1] = 225
+    arr[pixels_y // 3 : -pixels_y // 3, 8::yellow_line_offset, 0] = 225
+    arr[pixels_y // 3 : -pixels_y // 3, 8::yellow_line_offset, 1] = 225
+    arr[pixels_y // 3 : -pixels_y // 3, 9::yellow_line_offset, 0] = 225
+    arr[pixels_y // 3 : -pixels_y // 3, 9::yellow_line_offset, 1] = 225
     return arr
 
 
@@ -252,17 +256,25 @@ def make_tier_edges(
     r, c = arr.shape[:2]
     for k in range(1, 2 * n_lines, 2):
         if tl:
-            arr[: r // 4, (k - 1) * lt : k * lt, 1] = 255
-            arr[(k - 1) * lt : k * lt, : c // 4, 1] = 255
+            arr[: r // 4, (k - 1) * lt : k * lt, 0] = 75
+            arr[(k - 1) * lt : k * lt, : c // 4, 0] = 75
+            arr[: r // 4, (k - 1) * lt : k * lt, 1] = 150
+            arr[(k - 1) * lt : k * lt, : c // 4, 1] = 150
         if tr:
-            arr[(k - 1) * lt : k * lt, -c // 4 :, 1] = 255
-            arr[: r // 4, c - k * lt : c - (k - 1) * lt, 1] = 255
+            arr[(k - 1) * lt : k * lt, -c // 4 :, 0] = 75
+            arr[: r // 4, c - k * lt : c - (k - 1) * lt, 0] = 75
+            arr[(k - 1) * lt : k * lt, -c // 4 :, 1] = 150
+            arr[: r // 4, c - k * lt : c - (k - 1) * lt, 1] = 150
         if br:
-            arr[-r // 4 :, c - k * lt : c - (k - 1) * lt, 1] = 255
-            arr[r - k * lt : r - (k - 1) * lt, -c // 4 :, 1] = 255
+            arr[-r // 4 :, c - k * lt : c - (k - 1) * lt, 0] = 75
+            arr[r - k * lt : r - (k - 1) * lt, -c // 4 :, 0] = 75
+            arr[-r // 4 :, c - k * lt : c - (k - 1) * lt, 1] = 150
+            arr[r - k * lt : r - (k - 1) * lt, -c // 4 :, 1] = 150
         if bl:
-            arr[r - k * lt : r - (k - 1) * lt, : c // 4, 1] = 255
-            arr[-r // 4 :, (k - 1) * lt : k * lt, 1] = 255
+            arr[r - k * lt : r - (k - 1) * lt, : c // 4, 0] = 75
+            arr[-r // 4 :, (k - 1) * lt : k * lt, 0] = 75
+            arr[r - k * lt : r - (k - 1) * lt, : c // 4, 1] = 150
+            arr[-r // 4 :, (k - 1) * lt : k * lt, 1] = 150
     return arr
 
 
@@ -285,13 +297,17 @@ def make_tier_lines(
     r, c = arr.shape[:2]
     for k in range(1, 2 * n_lines, 2):
         if left:
-            arr[r // 4 : -r // 4, (k - 1) * lt : k * lt, 1] = 255
+            arr[r // 4 : -r // 4, (k - 1) * lt : k * lt, 0] = 75
+            arr[r // 4 : -r // 4, (k - 1) * lt : k * lt, 1] = 150
         if top:
-            arr[(k - 1) * lt : k * lt, c // 4 : -c // 4, 1] = 255
+            arr[(k - 1) * lt : k * lt, c // 4 : -c // 4, 0] = 75
+            arr[(k - 1) * lt : k * lt, c // 4 : -c // 4, 1] = 150
         if right:
-            arr[r // 4 : -r // 4, c - k * lt : c - (k - 1) * lt, 1] = 255
+            arr[r // 4 : -r // 4, c - k * lt : c - (k - 1) * lt, 0] = 75
+            arr[r // 4 : -r // 4, c - k * lt : c - (k - 1) * lt, 1] = 150
         if bottom:
-            arr[r - k * lt : r - (k - 1) * lt, c // 4 : -c // 4, 1] = 255
+            arr[r - k * lt : r - (k - 1) * lt, c // 4 : -c // 4, 0] = 75
+            arr[r - k * lt : r - (k - 1) * lt, c // 4 : -c // 4, 1] = 150
     return arr
 
 
