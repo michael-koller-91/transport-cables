@@ -31,6 +31,8 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * make the names lookup better; probably something like `names.nodes[name_string] = true` and then `if names.nodes[entiy.name] then`; maybe even `names.nodes[name_string] = tier`?
 * there should be two `get_rx_filter`: one for containers and one of combinators
 * can receivers be made pastable onto other receivers?
+* rewrite all `if entity and ...` back to `if entity then`
+* update json parsing in pipeline
 
 ## Acknowledgement
 

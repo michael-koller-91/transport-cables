@@ -77,7 +77,11 @@ end
 
 ---------------------------------------------------------------------------
 local function get_inventory(entity)
-    return entity.get_inventory(defines.inventory.item_main)
+    if not entity or not entity.valid then
+        return
+    else
+        return entity.get_inventory(defines.inventory.item_main)
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -107,6 +111,14 @@ end
 
 -- Destroy the proxy associated with `entity`.
 local function destroy_proxy(entity, proxy)
+    if not entity or not entity.valid then
+        return
+    end
+
+    if not proxy or not proxy.valid then
+        return
+    end
+
     local destroyed = proxy.destroy()
     proxies[entity.unit_number] = nil
     return destroyed
@@ -114,6 +126,10 @@ end
 
 -- Disconnect the circuit connections associated with `entity`'s proxy.
 local function disconnect_proxies(entity)
+    if not entity or not entity.valid then
+        return
+    end
+
     local proxy = get_proxy(entity)
     if proxy then
         proxy.disconnect_neighbour(wire)
@@ -138,28 +154,32 @@ local function create_container(receiver, force, tier)
         return found
     end
 
-    -- If an upgrade happened, there is a container of a previous tier.
+    -- If an upgrade happened, there is a container of a previous tier ...
     if tier > 1 then
-        -- TODO: should we search through all previous tiers here (e.g., due to double update)?
-        local old_container = game.surfaces[1].find_entity(names[tier - 1].container, receiver.position)
-        if old_container then
-            if dbg.flags.print_create_container then
-                dbg.print("create_container(): old_container.unit_number = " ..
-                    tostring(old_container.unit_number) .. tostring(", tier = ") .. tostring(tier - 1))
+        local old_container
+        for previous_tier = 1, tier - 1 do
+            old_container = game.surfaces[1].find_entity(names[previous_tier].container, receiver.position)
+            if old_container then
+                if dbg.flags.print_create_container then
+                    dbg.print("create_container(): old_container.unit_number = " ..
+                        tostring(old_container.unit_number) .. tostring(", tier = ") .. tostring(tier - 1))
+                end
+                proxies[receiver.unit_number] = game.surfaces[1].create_entity {
+                    name = names[tier].container,
+                    position = receiver.position,
+                    force = force
+                }
+                -- copy items from old container to new container
+                local new_inventory = get_inventory(proxies[receiver.unit_number])
+                local old_inventory = get_inventory(old_container)
+                if old_inventory and new_inventory then
+                    for name, count in pairs(old_inventory.get_contents()) do
+                        new_inventory.insert({ name = name, count = count })
+                    end
+                end
+                old_container.destroy()
+                return proxies[receiver.unit_number]
             end
-            proxies[receiver.unit_number] = game.surfaces[1].create_entity {
-                name = names[tier].container,
-                position = receiver.position,
-                force = force
-            }
-            -- copy items from old container to new container
-            local new_inventory = get_inventory(proxies[receiver.unit_number])
-            local old_inventory = get_inventory(old_container)
-            for name, count in pairs(old_inventory.get_contents()) do
-                new_inventory.insert({ name = name, count = count })
-            end
-            old_container.destroy()
-            return proxies[receiver.unit_number]
         end
     end
 
@@ -188,6 +208,10 @@ end
 
 ---------------------------------------------------------------------------
 local function get_net_id(proxy)
+    if not proxy or not proxy.valid then
+        return
+    end
+
     local net_id
 
     local circuit_network = proxy.get_circuit_network(wire)
@@ -204,6 +228,10 @@ end
 
 -- Get what the receiver wants to receive.
 local function get_rx_filter(container, tier)
+    if not container or not container.valid then
+        return
+    end
+
     -- see if the combinator has a signal
     local combinator = game.surfaces[1].find_entity(names[tier].receiver, container.position)
     local signal = combinator.get_control_behavior().get_signal(slot_filter)
@@ -216,6 +244,10 @@ end
 
 -- Set what the receiver wants to receive.
 local function set_rx_filter_from_container(container, elem_value, tier)
+    if not container or not container.valid then
+        return
+    end
+
     -- the filter needs to be set for the combinator
     local combinator = game.surfaces[1].find_entity(names[tier].receiver, container.position)
     if combinator then
@@ -233,6 +265,10 @@ local function set_rx_filter_from_container(container, elem_value, tier)
 end
 
 local function set_rx_filter(combinator, elem_value)
+    if not combinator or not combinator.valid then
+        return
+    end
+
     local cb = combinator.get_control_behavior()
     if elem_value then
         cb.set_signal(slot_filter, { signal = { type = "item", name = elem_value }, count = 1 })
@@ -248,6 +284,10 @@ end
 -- All containers with the same network_id as `container` get the filter of
 -- `container`.
 local function set_rx_filter_in_same_network_as(container, tier)
+    if not container or not container.valid then
+        return
+    end
+
     if dbg.flags.print_set_rx_filter then
         dbg.print("set_rx_filter_in_same_network_as(): rx[" .. tostring(tier) .. "].net_id =", true)
         dbg.block(rx[tier].net_id)
@@ -298,7 +338,7 @@ local function update_net_id(tier)
                 if n_id ~= built_net_id then
                     new_net_id = get_net_id(get_proxy(un))
                     if built_net_id == new_net_id then
-                        -- ... and update their filter if that is the case.
+                        -- ... and update their filters if that is the case.
                         set_rx_filter(rx[tier].un[un], filter)
                     end
                 end
@@ -377,6 +417,10 @@ end
 -- Connect a cable to suitable neighbors.
 -- Note: A curved cable's direction is the direction of its front part.
 local function cable_connect_to_neighbors(entity, tier)
+    if not entity or not entity.valid then
+        return
+    end
+
     -- connect to neighboring cables
     for _, val in pairs(entity.belt_neighbours) do
         for _, neighbor in ipairs(val) do
@@ -384,16 +428,12 @@ local function cable_connect_to_neighbors(entity, tier)
                 if entity.direction == neighbor.direction then
                     connect_proxies(entity, neighbor)
                 elseif entity.direction ~= util.oppositedirection(neighbor.direction)
-                    and equal_position(move_position(neighbor.position, neighbor.direction), entity.position)
-                    and entity.belt_shape ~= "straight" then
-                    -- entity is in front of neighbor
-
+                    and equal_position(move_position(neighbor.position, neighbor.direction), entity.position) -- entity is in front of neighbor
+                    and entity.belt_shape ~= "straight" then                                                  -- and curved
                     connect_proxies(entity, neighbor)
                 elseif entity.direction ~= util.oppositedirection(neighbor.direction)
-                    and equal_position(move_position(entity.position, entity.direction), neighbor.position)
-                    and neighbor.belt_shape ~= "straight" then
-                    -- neighbor is in front of entity and curved
-
+                    and equal_position(move_position(entity.position, entity.direction), neighbor.position) -- neighbor is in front of entity
+                    and neighbor.belt_shape ~= "straight" then                                              -- and curved
                     connect_proxies(entity, neighbor)
                 end
             elseif neighbor.name == names[tier].underground_cable then
@@ -415,13 +455,6 @@ local function cable_connect_to_neighbors(entity, tier)
         connect_proxies(entity, receiver)
     end
 
-    -- connect to transmitter south of cable
-    position = move_position(entity.position, entity.direction, -1)
-    local transmitter = game.surfaces[1].find_entity(names[tier].transmitter, position)
-    if transmitter then
-        connect_proxies(entity, transmitter)
-    end
-
     -- connect to node north of cable
     position = move_position(entity.position, entity.direction, 1)
     local entity_node = game.surfaces[1].find_entity(names[tier].node, position)
@@ -429,17 +462,30 @@ local function cable_connect_to_neighbors(entity, tier)
         connect_proxies(entity, entity_node)
     end
 
-    -- connect to node south of cable
-    position = move_position(entity.position, entity.direction, -1)
-    entity_node = game.surfaces[1].find_entity(names[tier].node, position)
-    if entity_node and entity.belt_shape == "straight" then
-        connect_proxies(entity, entity_node)
+    if entity.belt_shape == "straight" then
+        -- connect to transmitter south of cable
+        position = move_position(entity.position, entity.direction, -1)
+        local transmitter = game.surfaces[1].find_entity(names[tier].transmitter, position)
+        if transmitter then
+            connect_proxies(entity, transmitter)
+        end
+
+        -- connect to node south of cable
+        position = move_position(entity.position, entity.direction, -1)
+        entity_node = game.surfaces[1].find_entity(names[tier].node, position)
+        if entity_node and entity.belt_shape == "straight" then
+            connect_proxies(entity, entity_node)
+        end
     end
 end
 
 ---------------------------------------------------------------------------
 -- Connect an underground cable to suitable neighbors.
 local function underground_cable_connect_to_neighbors(entity, tier)
+    if not entity or not entity.valid then
+        return
+    end
+
     -- connect to neighboring underground_cable
     if entity.neighbours then
         connect_proxies(entity, entity.neighbours)
@@ -570,6 +616,9 @@ local function on_built_entity(event)
                 entity.destroy()
             end
 
+            -- A connection to the non-proxy entity can happen with a fast replace
+            entity.disconnect_neighbour(wire) -- but we don't want that.
+
             cable_connect_to_neighbors(entity, tier)
 
             local belt_neighbors = entity.belt_neighbours
@@ -588,6 +637,9 @@ local function on_built_entity(event)
                 entity.destroy()
             end
 
+            -- A connection to the non-proxy entity can happen with a fast replace
+            entity.disconnect_neighbour(wire) -- but we don't want that.
+
             -- connect to neighboring cables (if they are facing towards or away from the node)
             -- and connect to neighboring nodes
             local position
@@ -601,7 +653,7 @@ local function on_built_entity(event)
                 -- neighboring cable
                 entity_neighbor = game.surfaces[1].find_entity(names[tier].cable, position)
                 if entity_neighbor then
-                    if entity_neighbor.direction == direction or entity_neighbor.direction == util.oppositedirection(direction) then
+                    if entity_neighbor.belt_shape == "straight" and entity_neighbor.direction == direction or entity_neighbor.direction == util.oppositedirection(direction) then
                         connect_proxies(entity, entity_neighbor)
                     end
                 end
@@ -648,6 +700,9 @@ local function on_built_entity(event)
                 entity.destroy()
             end
 
+            -- A connection to the non-proxy entity can happen with a fast replace
+            entity.disconnect_neighbour(wire) -- but we don't want that.
+
             local position
 
             rx[tier].un[entity.unit_number] = entity
@@ -660,14 +715,14 @@ local function on_built_entity(event)
                 text = "ID: -1",
                 surface = game.surfaces[1],
                 target = entity,
-                target_offset = { -0.75, 0 },
+                target_offset = { -0.6, 0 },
                 color = {
                     r = 1,
                     g = 1,
                     b = 1,
                     a = 0.9
                 },
-                scale = 1.0
+                scale = 0.8
             }
 
             -- connect to neighbors
@@ -706,6 +761,9 @@ local function on_built_entity(event)
                 entity.destroy()
             end
 
+            -- A connection to the non-proxy entity can happen with a fast replace
+            entity.disconnect_neighbour(wire) -- but we don't want that.
+
             tx[tier].un[entity.unit_number] = entity
 
             -- default ID
@@ -716,14 +774,14 @@ local function on_built_entity(event)
                 text = "ID: -1",
                 surface = game.surfaces[1],
                 target = entity,
-                target_offset = { -0.75, 0.25 },
+                target_offset = { -0.6, 0 },
                 color = {
                     r = 1,
                     g = 1,
                     b = 1,
                     a = 0.9
                 },
-                scale = 1.0
+                scale = 0.8
             }
 
             -- connect to neighbors
@@ -762,6 +820,9 @@ local function on_built_entity(event)
             if not proxy then
                 entity.destroy()
             end
+
+            -- A connection to the non-proxy entity can happen with a fast replace
+            entity.disconnect_neighbour(wire) -- but we don't want that.
 
             underground_cable_connect_to_neighbors(entity, tier)
 
@@ -1055,10 +1116,35 @@ local function on_rotated_entity(event)
         return
     end
 
+    local belt_neighbors = { inputs = {} } -- use same table structure as entity.belt_neighbours
+    local direction
+    local neighbor
+    local position
     for tier = 1, n_tiers do
         if entity.name == names[tier].cable then
+            -- After a rotation, what used to be a belt_neighbor might no longer be a belt_neighbor but still needs an upgrade.
+            -- Search for (underground) cables north, east, south, west.
+            for i = 0, 6, 2 do
+                -- rotate direction by i / 2 * 90°
+                direction = (entity.direction + i) % 8
+                position = move_position(entity.position, direction, 1)
+
+                neighbor = game.surfaces[1].find_entity(names[tier].cable, position)
+                if neighbor then
+                    table.insert(belt_neighbors.inputs, neighbor)
+                end
+                neighbor = game.surfaces[1].find_entity(names[tier].underground_cable, position)
+                if neighbor then
+                    table.insert(belt_neighbors.inputs, neighbor)
+                end
+            end
+
             disconnect_proxies(entity)
             cable_connect_to_neighbors(entity, tier)
+
+            cable_connection_update.belt_neighbors = belt_neighbors
+            cable_connection_update.scheduled = true
+            cable_connection_update.tier = tier
 
             network_update_scheduled[tier] = true
             return
@@ -1104,7 +1190,11 @@ local function on_tick(event)
         for _, val in pairs(cable_connection_update.belt_neighbors) do
             for _, neighbor in ipairs(val) do
                 disconnect_proxies(neighbor)
-                cable_connect_to_neighbors(neighbor, cable_connection_update.tier)
+                if neighbor.name == names[cable_connection_update.tier].cable then
+                    cable_connect_to_neighbors(neighbor, cable_connection_update.tier)
+                elseif neighbor.name == names[cable_connection_update.tier].underground_cable then
+                    underground_cable_connect_to_neighbors(neighbor, cable_connection_update.tier)
+                end
             end
         end
     end
@@ -1112,16 +1202,24 @@ end
 
 ---------------------------------------------------------------------------
 local function get_inventory_rx(entity)
-    return get_inventory(get_proxy(entity))
+    if not entity or not entity.valid then
+        return
+    else
+        return get_inventory(get_proxy(entity))
+    end
 end
 
 local function get_item_count(entity, item)
-    return get_inventory(entity).get_item_count(item)
+    if not entity or not entity.valid then
+        return
+    else
+        return get_inventory(entity).get_item_count(item)
+    end
 end
 
 -- Iterate over the key-value-pairs of the table `t` such that the values
 -- appear in descending order.
-local function pairs_by_value(t)
+local function pairs_by_descending_value(t)
     local a = {}
     for n in pairs(t) do
         table.insert(a, n)
@@ -1170,22 +1268,22 @@ local function on_nth_tick(event)
     -- move items between transmitter-receiver-pairs
     for tier = 1, n_tiers do
         for net_id, _ in pairs(active_nets[tier]) do
-            -- all transmitter unit numbers with this network_id
-            tx_un_array = tx[tier].net_id_and_un[net_id]
-            n_tx = #tx_un_array
-
-            -- all receiver unit numbers with this network_id
-            rx_un_array = rx[tier].net_id_and_un[net_id]
-            n_rx = #rx_un_array
-
             -- all receiver priorities with this network_id
             rx_priority_array = rx[tier].net_id_and_priority[net_id]
 
             if rx_priority_array then
+                -- all receiver unit numbers with this network_id
+                rx_un_array = rx[tier].net_id_and_un[net_id]
+                n_rx = #rx_un_array
+
                 -- the filter of all receivers with this network_id
                 filter = get_rx_filter(get_proxy(rx_un_array[1]), tier)
 
                 if filter then
+                    -- all transmitter unit numbers with this network_id
+                    tx_un_array = tx[tier].net_id_and_un[net_id]
+                    n_tx = #tx_un_array
+
                     -- Count the total number of items in all transmitters' inventories.
                     n_count_tx = 0
                     count_tx = {}
@@ -1210,7 +1308,7 @@ local function on_nth_tick(event)
 
                         n_items_inserted = 0
                         -- Try to give every receiver the necessary amount of items ...
-                        for un, _ in pairs_by_value(rx_priority_array) do
+                        for un, _ in pairs_by_descending_value(rx_priority_array) do
                             i = i + 1
                             n_insert = item_dividend
                             if i < item_remainder then
@@ -1218,18 +1316,20 @@ local function on_nth_tick(event)
                             end
 
                             rx_inventory = get_inventory_rx(rx[tier].un[un])
-                            n_items_insertable = rx_inventory.get_insertable_count(filter)
-                            if n_items_insertable >= n_insert then
-                                -- ... if enough items can be inserted ...
-                                if n_insert > 0 then
-                                    rx_inventory.insert({ name = filter, count = n_insert })
-                                    n_items_inserted = n_items_inserted + n_insert
-                                end
-                            else
-                                -- ... and otherwise insert as many as possible.
-                                if n_items_insertable > 0 then
-                                    rx_inventory.insert({ name = filter, count = n_items_insertable })
-                                    n_items_inserted = n_items_inserted + n_items_insertable
+                            if rx_inventory then
+                                n_items_insertable = rx_inventory.get_insertable_count(filter)
+                                if n_items_insertable >= n_insert then
+                                    -- ... if enough items can be inserted ...
+                                    if n_insert > 0 then
+                                        rx_inventory.insert({ name = filter, count = n_insert })
+                                        n_items_inserted = n_items_inserted + n_insert
+                                    end
+                                else
+                                    -- ... and otherwise insert as many as possible.
+                                    if n_items_insertable > 0 then
+                                        rx_inventory.insert({ name = filter, count = n_items_insertable })
+                                        n_items_inserted = n_items_inserted + n_items_insertable
+                                    end
                                 end
                             end
                             -- update the priority
@@ -1254,18 +1354,20 @@ local function on_nth_tick(event)
                             end
 
                             tx_inventory = get_inventory(tx[tier].un[un])
-                            n_items_removable = tx_inventory.get_item_count(filter)
-                            if n_items_removable >= n_remove then
-                                -- ... if enough items can be removed ...
-                                if n_remove > 0 then
-                                    tx_inventory.remove({ name = filter, count = n_remove })
-                                    n_items_to_remove = n_items_to_remove - n_remove
-                                end
-                            else
-                                -- ... and otherwise remove as many as possible.
-                                if n_items_removable > 0 then
-                                    tx_inventory.remove({ name = filter, count = n_items_removable })
-                                    n_items_to_remove = n_items_to_remove - n_items_removable
+                            if tx_inventory then
+                                n_items_removable = tx_inventory.get_item_count(filter)
+                                if n_items_removable >= n_remove then
+                                    -- ... if enough items can be removed ...
+                                    if n_remove > 0 then
+                                        tx_inventory.remove({ name = filter, count = n_remove })
+                                        n_items_to_remove = n_items_to_remove - n_remove
+                                    end
+                                else
+                                    -- ... and otherwise remove as many as possible.
+                                    if n_items_removable > 0 then
+                                        tx_inventory.remove({ name = filter, count = n_items_removable })
+                                        n_items_to_remove = n_items_to_remove - n_items_removable
+                                    end
                                 end
                             end
                         end
