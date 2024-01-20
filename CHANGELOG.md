@@ -6,6 +6,7 @@
 * Alt-view shows the filter of the receiver.
 * The item distribution algorithm has been rewritten.
 * The item description explains what transport cable entities can be connected to one another.
+* Sprite colors are more subtle.
 
 ## v0.1.3
 * Every level of the infinite research doubles the rate (up from times 1.1).

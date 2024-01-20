@@ -17,23 +17,56 @@ local slot_bar = 2              -- the combinator's slot which stores the state 
 local slot_filter = 1           -- the combinator's slot which stores the filter
 local wire = defines.wire_type.red
 
+---------------------------------------------------------------------------
 local prefix = "transport-cables:"
-local names = {}
+
+local tier_to_name = {
+    cable = {},
+    container = {},
+    lamp = {},
+    node = {},
+    receiver = {},
+    transmitter = {},
+    underground_cable = {},
+    gui_filter = {},
+    gui_frame = {}
+}
 for tier = 1, n_tiers do
-    names[tier] = {
-        cable = prefix .. "cable-t" .. tostring(tier),
-        container = prefix .. "container-t" .. tostring(tier),
-        lamp = prefix .. "lamp-t" .. tostring(tier),
-        node = prefix .. "node-t" .. tostring(tier),
-        receiver = prefix .. "receiver-t" .. tostring(tier),
-        transmitter = prefix .. "transmitter-t" .. tostring(tier),
-        underground_cable = prefix .. "underground-cable-t" .. tostring(tier),
-        --
-        gui_filter = prefix .. "filter-t" .. tostring(tier),
-        gui_frame = prefix .. "frame-t" .. tostring(tier)
-    }
+    tier_to_name.cable[tier] = prefix .. "cable-t" .. tostring(tier)
+    tier_to_name.container[tier] = prefix .. "container-t" .. tostring(tier)
+    tier_to_name.lamp[tier] = prefix .. "lamp-t" .. tostring(tier)
+    tier_to_name.node[tier] = prefix .. "node-t" .. tostring(tier)
+    tier_to_name.receiver[tier] = prefix .. "receiver-t" .. tostring(tier)
+    tier_to_name.transmitter[tier] = prefix .. "transmitter-t" .. tostring(tier)
+    tier_to_name.underground_cable[tier] = prefix .. "underground-cable-t" .. tostring(tier)
+    tier_to_name.gui_filter[tier] = prefix .. "filter-t" .. tostring(tier)
+    tier_to_name.gui_frame[tier] = prefix .. "frame-t" .. tostring(tier)
 end
 
+local name_to_tier = {
+    cable = {},
+    container = {},
+    lamp = {},
+    node = {},
+    receiver = {},
+    transmitter = {},
+    underground_cable = {},
+    gui_filter = {},
+    gui_frame = {}
+}
+for tier = 1, n_tiers do
+    name_to_tier.cable[prefix .. "cable-t" .. tostring(tier)] = tier
+    name_to_tier.container[prefix .. "container-t" .. tostring(tier)] = tier
+    name_to_tier.lamp[prefix .. "lamp-t" .. tostring(tier)] = tier
+    name_to_tier.node[prefix .. "node-t" .. tostring(tier)] = tier
+    name_to_tier.receiver[prefix .. "receiver-t" .. tostring(tier)] = tier
+    name_to_tier.transmitter[prefix .. "transmitter-t" .. tostring(tier)] = tier
+    name_to_tier.underground_cable[prefix .. "underground-cable-t" .. tostring(tier)] = tier
+    name_to_tier.gui_filter[prefix .. "filter-t" .. tostring(tier)] = tier
+    name_to_tier.gui_frame[prefix .. "frame-t" .. tostring(tier)] = tier
+end
+
+---------------------------------------------------------------------------
 local network_update_data = {}      -- data collected when the update is triggered
 local network_update_scheduled = {} -- is an update of the network ids necessary?
 
@@ -144,7 +177,7 @@ end
 -- Create a container and associate it with `entity`.
 local function create_container(receiver, force, tier)
     -- If there already is a container, do not create a new one.
-    local found = game.surfaces[1].find_entity(names[tier].container, receiver.position)
+    local found = game.surfaces[1].find_entity(tier_to_name.container[tier], receiver.position)
     if found then
         if dbg.flags.print_create_container then
             dbg.print("create_container(): found.unit_number = " ..
@@ -158,14 +191,14 @@ local function create_container(receiver, force, tier)
     if tier > 1 then
         local old_container
         for previous_tier = 1, tier - 1 do
-            old_container = game.surfaces[1].find_entity(names[previous_tier].container, receiver.position)
+            old_container = game.surfaces[1].find_entity(tier_to_name.container[previous_tier], receiver.position)
             if old_container then
                 if dbg.flags.print_create_container then
                     dbg.print("create_container(): old_container.unit_number = " ..
                         tostring(old_container.unit_number) .. tostring(", tier = ") .. tostring(tier - 1))
                 end
                 proxies[receiver.unit_number] = game.surfaces[1].create_entity {
-                    name = names[tier].container,
+                    name = tier_to_name.container[tier],
                     position = receiver.position,
                     force = force
                 }
@@ -185,7 +218,7 @@ local function create_container(receiver, force, tier)
 
     -- ... otherwise create one.
     proxies[receiver.unit_number] = game.surfaces[1].create_entity {
-        name = names[tier].container,
+        name = tier_to_name.container[tier],
         position = receiver.position,
         force = force
     }
@@ -199,7 +232,7 @@ end
 -- Create a lamp and associate it with `entity`.
 local function create_lamp(entity, force, tier)
     proxies[entity.unit_number] = game.surfaces[1].create_entity {
-        name = names[tier].lamp,
+        name = tier_to_name.lamp[tier],
         position = entity.position,
         force = force
     }
@@ -233,7 +266,7 @@ local function get_rx_filter(container, tier)
     end
 
     -- see if the combinator has a signal
-    local combinator = game.surfaces[1].find_entity(names[tier].receiver, container.position)
+    local combinator = game.surfaces[1].find_entity(tier_to_name.receiver[tier], container.position)
     local signal = combinator.get_control_behavior().get_signal(slot_filter)
     if signal and signal.signal then
         return signal.signal.name
@@ -249,7 +282,7 @@ local function set_rx_filter_from_container(container, elem_value, tier)
     end
 
     -- the filter needs to be set for the combinator
-    local combinator = game.surfaces[1].find_entity(names[tier].receiver, container.position)
+    local combinator = game.surfaces[1].find_entity(tier_to_name.receiver[tier], container.position)
     if combinator then
         local cb = combinator.get_control_behavior()
         if elem_value then
@@ -424,7 +457,7 @@ local function cable_connect_to_neighbors(entity, tier)
     -- connect to neighboring cables
     for _, val in pairs(entity.belt_neighbours) do
         for _, neighbor in ipairs(val) do
-            if neighbor.name == names[tier].cable then
+            if neighbor.name == tier_to_name.cable[tier] then
                 if entity.direction == neighbor.direction then
                     connect_proxies(entity, neighbor)
                 elseif entity.direction ~= util.oppositedirection(neighbor.direction)
@@ -436,7 +469,7 @@ local function cable_connect_to_neighbors(entity, tier)
                     and neighbor.belt_shape ~= "straight" then                                              -- and curved
                     connect_proxies(entity, neighbor)
                 end
-            elseif neighbor.name == names[tier].underground_cable then
+            elseif neighbor.name == tier_to_name.underground_cable[tier] then
                 if entity.direction == neighbor.direction then
                     connect_proxies(entity, neighbor)
                 end
@@ -450,14 +483,14 @@ local function cable_connect_to_neighbors(entity, tier)
 
     -- connect to receiver north of cable
     local position = move_position(entity.position, entity.direction, 1)
-    local receiver = game.surfaces[1].find_entity(names[tier].receiver, position)
+    local receiver = game.surfaces[1].find_entity(tier_to_name.receiver[tier], position)
     if receiver then
         connect_proxies(entity, receiver)
     end
 
     -- connect to node north of cable
     position = move_position(entity.position, entity.direction, 1)
-    local entity_node = game.surfaces[1].find_entity(names[tier].node, position)
+    local entity_node = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
     if entity_node then
         connect_proxies(entity, entity_node)
     end
@@ -465,14 +498,14 @@ local function cable_connect_to_neighbors(entity, tier)
     if entity.belt_shape == "straight" then
         -- connect to transmitter south of cable
         position = move_position(entity.position, entity.direction, -1)
-        local transmitter = game.surfaces[1].find_entity(names[tier].transmitter, position)
+        local transmitter = game.surfaces[1].find_entity(tier_to_name.transmitter[tier], position)
         if transmitter then
             connect_proxies(entity, transmitter)
         end
 
         -- connect to node south of cable
         position = move_position(entity.position, entity.direction, -1)
-        entity_node = game.surfaces[1].find_entity(names[tier].node, position)
+        entity_node = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
         if entity_node and entity.belt_shape == "straight" then
             connect_proxies(entity, entity_node)
         end
@@ -493,14 +526,14 @@ local function underground_cable_connect_to_neighbors(entity, tier)
 
     -- connect to underground_cable north of underground_cable if it is facing in the same direction
     local position = move_position(entity.position, entity.direction, 1)
-    local entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
+    local entity_cable = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
     if entity_cable and entity_cable.direction == entity.direction then
         connect_proxies(entity, entity_cable)
     end
 
     -- connect to underground_cable south of underground_cable if it is facing in the same direction
     position = move_position(entity.position, entity.direction, -1)
-    entity_cable = game.surfaces[1].find_entity(names[tier].underground_cable, position)
+    entity_cable = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
     if entity_cable and entity_cable.direction == entity.direction then
         connect_proxies(entity, entity_cable)
     end
@@ -508,7 +541,7 @@ local function underground_cable_connect_to_neighbors(entity, tier)
     -- connect to cable north of underground_cable if it is not facing towards
     -- the underground_cable
     position = move_position(entity.position, entity.direction, 1)
-    entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
+    entity_cable = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
     if entity_cable and entity_cable.direction ~= util.oppositedirection(entity.direction) and entity.belt_to_ground_type == "output" then
         connect_proxies(entity, entity_cable)
     end
@@ -516,35 +549,35 @@ local function underground_cable_connect_to_neighbors(entity, tier)
     -- connect to cable south of underground_cable if it is facing in the
     -- same direction
     position = move_position(entity.position, entity.direction, -1)
-    entity_cable = game.surfaces[1].find_entity(names[tier].cable, position)
+    entity_cable = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
     if entity_cable and entity_cable.direction == entity.direction then
         connect_proxies(entity, entity_cable)
     end
 
     -- connect to node north of underground_cable
     position = move_position(entity.position, entity.direction, 1)
-    local entity_node = game.surfaces[1].find_entity(names[tier].node, position)
+    local entity_node = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
     if entity_node and entity.belt_to_ground_type == "output" then
         connect_proxies(entity, entity_node)
     end
 
     -- connect to node south of underground_cable
     position = move_position(entity.position, entity.direction, -1)
-    entity_node = game.surfaces[1].find_entity(names[tier].node, position)
+    entity_node = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
     if entity_node and entity.belt_to_ground_type == "input" then
         connect_proxies(entity, entity_node)
     end
 
     -- connect to receiver north of underground cable
     position = move_position(entity.position, entity.direction, 1)
-    local receiver = game.surfaces[1].find_entity(names[tier].receiver, position)
+    local receiver = game.surfaces[1].find_entity(tier_to_name.receiver[tier], position)
     if receiver and entity.belt_to_ground_type == "output" then
         connect_proxies(entity, receiver)
     end
 
     -- connect to transmitter south of cable
     position = move_position(entity.position, entity.direction, -1)
-    local transmitter = game.surfaces[1].find_entity(names[tier].transmitter, position)
+    local transmitter = game.surfaces[1].find_entity(tier_to_name.transmitter[tier], position)
     if transmitter and entity.belt_to_ground_type == "input" then
         connect_proxies(entity, transmitter)
     end
@@ -559,13 +592,13 @@ local function create_gui(player, tier)
     }
     local frame = player.gui.relative.add({
         type = "frame",
-        name = names[tier].gui_frame,
+        name = tier_to_name.gui_frame[tier],
         anchor = anchor,
         caption = { "transport-cables.button-caption" }
     })
     local button = frame.add({
         type = "choose-elem-button",
-        name = names[tier].gui_filter,
+        name = tier_to_name.gui_filter[tier],
         elem_type = "item",
         tooltip = { "transport-cables.button-tooltip" }
     })
@@ -585,7 +618,7 @@ local function destroy_gui(player, tier)
         return
     end
 
-    local frame = player.gui.relative[names[tier].gui_frame]
+    local frame = player.gui.relative[tier_to_name.gui_frame[tier]]
 
     if not frame then
         return
@@ -609,238 +642,246 @@ local function on_built_entity(event)
         force = event.robot.force
     end
 
-    for tier = 1, n_tiers do
-        if entity.name == names[tier].cable then
-            local proxy = create_lamp(entity, force, tier)
-            if not proxy then
-                entity.destroy()
-            end
+    if name_to_tier.cable[entity.name] then
+        local tier = name_to_tier.cable[entity.name]
 
-            -- A connection to the non-proxy entity can happen with a fast replace
-            entity.disconnect_neighbour(wire) -- but we don't want that.
+        local proxy = create_lamp(entity, force, tier)
+        if not proxy then
+            entity.destroy()
+        end
 
-            cable_connect_to_neighbors(entity, tier)
+        -- A connection to the non-proxy entity can happen with a fast replace
+        entity.disconnect_neighbour(wire) -- but we don't want that.
 
-            local belt_neighbors = entity.belt_neighbours
-            if belt_neighbors then
-                cable_connection_update.belt_neighbors = belt_neighbors
-                cable_connection_update.scheduled = true
-                cable_connection_update.tier = tier
-            end
+        cable_connect_to_neighbors(entity, tier)
 
-            network_update_scheduled[tier] = true
-            network_update_data[tier] = { proxy = proxy, built = true }
-            return
-        elseif entity.name == names[tier].node then
-            local proxy = create_lamp(entity, force, tier)
-            if not proxy then
-                entity.destroy()
-            end
+        local belt_neighbors = entity.belt_neighbours
+        if belt_neighbors then
+            cable_connection_update.belt_neighbors = belt_neighbors
+            cable_connection_update.scheduled = true
+            cable_connection_update.tier = tier
+        end
 
-            -- A connection to the non-proxy entity can happen with a fast replace
-            entity.disconnect_neighbour(wire) -- but we don't want that.
+        network_update_scheduled[tier] = true
+        network_update_data[tier] = { proxy = proxy, built = true }
+        return
+    elseif name_to_tier.node[entity.name] then
+        local tier = name_to_tier.node[entity.name]
 
-            -- connect to neighboring cables (if they are facing towards or away from the node)
-            -- and connect to neighboring nodes
-            local position
-            local direction
-            local entity_neighbor
-            for i = 0, 6, 2 do
-                -- rotate direction by i / 2 * 90°
-                direction = (entity.direction + i) % 8
-                position = move_position(entity.position, direction, 1)
+        local proxy = create_lamp(entity, force, tier)
+        if not proxy then
+            entity.destroy()
+        end
 
-                -- neighboring cable
-                entity_neighbor = game.surfaces[1].find_entity(names[tier].cable, position)
-                if entity_neighbor then
-                    if entity_neighbor.belt_shape == "straight" and entity_neighbor.direction == direction or entity_neighbor.direction == util.oppositedirection(direction) then
-                        connect_proxies(entity, entity_neighbor)
-                    end
-                end
+        -- A connection to the non-proxy entity can happen with a fast replace
+        entity.disconnect_neighbour(wire) -- but we don't want that.
 
-                -- neighboring node
-                entity_neighbor = game.surfaces[1].find_entity(names[tier].node, position)
-                if entity_neighbor then
+        -- connect to neighboring cables (if they are facing towards or away from the node)
+        -- and connect to neighboring nodes
+        local position
+        local direction
+        local entity_neighbor
+        for i = 0, 6, 2 do
+            -- rotate direction by i / 2 * 90°
+            direction = (entity.direction + i) % 8
+            position = move_position(entity.position, direction, 1)
+
+            -- neighboring cable
+            entity_neighbor = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
+            if entity_neighbor then
+                if entity_neighbor.belt_shape == "straight" and entity_neighbor.direction == direction or entity_neighbor.direction == util.oppositedirection(direction) then
                     connect_proxies(entity, entity_neighbor)
                 end
             end
 
-            -- connect to neighbors
-            local neighbor
-            for i = 0, 6, 2 do
-                -- rotate direction by i / 2 * 90°
-                direction = (entity.direction + i) % 8
-                position = move_position(entity.position, direction, 1)
-
-                --  node
-                neighbor = game.surfaces[1].find_entity(names[tier].node, position)
-                if neighbor and ((neighbor.direction == direction) or (neighbor.direction == util.oppositedirection(direction))) then
-                    connect_proxies(entity, neighbor)
-                end
-
-                -- receiver
-                neighbor = game.surfaces[1].find_entity(names[tier].receiver, position)
-                if neighbor then
-                    connect_proxies(entity, neighbor)
-                end
-
-                -- transmitter
-                neighbor = game.surfaces[1].find_entity(names[tier].transmitter, position)
-                if neighbor then
-                    connect_proxies(entity, neighbor)
-                end
+            -- neighboring node
+            entity_neighbor = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
+            if entity_neighbor then
+                connect_proxies(entity, entity_neighbor)
             end
-
-            network_update_scheduled[tier] = true
-            network_update_data[tier] = { proxy = proxy, built = true }
-            return
-        elseif entity.name == names[tier].receiver then
-            local proxy = create_container(entity, force, tier)
-            if not proxy then
-                entity.destroy()
-            end
-
-            -- A connection to the non-proxy entity can happen with a fast replace
-            entity.disconnect_neighbour(wire) -- but we don't want that.
-
-            local position
-
-            rx[tier].un[entity.unit_number] = entity
-
-            -- default ID
-            rx[tier].net_id[entity.unit_number] = -1
-
-            -- display ID
-            rx[tier].text_id[entity.unit_number] = rendering.draw_text {
-                text = "ID: -1",
-                surface = game.surfaces[1],
-                target = entity,
-                target_offset = { -0.6, 0 },
-                color = {
-                    r = 1,
-                    g = 1,
-                    b = 1,
-                    a = 0.9
-                },
-                scale = 0.8
-            }
-
-            -- connect to neighbors
-            local direction
-            local neighbor
-            for i = 0, 6, 2 do
-                -- rotate direction by i / 2 * 90°
-                direction = (entity.direction + i) % 8
-                position = move_position(entity.position, direction, 1)
-
-                -- cable north, east, south, west of receiver if it is facing towards the receiver
-                neighbor = game.surfaces[1].find_entity(names[tier].cable, position)
-                if neighbor and neighbor.direction == util.oppositedirection(direction) then
-                    connect_proxies(entity, neighbor)
-                end
-
-                -- node
-                neighbor = game.surfaces[1].find_entity(names[tier].node, position)
-                if neighbor then
-                    connect_proxies(entity, neighbor)
-                end
-
-                -- underground cable north, east, south, west of receiver if it is facing towards the receiver and an output
-                neighbor = game.surfaces[1].find_entity(names[tier].underground_cable, position)
-                if neighbor and neighbor.belt_to_ground_type == "output" and neighbor.direction == util.oppositedirection(direction) then
-                    connect_proxies(entity, neighbor)
-                end
-            end
-
-            network_update_scheduled[tier] = true
-            network_update_data[tier] = { proxy = proxy, built = true }
-            return
-        elseif entity.name == names[tier].transmitter then
-            local proxy = create_lamp(entity, force, tier)
-            if not proxy then
-                entity.destroy()
-            end
-
-            -- A connection to the non-proxy entity can happen with a fast replace
-            entity.disconnect_neighbour(wire) -- but we don't want that.
-
-            tx[tier].un[entity.unit_number] = entity
-
-            -- default ID
-            tx[tier].net_id[entity.unit_number] = -1
-
-            -- display ID
-            tx[tier].text_id[entity.unit_number] = rendering.draw_text {
-                text = "ID: -1",
-                surface = game.surfaces[1],
-                target = entity,
-                target_offset = { -0.6, 0 },
-                color = {
-                    r = 1,
-                    g = 1,
-                    b = 1,
-                    a = 0.9
-                },
-                scale = 0.8
-            }
-
-            -- connect to neighbors
-            local position
-            local direction
-            local neighbor
-            for i = 0, 6, 2 do
-                -- rotate direction by i / 2 * 90°
-                direction = (entity.direction + i) % 8
-                position = move_position(entity.position, direction, 1)
-
-                -- cable north, east, south, west of transmitter if it is facing away from the transmitter
-                neighbor = game.surfaces[1].find_entity(names[tier].cable, position)
-                if neighbor and neighbor.direction == direction then
-                    connect_proxies(entity, neighbor)
-                end
-
-                -- node
-                neighbor = game.surfaces[1].find_entity(names[tier].node, position)
-                if neighbor then
-                    connect_proxies(entity, neighbor)
-                end
-
-                -- underground cable north, east, south, west of transmitter if it is facing away from the transmitter and an input
-                neighbor = game.surfaces[1].find_entity(names[tier].underground_cable, position)
-                if neighbor and neighbor.belt_to_ground_type == "input" and neighbor.direction == direction then
-                    connect_proxies(entity, neighbor)
-                end
-            end
-
-            network_update_scheduled[tier] = true
-            network_update_data[tier] = { proxy = proxy, built = true }
-            return
-        elseif entity.name == names[tier].underground_cable then
-            local proxy = create_lamp(entity, force, tier)
-            if not proxy then
-                entity.destroy()
-            end
-
-            -- A connection to the non-proxy entity can happen with a fast replace
-            entity.disconnect_neighbour(wire) -- but we don't want that.
-
-            underground_cable_connect_to_neighbors(entity, tier)
-
-            network_update_scheduled[tier] = true
-            network_update_data[tier] = { proxy = proxy, built = true }
-            return
         end
+
+        -- connect to neighbors
+        local neighbor
+        for i = 0, 6, 2 do
+            -- rotate direction by i / 2 * 90°
+            direction = (entity.direction + i) % 8
+            position = move_position(entity.position, direction, 1)
+
+            --  node
+            neighbor = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
+            if neighbor and ((neighbor.direction == direction) or (neighbor.direction == util.oppositedirection(direction))) then
+                connect_proxies(entity, neighbor)
+            end
+
+            -- receiver
+            neighbor = game.surfaces[1].find_entity(tier_to_name.receiver[tier], position)
+            if neighbor then
+                connect_proxies(entity, neighbor)
+            end
+
+            -- transmitter
+            neighbor = game.surfaces[1].find_entity(tier_to_name.transmitter[tier], position)
+            if neighbor then
+                connect_proxies(entity, neighbor)
+            end
+        end
+
+        network_update_scheduled[tier] = true
+        network_update_data[tier] = { proxy = proxy, built = true }
+        return
+    elseif name_to_tier.receiver[entity.name] then
+        local tier = name_to_tier.receiver[entity.name]
+
+        local proxy = create_container(entity, force, tier)
+        if not proxy then
+            entity.destroy()
+        end
+
+        -- A connection to the non-proxy entity can happen with a fast replace
+        entity.disconnect_neighbour(wire) -- but we don't want that.
+
+        local position
+
+        rx[tier].un[entity.unit_number] = entity
+
+        -- default ID
+        rx[tier].net_id[entity.unit_number] = -1
+
+        -- display ID
+        rx[tier].text_id[entity.unit_number] = rendering.draw_text {
+            text = "ID: -1",
+            surface = game.surfaces[1],
+            target = entity,
+            target_offset = { -0.6, 0 },
+            color = {
+                r = 1,
+                g = 1,
+                b = 1,
+                a = 0.9
+            },
+            scale = 0.8
+        }
+
+        -- connect to neighbors
+        local direction
+        local neighbor
+        for i = 0, 6, 2 do
+            -- rotate direction by i / 2 * 90°
+            direction = (entity.direction + i) % 8
+            position = move_position(entity.position, direction, 1)
+
+            -- cable north, east, south, west of receiver if it is facing towards the receiver
+            neighbor = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
+            if neighbor and neighbor.direction == util.oppositedirection(direction) then
+                connect_proxies(entity, neighbor)
+            end
+
+            -- node
+            neighbor = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
+            if neighbor then
+                connect_proxies(entity, neighbor)
+            end
+
+            -- underground cable north, east, south, west of receiver if it is facing towards the receiver and an output
+            neighbor = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
+            if neighbor and neighbor.belt_to_ground_type == "output" and neighbor.direction == util.oppositedirection(direction) then
+                connect_proxies(entity, neighbor)
+            end
+        end
+
+        network_update_scheduled[tier] = true
+        network_update_data[tier] = { proxy = proxy, built = true }
+        return
+    elseif name_to_tier.transmitter[entity.name] then
+        local tier = name_to_tier.transmitter[entity.name]
+
+        local proxy = create_lamp(entity, force, tier)
+        if not proxy then
+            entity.destroy()
+        end
+
+        -- A connection to the non-proxy entity can happen with a fast replace
+        entity.disconnect_neighbour(wire) -- but we don't want that.
+
+        tx[tier].un[entity.unit_number] = entity
+
+        -- default ID
+        tx[tier].net_id[entity.unit_number] = -1
+
+        -- display ID
+        tx[tier].text_id[entity.unit_number] = rendering.draw_text {
+            text = "ID: -1",
+            surface = game.surfaces[1],
+            target = entity,
+            target_offset = { -0.6, 0 },
+            color = {
+                r = 1,
+                g = 1,
+                b = 1,
+                a = 0.9
+            },
+            scale = 0.8
+        }
+
+        -- connect to neighbors
+        local position
+        local direction
+        local neighbor
+        for i = 0, 6, 2 do
+            -- rotate direction by i / 2 * 90°
+            direction = (entity.direction + i) % 8
+            position = move_position(entity.position, direction, 1)
+
+            -- cable north, east, south, west of transmitter if it is facing away from the transmitter
+            neighbor = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
+            if neighbor and neighbor.direction == direction then
+                connect_proxies(entity, neighbor)
+            end
+
+            -- node
+            neighbor = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
+            if neighbor then
+                connect_proxies(entity, neighbor)
+            end
+
+            -- underground cable north, east, south, west of transmitter if it is facing away from the transmitter and an input
+            neighbor = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
+            if neighbor and neighbor.belt_to_ground_type == "input" and neighbor.direction == direction then
+                connect_proxies(entity, neighbor)
+            end
+        end
+
+        network_update_scheduled[tier] = true
+        network_update_data[tier] = { proxy = proxy, built = true }
+        return
+    elseif name_to_tier.underground_cable[entity.name] then
+        local tier = name_to_tier.underground_cable[entity.name]
+
+        local proxy = create_lamp(entity, force, tier)
+        if not proxy then
+            entity.destroy()
+        end
+
+        -- A connection to the non-proxy entity can happen with a fast replace
+        entity.disconnect_neighbour(wire) -- but we don't want that.
+
+        underground_cable_connect_to_neighbors(entity, tier)
+
+        network_update_scheduled[tier] = true
+        network_update_data[tier] = { proxy = proxy, built = true }
+        return
     end
 end
 
 ---------------------------------------------------------------------------
 local on_built_filter = {}
 for tier = 1, n_tiers do
-    table.insert(on_built_filter, { filter = "name", name = names[tier].cable })
-    table.insert(on_built_filter, { filter = "name", name = names[tier].node })
-    table.insert(on_built_filter, { filter = "name", name = names[tier].transmitter })
-    table.insert(on_built_filter, { filter = "name", name = names[tier].receiver })
-    table.insert(on_built_filter, { filter = "name", name = names[tier].underground_cable })
+    table.insert(on_built_filter, { filter = "name", name = tier_to_name.cable[tier] })
+    table.insert(on_built_filter, { filter = "name", name = tier_to_name.node[tier] })
+    table.insert(on_built_filter, { filter = "name", name = tier_to_name.transmitter[tier] })
+    table.insert(on_built_filter, { filter = "name", name = tier_to_name.receiver[tier] })
+    table.insert(on_built_filter, { filter = "name", name = tier_to_name.underground_cable[tier] })
 end
 
 ---------------------------------------------------------------------------
@@ -896,12 +937,13 @@ end
 
 ---------------------------------------------------------------------------
 local function on_entity_settings_pasted(event)
-    for tier = 1, n_tiers do
-        if event.source.name == names[tier].receiver and event.destination.name == names[tier].receiver then
-            set_rx_filter_from_container(event.destination, get_rx_filter(event.source, tier), tier)
-            set_rx_filter_in_same_network_as(get_proxy(event.destination), tier)
-            return
-        end
+    if name_to_tier.receiver[event.source.name]
+        and name_to_tier.receiver[event.destination.name]
+        and name_to_tier.receiver[event.source.name] == name_to_tier.receiver[event.destination.name] then
+        local tier = name_to_tier.receiver[event.source.name]
+        set_rx_filter_from_container(event.destination, get_rx_filter(event.source, tier), tier)
+        set_rx_filter_in_same_network_as(get_proxy(event.destination), tier)
+        return
     end
 end
 
@@ -917,12 +959,11 @@ local function on_gui_closed(event)
         dbg.print("on_gui_closed(): entity.name = " .. tostring(entity.name))
     end
 
-    for tier = 1, n_tiers do
-        if event.entity.name == names[tier].container then
-            set_rx_filter_in_same_network_as(event.entity, tier)
-            destroy_gui(game.players[event.player_index], tier)
-            return
-        end
+    if name_to_tier.container[entity.name] then
+        local tier = name_to_tier.container[entity.name]
+        set_rx_filter_in_same_network_as(entity, tier)
+        destroy_gui(game.players[event.player_index], tier)
+        return
     end
 end
 
@@ -934,12 +975,10 @@ local function on_gui_elem_changed(event)
         return
     end
 
-    for tier = 1, n_tiers do
-        if element.name == names[tier].gui_filter then
-            if get_rx_filter(game.players[event.player_index].opened, tier) ~= event.element.elem_value then
-                set_rx_filter_from_container(game.players[event.player_index].opened, event.element.elem_value, tier)
-            end
-            return
+    if name_to_tier.gui_filter[element.name] then
+        local tier = name_to_tier.gui_filter[element.name]
+        if get_rx_filter(game.players[event.player_index].opened, tier) ~= event.element.elem_value then
+            set_rx_filter_from_container(game.players[event.player_index].opened, event.element.elem_value, tier)
         end
     end
 end
@@ -956,17 +995,13 @@ local function on_gui_opened(event)
         dbg.print("on_gui_opened(): entity.name = " .. tostring(entity.name))
     end
 
-    for tier = 1, n_tiers do
-        if entity.name == names[tier].receiver then
-            if not dbg.flags.combinator_selectale then
-                -- don't show the receiver GUI - switch to the container GUI
-                game.players[event.player_index].opened = get_proxy(entity)
-            end
-            return
-        elseif entity.name == names[tier].container then
-            create_gui(game.players[event.player_index], tier)
-            return
+    if name_to_tier.receiver[entity.name] then
+        if not dbg.flags.combinator_selectale then
+            -- don't show the receiver GUI - switch to the container GUI
+            game.players[event.player_index].opened = get_proxy(entity)
         end
+    elseif name_to_tier.container[entity.name] then
+        create_gui(game.players[event.player_index], name_to_tier.container[entity.name])
     end
 end
 
@@ -978,78 +1013,81 @@ local function on_mined_entity(event)
         return
     end
 
-    for tier = 1, n_tiers do
-        if entity.name == names[tier].cable then
-            local proxy = get_proxy(entity)
-            network_update_data[tier] = { proxy = proxy, mined = true }
+    if name_to_tier.cable[entity.name] then
+        local tier = name_to_tier.cable[entity.name]
 
-            local belt_neighbors = entity.belt_neighbours
-            if belt_neighbors then
-                cable_connection_update.belt_neighbors = belt_neighbors
-                cable_connection_update.scheduled = true
-                cable_connection_update.tier = tier
-            end
+        local proxy = get_proxy(entity)
+        network_update_data[tier] = { proxy = proxy, mined = true }
 
-            destroy_proxy(entity, proxy)
-
-            network_update_scheduled[tier] = true
-            return
-        elseif entity.name == names[tier].node then
-            local proxy = get_proxy(entity)
-            network_update_data[tier] = { proxy = proxy, mined = true }
-
-            destroy_proxy(entity, proxy)
-
-            network_update_scheduled[tier] = true
-            return
-        elseif entity.name == names[tier].receiver then
-            local proxy = get_proxy(entity)
-            network_update_data[tier] = { proxy = proxy, mined = true }
-            if entity.to_be_upgraded() then
-                -- Keep the container if the entity is to be upgraded but remove
-                -- the reference to the container as it will be destroyed soon.
-                proxies[entity.unit_number] = nil
-            else
-                destroy_proxy(entity, proxy)
-            end
-
-            rx[tier].un[entity.unit_number] = nil
-
-            -- and the displayed text
-            rendering.destroy(rx[tier].text_id[entity.unit_number])
-            rx[tier].text_id[entity.unit_number] = nil
-
-            -- and the ID
-            rx[tier].net_id[entity.unit_number] = nil
-
-            network_update_scheduled[tier] = true
-            return
-        elseif entity.name == names[tier].transmitter then
-            local proxy = get_proxy(entity)
-            network_update_data[tier] = { proxy = proxy, mined = true }
-
-            destroy_proxy(entity, proxy)
-
-            tx[tier].un[entity.unit_number] = nil
-
-            -- also destroy the displayed text
-            rendering.destroy(tx[tier].text_id[entity.unit_number])
-            tx[tier].text_id[entity.unit_number] = nil
-
-            -- and the ID
-            tx[tier].net_id[entity.unit_number] = nil
-
-            network_update_scheduled[tier] = true
-            return
-        elseif entity.name == names[tier].underground_cable then
-            local proxy = get_proxy(entity)
-            network_update_data[tier] = { proxy = proxy, mined = true }
-
-            destroy_proxy(entity, proxy)
-
-            network_update_scheduled[tier] = true
-            return
+        local belt_neighbors = entity.belt_neighbours
+        if belt_neighbors then
+            cable_connection_update.belt_neighbors = belt_neighbors
+            cable_connection_update.scheduled = true
+            cable_connection_update.tier = tier
         end
+
+        destroy_proxy(entity, proxy)
+
+        network_update_scheduled[tier] = true
+    elseif name_to_tier.node[entity.name] then
+        local tier = name_to_tier.node[entity.name]
+
+        local proxy = get_proxy(entity)
+        network_update_data[tier] = { proxy = proxy, mined = true }
+
+        destroy_proxy(entity, proxy)
+
+        network_update_scheduled[tier] = true
+    elseif name_to_tier.receiver[entity.name] then
+        local tier = name_to_tier.receiver[entity.name]
+
+        local proxy = get_proxy(entity)
+        network_update_data[tier] = { proxy = proxy, mined = true }
+        if entity.to_be_upgraded() then
+            -- Keep the container if the entity is to be upgraded but remove
+            -- the reference to the container as it will be destroyed soon.
+            proxies[entity.unit_number] = nil
+        else
+            destroy_proxy(entity, proxy)
+        end
+
+        rx[tier].un[entity.unit_number] = nil
+
+        -- and the displayed text
+        rendering.destroy(rx[tier].text_id[entity.unit_number])
+        rx[tier].text_id[entity.unit_number] = nil
+
+        -- and the ID
+        rx[tier].net_id[entity.unit_number] = nil
+
+        network_update_scheduled[tier] = true
+    elseif name_to_tier.transmitter[entity.name] then
+        local tier = name_to_tier.transmitter[entity.name]
+
+        local proxy = get_proxy(entity)
+        network_update_data[tier] = { proxy = proxy, mined = true }
+
+        destroy_proxy(entity, proxy)
+
+        tx[tier].un[entity.unit_number] = nil
+
+        -- also destroy the displayed text
+        rendering.destroy(tx[tier].text_id[entity.unit_number])
+        tx[tier].text_id[entity.unit_number] = nil
+
+        -- and the ID
+        tx[tier].net_id[entity.unit_number] = nil
+
+        network_update_scheduled[tier] = true
+    elseif name_to_tier.underground_cable[entity.name] then
+        local tier = name_to_tier.underground_cable[entity.name]
+
+        local proxy = get_proxy(entity)
+        network_update_data[tier] = { proxy = proxy, mined = true }
+
+        destroy_proxy(entity, proxy)
+
+        network_update_scheduled[tier] = true
     end
 
     -- Note:
@@ -1061,11 +1099,11 @@ end
 ---------------------------------------------------------------------------
 local on_mined_filter = {}
 for tier = 1, n_tiers do
-    table.insert(on_mined_filter, { filter = "name", name = names[tier].cable })
-    table.insert(on_mined_filter, { filter = "name", name = names[tier].node })
-    table.insert(on_mined_filter, { filter = "name", name = names[tier].transmitter })
-    table.insert(on_mined_filter, { filter = "name", name = names[tier].receiver })
-    table.insert(on_mined_filter, { filter = "name", name = names[tier].underground_cable })
+    table.insert(on_mined_filter, { filter = "name", name = tier_to_name.cable[tier] })
+    table.insert(on_mined_filter, { filter = "name", name = tier_to_name.node[tier] })
+    table.insert(on_mined_filter, { filter = "name", name = tier_to_name.transmitter[tier] })
+    table.insert(on_mined_filter, { filter = "name", name = tier_to_name.receiver[tier] })
+    table.insert(on_mined_filter, { filter = "name", name = tier_to_name.underground_cable[tier] })
 end
 
 ---------------------------------------------------------------------------
@@ -1120,60 +1158,48 @@ local function on_rotated_entity(event)
     local direction
     local neighbor
     local position
-    for tier = 1, n_tiers do
-        if entity.name == names[tier].cable then
-            -- After a rotation, what used to be a belt_neighbor might no longer be a belt_neighbor but still needs an upgrade.
-            -- Search for (underground) cables north, east, south, west.
-            for i = 0, 6, 2 do
-                -- rotate direction by i / 2 * 90°
-                direction = (entity.direction + i) % 8
-                position = move_position(entity.position, direction, 1)
+    if name_to_tier.cable[entity.name] then
+        local tier = name_to_tier.cable[entity.name]
 
-                neighbor = game.surfaces[1].find_entity(names[tier].cable, position)
-                if neighbor then
-                    table.insert(belt_neighbors.inputs, neighbor)
-                end
-                neighbor = game.surfaces[1].find_entity(names[tier].underground_cable, position)
-                if neighbor then
-                    table.insert(belt_neighbors.inputs, neighbor)
-                end
+        -- After a rotation, what used to be a belt_neighbor might no longer be a belt_neighbor but still needs an upgrade.
+        -- Search for (underground) cables north, east, south, west.
+        for i = 0, 6, 2 do
+            -- rotate direction by i / 2 * 90°
+            direction = (entity.direction + i) % 8
+            position = move_position(entity.position, direction, 1)
+
+            neighbor = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
+            if neighbor then
+                table.insert(belt_neighbors.inputs, neighbor)
             end
-
-            disconnect_proxies(entity)
-            cable_connect_to_neighbors(entity, tier)
-
-            cable_connection_update.belt_neighbors = belt_neighbors
-            cable_connection_update.scheduled = true
-            cable_connection_update.tier = tier
-
-            network_update_scheduled[tier] = true
-            return
-        elseif entity.name == names[tier].underground_cable then
-            disconnect_proxies(entity)
-            underground_cable_connect_to_neighbors(entity, tier)
-
-            -- also make the neighboring underground cable react
-            if entity.neighbours then
-                disconnect_proxies(entity.neighbours)
-                underground_cable_connect_to_neighbors(entity.neighbours, tier)
+            neighbor = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
+            if neighbor then
+                table.insert(belt_neighbors.inputs, neighbor)
             end
-
-            network_update_scheduled[tier] = true
-            return
         end
+
+        disconnect_proxies(entity)
+        cable_connect_to_neighbors(entity, tier)
+
+        cable_connection_update.belt_neighbors = belt_neighbors
+        cable_connection_update.scheduled = true
+        cable_connection_update.tier = tier
+
+        network_update_scheduled[tier] = true
+    elseif name_to_tier.underground_cable[entity.name] then
+        local tier = name_to_tier.underground_cable[entity.name]
+
+        disconnect_proxies(entity)
+        underground_cable_connect_to_neighbors(entity, tier)
+
+        -- also make the neighboring underground cable react
+        if entity.neighbours then
+            disconnect_proxies(entity.neighbours)
+            underground_cable_connect_to_neighbors(entity.neighbours, tier)
+        end
+
+        network_update_scheduled[tier] = true
     end
-end
-
----------------------------------------------------------------------------
-local function keys_sorted_by_value(t)
-    local keys = {}
-    for key in pairs(t) do
-        table.insert(keys, key)
-    end
-
-    table.sort(keys) -- ascending order
-
-    return keys
 end
 
 ---------------------------------------------------------------------------
@@ -1190,9 +1216,9 @@ local function on_tick(event)
         for _, val in pairs(cable_connection_update.belt_neighbors) do
             for _, neighbor in ipairs(val) do
                 disconnect_proxies(neighbor)
-                if neighbor.name == names[cable_connection_update.tier].cable then
+                if neighbor.name == tier_to_name.cable[cable_connection_update.tier] then
                     cable_connect_to_neighbors(neighbor, cable_connection_update.tier)
-                elseif neighbor.name == names[cable_connection_update.tier].underground_cable then
+                elseif neighbor.name == tier_to_name.underground_cable[cable_connection_update.tier] then
                     underground_cable_connect_to_neighbors(neighbor, cable_connection_update.tier)
                 end
             end
@@ -1215,6 +1241,19 @@ local function get_item_count(entity, item)
     else
         return get_inventory(entity).get_item_count(item)
     end
+end
+
+---------------------------------------------------------------------------
+-- Sort the keys in the table `t` by their values.
+local function keys_sorted_by_value(t)
+    local keys = {}
+    for key in pairs(t) do
+        table.insert(keys, key)
+    end
+
+    table.sort(keys) -- ascending order
+
+    return keys
 end
 
 -- Iterate over the key-value-pairs of the table `t` such that the values
@@ -1292,13 +1331,14 @@ local function on_nth_tick(event)
                         count_tx[un] = count
                         n_count_tx = n_count_tx + count
                     end
-                    -- Sort the transmitters ascendingly by their item count.
-                    tx_un_array_sorted_by_count = keys_sorted_by_value(count_tx)
 
                     -- Try to move `rate` many items unless there are not enough items in all transmitters combined.
                     n_items_to_move = math.min(mod_state[tier].rate, n_count_tx)
 
                     if n_items_to_move > 0 then
+                        -- Sort the transmitters ascendingly by their item count.
+                        tx_un_array_sorted_by_count = keys_sorted_by_value(count_tx)
+
                         -- On average, insert this many items into every receiver.
                         n_items_per_rx = n_items_to_move / n_rx
 

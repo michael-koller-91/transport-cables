@@ -32,6 +32,7 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * there should be two `get_rx_filter`: one for containers and one of combinators
 * can receivers be made pastable onto other receivers?
 * rewrite all `if entity and ...` back to `if entity then`
+* should cable_connection_update be an array to which updates are appended? multiple tiers for example or simultaneous updates?
 
 ## Acknowledgement
 
