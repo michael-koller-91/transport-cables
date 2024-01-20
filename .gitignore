@@ -1,5 +1,6 @@
 __pycache__/
 sprites/
+venv/
 work/
 *.lnk
 notes.md
