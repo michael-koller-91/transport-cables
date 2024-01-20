@@ -5,7 +5,7 @@
 * Receivers can be upgraded without losing their contents.
 * Alt-view shows the filter of the receiver.
 * The item distribution algorithm has been rewritten.
-* The item description explains what transport cable entities can be connected to one another.
+* The item descriptions explain what transport cable entities can be connected to one another.
 * Sprite colors are more subtle.
 
 ## v0.1.3

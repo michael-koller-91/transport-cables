@@ -74,10 +74,11 @@ local receiver_table = {
 ---------------------------------------------------------------------------
 script.on_init(function()
     global.active_nets = {}
-    global.cable_connection_update = {}
+    global.cable_connection_update_data = {}
+    global.cable_connection_update_scheduled = false
     global.mod_state = {}
     global.network_update_data = {}
-    global.network_update_scheduled = {}
+    global.network_update_scheduled = false
     global.proxies = {}
     global.receiver = {}
     global.transmitter = {}
@@ -85,8 +86,6 @@ script.on_init(function()
     for tier = 1, lib.n_tiers do
         global.active_nets[tier] = {}
         global.mod_state[tier] = { rate = 0 }
-        global.network_update_data[tier] = {}
-        global.network_update_scheduled[tier] = true
         global.receiver[tier] = table.deepcopy(receiver_table)
         global.transmitter[tier] = table.deepcopy(transmitter_table)
     end
