@@ -130,6 +130,10 @@ end
 
 -- Connect the two proxies associated with `source_entity` and `target_entity`.
 local function connect_proxies(source_entity, target_entity)
+    if not source_entity or not source_entity.valid or not target_entity or not target_entity.valid then
+        return
+    end
+
     if source_entity.type ~= "entity-ghost" and target_entity.type ~= "entity-ghost" then
         get_proxy(source_entity).connect_neighbour {
             wire = wire,
@@ -457,25 +461,27 @@ local function cable_connect_to_neighbors(entity, tier)
     -- connect to neighboring cables
     for _, val in pairs(entity.belt_neighbours) do
         for _, neighbor in ipairs(val) do
-            if neighbor.name == tier_to_name.cable[tier] then
-                if entity.direction == neighbor.direction then
-                    connect_proxies(entity, neighbor)
-                elseif entity.direction ~= util.oppositedirection(neighbor.direction)
-                    and equal_position(move_position(neighbor.position, neighbor.direction), entity.position) -- entity is in front of neighbor
-                    and entity.belt_shape ~= "straight" then                                                  -- and curved
-                    connect_proxies(entity, neighbor)
-                elseif entity.direction ~= util.oppositedirection(neighbor.direction)
-                    and equal_position(move_position(entity.position, entity.direction), neighbor.position) -- neighbor is in front of entity
-                    and neighbor.belt_shape ~= "straight" then                                              -- and curved
-                    connect_proxies(entity, neighbor)
-                end
-            elseif neighbor.name == tier_to_name.underground_cable[tier] then
-                if entity.direction == neighbor.direction then
-                    connect_proxies(entity, neighbor)
-                end
+            if neighbor and neighbor.valid then
+                if neighbor.name == tier_to_name.cable[tier] then
+                    if entity.direction == neighbor.direction then
+                        connect_proxies(entity, neighbor)
+                    elseif entity.direction ~= util.oppositedirection(neighbor.direction)
+                        and equal_position(move_position(neighbor.position, neighbor.direction), entity.position) -- entity is in front of neighbor
+                        and entity.belt_shape ~= "straight" then                                                  -- and curved
+                        connect_proxies(entity, neighbor)
+                    elseif entity.direction ~= util.oppositedirection(neighbor.direction)
+                        and equal_position(move_position(entity.position, entity.direction), neighbor.position) -- neighbor is in front of entity
+                        and neighbor.belt_shape ~= "straight" then                                              -- and curved
+                        connect_proxies(entity, neighbor)
+                    end
+                elseif neighbor.name == tier_to_name.underground_cable[tier] then
+                    if entity.direction == neighbor.direction then
+                        connect_proxies(entity, neighbor)
+                    end
 
-                if entity.belt_shape ~= "straight" and entity.direction ~= util.oppositedirection(neighbor.direction) then
-                    connect_proxies(entity, neighbor)
+                    if entity.belt_shape ~= "straight" and entity.direction ~= util.oppositedirection(neighbor.direction) then
+                        connect_proxies(entity, neighbor)
+                    end
                 end
             end
         end
@@ -688,10 +694,8 @@ local function on_built_entity(event)
 
             -- neighboring cable
             entity_neighbor = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
-            if entity_neighbor then
-                if entity_neighbor.belt_shape == "straight" and entity_neighbor.direction == direction or entity_neighbor.direction == util.oppositedirection(direction) then
-                    connect_proxies(entity, entity_neighbor)
-                end
+            if entity_neighbor and (entity_neighbor.belt_shape == "straight" and entity_neighbor.direction == direction or entity_neighbor.direction == util.oppositedirection(direction)) then
+                connect_proxies(entity, entity_neighbor)
             end
 
             -- neighboring node
@@ -785,7 +789,7 @@ local function on_built_entity(event)
 
             -- underground cable north, east, south, west of receiver if it is facing towards the receiver and an output
             neighbor = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
-            if neighbor and neighbor.belt_to_ground_type == "output" and neighbor.direction == util.oppositedirection(direction) then
+            if neighbor and (neighbor.belt_to_ground_type == "output" and neighbor.direction == util.oppositedirection(direction)) then
                 connect_proxies(entity, neighbor)
             end
         end
@@ -847,7 +851,7 @@ local function on_built_entity(event)
 
             -- underground cable north, east, south, west of transmitter if it is facing away from the transmitter and an input
             neighbor = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
-            if neighbor and neighbor.belt_to_ground_type == "input" and neighbor.direction == direction then
+            if neighbor and (neighbor.belt_to_ground_type == "input" and neighbor.direction == direction) then
                 connect_proxies(entity, neighbor)
             end
         end

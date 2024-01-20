@@ -21,18 +21,15 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 
 ## TODOs
 
-* write the how it works section
-* when mod entities are destroyed, should only the corresponding circuit network id tables be updated (instead of always calling update_network_ids())?
-* if a pair of underground cables is placed on cables, can the cables between the undergrounds be deleted?
-* allow container bar and store its status in combinator slot
-* what happens when a node is placed next to a (curved) cable?
-* update locale: what connects to what
+* Write the how it works section.
+* Introduce container bars and store their status in a combinator slot.
+* When mod entities are destroyed, should only the corresponding circuit network id tables be updated (instead of always calling update_network_ids())?
 * is it necessary to have n_tiers many entries in variables like proxies? can we avoid passing tier to almost every function? store the tier like net_id and use a get_tier function?
-* make the names lookup better; probably something like `names.nodes[name_string] = true` and then `if names.nodes[entiy.name] then`; maybe even `names.nodes[name_string] = tier`?
-* there should be two `get_rx_filter`: one for containers and one of combinators
-* can receivers be made pastable onto other receivers?
-* rewrite all `if entity and ...` back to `if entity then`
 * should cable_connection_update be an array to which updates are appended? multiple tiers for example or simultaneous updates?
+
+### TODO if possible
+* If a pair of underground cables is placed onto cables, can the cables between the undergrounds be deleted?
+* Can receivers be made pastable onto other receivers?
 
 ## Acknowledgement
 
