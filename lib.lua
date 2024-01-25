@@ -192,24 +192,24 @@ local function connect_proxies(t)
                 local net_id = get_net_id(get_proxy(un_add_rx))
                 if net_id then
                     -- update the displayed text
-                    rx[1].net_id[un_add_rx] = net_id
-                    rendering.set_text(rx[1].text_id[un_add_rx], "ID: " .. tostring(net_id))
+                    rx.net_id[un_add_rx] = net_id
+                    rendering.set_text(rx.text_id[un_add_rx], "ID: " .. tostring(net_id))
 
                     -- collect all receivers with the same network_id
-                    rx[1].net_id_and_un[net_id] = rx[1].net_id_and_un[net_id] or {}
-                    rx[1].net_id_and_un[net_id][un_add_rx] = true
+                    rx.net_id_and_un[net_id] = rx.net_id_and_un[net_id] or {}
+                    rx.net_id_and_un[net_id][un_add_rx] = true
 
                     -- number of receivers in network changed: reset priority
-                    rx[1].net_id_and_priority[net_id] = rx[1].net_id_and_priority[net_id] or {}
-                    for un, _ in pairs(rx[1].net_id_and_priority[net_id]) do
-                        rx[1].net_id_and_priority[net_id][un] = 0
+                    rx.net_id_and_priority[net_id] = rx.net_id_and_priority[net_id] or {}
+                    for un, _ in pairs(rx.net_id_and_priority[net_id]) do
+                        rx.net_id_and_priority[net_id][un] = 0
                     end
-                    rx[1].net_id_and_priority[net_id][un_add_rx] = 0
+                    rx.net_id_and_priority[net_id][un_add_rx] = 0
                 else
                     dbg.print("event.un_add_rx: else part of: if net_id then")
                     -- update the displayed text
-                    -- rx[event.tier].net_id[event.un_add_rx] = net_id
-                    -- rendering.set_text(rx[event.tier].text_id[event.un_add_rx], "ID: -1")
+                    -- rx.net_id[event.un_add_rx] = net_id
+                    -- rendering.set_text(rx.text_id[event.un_add_rx], "ID: -1")
                 end
             end
         end
@@ -412,18 +412,18 @@ local function set_rx_filter_in_same_network_as(container, tier)
     end
 
     if dbg.flags.print_set_rx_filter then
-        dbg.print("set_rx_filter_in_same_network_as(): rx[" .. tostring(tier) .. "].net_id =", true)
-        dbg.block(rx[tier].net_id)
+        dbg.print("set_rx_filter_in_same_network_as(): rx.net_id =", true)
+        dbg.block(rx.net_id)
     end
 
     local net_id = get_net_id(container)
 
     if net_id and net_id > 0 then
-        if rx[tier].net_id_and_un[net_id] then -- if there are other receivers in this network
+        if rx.net_id_and_un[net_id] then -- if there are other receivers in this network
             local filter = get_rx_filter(container, tier)
-            -- for _, unit_number in ipairs(rx[tier].net_id_and_un[net_id]) do
-            for unit_number, _ in ipairs(rx[tier].net_id_and_un[net_id]) do
-                set_rx_filter(rx[tier].un[unit_number], filter)
+            -- for _, unit_number in ipairs(rx.net_id_and_un[net_id]) do
+            for unit_number, _ in ipairs(rx.net_id_and_un[net_id]) do
+                set_rx_filter(rx.un[unit_number], filter)
             end
         end
     end
@@ -438,13 +438,13 @@ local function update_net_id(event)
     local new_net_id
 
     if dbg.flags.print_net_id then
-        dbg.print("update_net_id(): rx[" .. tostring(event.tier) .. "].un =", true)
-        for unit_number, _ in pairs(rx[event.tier].un) do
+        dbg.print("update_net_id(): rx.un =", true)
+        for unit_number, _ in pairs(rx.un) do
             dbg.print("\tun = " .. tostring(unit_number))
         end
 
-        dbg.print("update_net_id(): tx[" .. tostring(event.tier) .. "].un =")
-        for unit_number, _ in pairs(tx[event.tier].un) do
+        dbg.print("update_net_id(): tx.un =")
+        for unit_number, _ in pairs(tx.un) do
             dbg.print("\tun = " .. tostring(unit_number))
         end
     end
@@ -455,24 +455,24 @@ local function update_net_id(event)
     --    dbg.print("event.un_add_rx: net_id = " .. tostring(event.un_add_rx))
     --    if net_id then
     --        -- update the displayed text
-    --        rx[event.tier].net_id[event.un_add_rx] = net_id
-    --        rendering.set_text(rx[event.tier].text_id[event.un_add_rx], "ID: " .. tostring(net_id))
+    --        rx.net_id[event.un_add_rx] = net_id
+    --        rendering.set_text(rx.text_id[event.un_add_rx], "ID: " .. tostring(net_id))
 
     --        -- collect all receivers with the same network_id
-    --        rx[event.tier].net_id_and_un[net_id] = rx[event.tier].net_id_and_un[net_id] or {}
-    --        rx[event.tier].net_id_and_un[net_id][event.un_add_rx] = true
+    --        rx.net_id_and_un[net_id] = rx.net_id_and_un[net_id] or {}
+    --        rx.net_id_and_un[net_id][event.un_add_rx] = true
 
     --        -- number of receivers in network changed: reset priority
-    --        rx[event.tier].net_id_and_priority[net_id] = rx[event.tier].net_id_and_priority[net_id] or {}
-    --        rx[event.tier].net_id_and_priority[net_id][event.un_add_rx] = 0
-    --        for un, _ in pairs(rx[event.tier].net_id_and_priority[net_id]) do
-    --            rx[event.tier].net_id_and_priority[net_id][un] = 0
+    --        rx.net_id_and_priority[net_id] = rx.net_id_and_priority[net_id] or {}
+    --        rx.net_id_and_priority[net_id][event.un_add_rx] = 0
+    --        for un, _ in pairs(rx.net_id_and_priority[net_id]) do
+    --            rx.net_id_and_priority[net_id][un] = 0
     --        end
     --    else
     --        dbg.print("event.un_add_rx: else part of: if net_id then")
     --        -- update the displayed text
-    --        -- rx[event.tier].net_id[event.un_add_rx] = net_id
-    --        -- rendering.set_text(rx[event.tier].text_id[event.un_add_rx], "ID: -1")
+    --        -- rx.net_id[event.un_add_rx] = net_id
+    --        -- rendering.set_text(rx.text_id[event.un_add_rx], "ID: -1")
     --    end
     --end
 
@@ -484,17 +484,17 @@ local function update_net_id(event)
             dbg.print("un_add_tx: net_id = " .. tostring(net_id))
 
             -- update the displayed text
-            tx[event.tier].net_id[event.un_add_tx] = net_id
-            rendering.set_text(tx[event.tier].text_id[event.un_add_tx], "ID: " .. tostring(net_id))
+            tx.net_id[event.un_add_tx] = net_id
+            rendering.set_text(tx.text_id[event.un_add_tx], "ID: " .. tostring(net_id))
 
             -- collect all transmitters with the same network_id
-            tx[event.tier].net_id_and_un[net_id] = tx[event.tier].net_id_and_un[net_id] or {}
-            tx[event.tier].net_id_and_un[net_id][event.un_add_tx] = true
+            tx.net_id_and_un[net_id] = tx.net_id_and_un[net_id] or {}
+            tx.net_id_and_un[net_id][event.un_add_tx] = true
         else
             dbg.print("event.un_add_tx: else part of: if net_id then")
             -- update the displayed text
-            -- tx[event.tier].net_id[event.un_add_tx] = net_id
-            -- rendering.set_text(tx[event.tier].text_id[event.un_add_tx], "ID: -1")
+            -- tx.net_id[event.un_add_tx] = net_id
+            -- rendering.set_text(tx.text_id[event.un_add_tx], "ID: -1")
         end
     end
 
@@ -511,77 +511,77 @@ local function update_net_id(event)
         for net_id_old, _ in pairs(event.t_net_requires_update) do
             dbg.print("update_net_id(): net_id_old = " .. tostring(net_id_old))
             dbg.print("update_net_id(): event.tier = " .. tostring(event.tier))
-            dbg.print("update_net_id() 1: rx[event.tier].net_id_and_un[net_id_old] = " ..
-                tostring(rx[event.tier].net_id_and_un[net_id_old]))
-            rx[event.tier].net_id_and_un[net_id_old] = rx[event.tier].net_id_and_un[net_id_old] or {}
-            dbg.print("update_net_id() 2: rx[event.tier].net_id_and_un[net_id_old] = " ..
-                tostring(rx[event.tier].net_id_and_un[net_id_old]))
-            -- if rx[event.tier].net_id_and_un[net_id_old] then
-            for un, _ in pairs(rx[event.tier].net_id_and_un[net_id_old]) do
+            dbg.print("update_net_id() 1: rx.net_id_and_un[net_id_old] = " ..
+                tostring(rx.net_id_and_un[net_id_old]))
+            rx.net_id_and_un[net_id_old] = rx.net_id_and_un[net_id_old] or {}
+            dbg.print("update_net_id() 2: rx.net_id_and_un[net_id_old] = " ..
+                tostring(rx.net_id_and_un[net_id_old]))
+            -- if rx.net_id_and_un[net_id_old] then
+            for un, _ in pairs(rx.net_id_and_un[net_id_old]) do
                 dbg.print("before: rx.net_id_and_un[net_id_old]: un = " .. tostring(un))
             end
             -- end
             -- At this point, the old network no longer exists.
             -- All its entities are in the new network, so we need to update our variables:
-            for un, _ in pairs(rx[event.tier].net_id_and_un[net_id_old]) do
+            for un, _ in pairs(rx.net_id_and_un[net_id_old]) do
                 net_id = get_net_id(get_proxy(un))
                 dbg.print("rx: net_id_old = " ..
                     tostring(net_id_old) .. " | un = " .. tostring(un) .. " | net_id = " .. tostring(net_id))
                 if net_id then
-                    rx[event.tier].net_id_and_un[net_id] = rx[event.tier].net_id_and_un[net_id] or {}
-                    rx[event.tier].net_id_and_un[net_id][un] = true
+                    rx.net_id_and_un[net_id] = rx.net_id_and_un[net_id] or {}
+                    rx.net_id_and_un[net_id][un] = true
 
-                    -- rx[event.tier].net_id_and_un[net_id_old][un] = nil
-                    -- rx[event.tier].net_id_and_priority[net_id_old][un] = nil
+                    -- rx.net_id_and_un[net_id_old][un] = nil
+                    -- rx.net_id_and_priority[net_id_old][un] = nil
                     new_net_ids[net_id] = true
 
                     -- update the displayed text
                     dbg.print("updating text rx")
-                    rx[event.tier].net_id[un] = net_id
-                    rendering.set_text(rx[event.tier].text_id[un], "ID: " .. tostring(net_id))
+                    rx.net_id[un] = net_id
+                    rendering.set_text(rx.text_id[un], "ID: " .. tostring(net_id))
                 else
                     dbg.print("event.t_net_requires_update: else part of: if net_id then (rx)")
                 end
             end
-            dbg.print("update_net_id() 1: tx[event.tier].net_id_and_un[net_id_old] = " ..
-                tostring(tx[event.tier].net_id_and_un[net_id_old]))
-            tx[event.tier].net_id_and_un[net_id_old] = tx[event.tier].net_id_and_un[net_id_old] or {}
-            dbg.print("update_net_id() 2: tx[event.tier].net_id_and_un[net_id_old] = " ..
-                tostring(tx[event.tier].net_id_and_un[net_id_old]))
-            -- if tx[event.tier].net_id_and_un[net_id_old] then
-            for un, _ in pairs(tx[event.tier].net_id_and_un[net_id_old]) do
+            dbg.print("update_net_id() 1: tx.net_id_and_un[net_id_old] = " ..
+                tostring(tx.net_id_and_un[net_id_old]))
+            tx.net_id_and_un[net_id_old] = tx.net_id_and_un[net_id_old] or {}
+            dbg.print("update_net_id() 2: tx.net_id_and_un[net_id_old] = " ..
+                tostring(tx.net_id_and_un[net_id_old]))
+            -- if tx.net_id_and_un[net_id_old] then
+            for un, _ in pairs(tx.net_id_and_un[net_id_old]) do
                 dbg.print("before: tx.net_id_and_un[net_id_old]: un = " .. tostring(un))
             end
             -- end
-            for un, _ in pairs(tx[event.tier].net_id_and_un[net_id_old]) do
+            for un, _ in pairs(tx.net_id_and_un[net_id_old]) do
                 net_id = get_net_id(get_proxy(un))
                 dbg.print("tx: net_id_old = " ..
                     tostring(net_id_old) .. " | un = " .. tostring(un) .. " | net_id = " .. tostring(net_id))
                 if net_id then
-                    tx[event.tier].net_id_and_un[net_id] = tx[event.tier].net_id_and_un[net_id] or {}
-                    tx[event.tier].net_id_and_un[net_id][un] = true
+                    tx.net_id_and_un[net_id] = tx.net_id_and_un[net_id] or {}
+                    tx.net_id_and_un[net_id][un] = true
 
-                    tx[event.tier].net_id_and_un[net_id_old][un] = nil
+                    tx.net_id_and_un[net_id_old][un] = nil
 
                     -- update the displayed text
                     dbg.print("updating text tx")
-                    tx[event.tier].net_id[un] = net_id
-                    rendering.set_text(tx[event.tier].text_id[un], "ID: " .. tostring(net_id))
+                    tx.net_id[un] = net_id
+                    rendering.set_text(tx.text_id[un], "ID: " .. tostring(net_id))
                 else
                     dbg.print("event.t_net_requires_update: else part of: if net_id then (tx)")
                 end
             end
             -- Since the old network no longer exists:
-            rx[event.tier].net_id_and_un[net_id_old] = nil
-            rx[event.tier].net_id_and_priority[net_id_old] = nil
-            tx[event.tier].net_id_and_un[net_id_old] = nil
+            rx.net_id_and_un[net_id_old] = nil
+            rx.net_id_and_priority[net_id_old] = nil
+            tx.net_id_and_un[net_id_old] = nil
 
             -- All networks which are affected by the receiver network change
             -- might have more receivers: Reset the priorities.
             for n_id, _ in pairs(new_net_ids) do
-                rx[event.tier].net_id_and_priority[n_id] = rx[event.tier].net_id_and_priority[n_id] or {}
-                for un, _ in pairs(rx[event.tier].net_id_and_priority[n_id]) do
-                    rx[event.tier].net_id_and_priority[n_id][un] = 0
+                rx.net_id_and_priority[n_id] = rx.net_id_and_priority[n_id] or {}
+                for un, _ in pairs(rx.net_id_and_priority[n_id]) do
+                    rx.net_id_and_priority[n_id][un] = 0
                 end
             end
         end
@@ -589,14 +589,14 @@ local function update_net_id(event)
 
     -- find transmitters and receivers with the same network_id
     active_nets[event.tier] = {}
-    for _, entity in pairs(rx[event.tier].un) do
+    for _, entity in pairs(rx.un) do
         local proxy = get_proxy(entity)
         if proxy then
             circuit_network = proxy.get_circuit_network(wire)
             if circuit_network then
                 net_id = circuit_network.network_id
 
-                if tx[event.tier].net_id_and_un[net_id] then
+                if tx.net_id_and_un[net_id] then
                     active_nets[event.tier][net_id] = true
                 end
             end
@@ -604,13 +604,13 @@ local function update_net_id(event)
     end
 
     if dbg.flags.print_net_id then
-        dbg.print("update_net_id(): rx[" .. tostring(event.tier) .. "].net_id =")
-        for unit_number, net_id in pairs(rx[event.tier].net_id) do
+        dbg.print("update_net_id(): rx.net_id =")
+        for unit_number, net_id in pairs(rx.net_id) do
             dbg.print("\tun = " .. tostring(unit_number) .. " | net_id = " .. tostring(net_id))
         end
 
-        dbg.print("update_net_id(): tx[" .. tostring(event.tier) .. "].net_id =")
-        for unit_number, net_id in pairs(tx[event.tier].net_id) do
+        dbg.print("update_net_id(): tx.net_id =")
+        for unit_number, net_id in pairs(tx.net_id) do
             dbg.print("\tun = " .. tostring(unit_number) .. " | net_id = " .. tostring(net_id))
         end
 
@@ -942,13 +942,13 @@ local function on_built_entity(event)
 
         local position
 
-        rx[tier].un[entity.unit_number] = entity
+        rx.un[entity.unit_number] = entity
 
         -- default ID
-        rx[tier].net_id[entity.unit_number] = -1
+        rx.net_id[entity.unit_number] = -1
 
         -- display ID
-        rx[tier].text_id[entity.unit_number] = rendering.draw_text {
+        rx.text_id[entity.unit_number] = rendering.draw_text {
             text = "ID: -1",
             surface = game.surfaces[1],
             target = entity,
@@ -1012,13 +1012,13 @@ local function on_built_entity(event)
         -- A connection to the non-proxy entity can happen with a fast replace
         entity.disconnect_neighbour(wire) -- but we don't want that.
 
-        tx[tier].un[entity.unit_number] = entity
+        tx.un[entity.unit_number] = entity
 
         -- default ID
-        tx[tier].net_id[entity.unit_number] = -1
+        tx.net_id[entity.unit_number] = -1
 
         -- display ID
-        tx[tier].text_id[entity.unit_number] = rendering.draw_text {
+        tx.text_id[entity.unit_number] = rendering.draw_text {
             text = "ID: -1",
             surface = game.surfaces[1],
             target = entity,
@@ -1278,14 +1278,14 @@ local function on_mined_entity(event)
             destroy_proxy(entity, proxy)
         end
 
-        rx[tier].un[entity.unit_number] = nil
+        rx.un[entity.unit_number] = nil
 
         -- and the displayed text
-        rendering.destroy(rx[tier].text_id[entity.unit_number])
-        rx[tier].text_id[entity.unit_number] = nil
+        rendering.destroy(rx.text_id[entity.unit_number])
+        rx.text_id[entity.unit_number] = nil
 
         -- and the ID
-        rx[tier].net_id[entity.unit_number] = nil
+        rx.net_id[entity.unit_number] = nil
 
         network_update_scheduled = true
         table.insert(network_update_data, { tier = tier })
@@ -1296,14 +1296,14 @@ local function on_mined_entity(event)
 
         destroy_proxy(entity, proxy)
 
-        tx[tier].un[entity.unit_number] = nil
+        tx.un[entity.unit_number] = nil
 
         -- also destroy the displayed text
-        rendering.destroy(tx[tier].text_id[entity.unit_number])
-        tx[tier].text_id[entity.unit_number] = nil
+        rendering.destroy(tx.text_id[entity.unit_number])
+        tx.text_id[entity.unit_number] = nil
 
         -- and the ID
-        tx[tier].net_id[entity.unit_number] = nil
+        tx.net_id[entity.unit_number] = nil
 
         network_update_scheduled = true
         table.insert(network_update_data, { tier = tier })
@@ -1556,20 +1556,20 @@ local function on_nth_tick(event)
     tick_counter = tick_counter + 1
     if tick_counter == 4 then
         tick_counter = 0
-        if rx[1].net_id_and_un then
+        if rx.net_id_and_un then
             dbg.print("RX:")
-            for net_id, _ in pairs(rx[1].net_id_and_un) do
+            for net_id, _ in pairs(rx.net_id_and_un) do
                 dbg.print("on_tick(): rx.net_id = " .. tostring(net_id))
-                for un, _ in pairs(rx[1].net_id_and_un[net_id]) do
+                for un, _ in pairs(rx.net_id_and_un[net_id]) do
                     dbg.print("on_tick(): un = " .. tostring(un))
                 end
             end
         end
-        if tx[1].net_id_and_un then
+        if tx.net_id_and_un then
             dbg.print("TX:")
-            for net_id, _ in pairs(tx[1].net_id_and_un) do
+            for net_id, _ in pairs(tx.net_id_and_un) do
                 dbg.print("on_tick(): tx.net_id = " .. tostring(net_id))
-                for un, _ in pairs(tx[1].net_id_and_un[net_id]) do
+                for un, _ in pairs(tx.net_id_and_un[net_id]) do
                     dbg.print("on_tick(): un = " .. tostring(un))
                 end
             end
@@ -1581,11 +1581,11 @@ local function on_nth_tick(event)
     for tier = 1, n_tiers do
         for net_id, _ in pairs(active_nets[tier]) do
             -- all receiver priorities with this network_id
-            rx_priority_array = rx[tier].net_id_and_priority[net_id]
+            rx_priority_array = rx.net_id_and_priority[net_id]
 
             if rx_priority_array then
                 -- all receiver unit numbers with this network_id
-                rx_un_array = rx[tier].net_id_and_un[net_id]
+                rx_un_array = rx.net_id_and_un[net_id]
                 n_rx = #rx_un_array
 
                 -- the filter of all receivers with this network_id
@@ -1594,7 +1594,7 @@ local function on_nth_tick(event)
 
                 if filter then
                     -- all transmitter unit numbers with this network_id
-                    tx_un_array = tx[tier].net_id_and_un[net_id]
+                    tx_un_array = tx.net_id_and_un[net_id]
                     n_tx = #tx_un_array
 
                     -- Count the total number of items in all transmitters' inventories.
@@ -1602,7 +1602,7 @@ local function on_nth_tick(event)
                     count_tx = {}
                     -- for _, un in ipairs(tx_un_array) do
                     for un, _ in pairs(tx_un_array) do
-                        count = get_item_count(tx[tier].un[un], filter)
+                        count = get_item_count(tx.un[un], filter)
                         count_tx[un] = count
                         n_count_tx = n_count_tx + count
                     end
@@ -1630,7 +1630,7 @@ local function on_nth_tick(event)
                                 n_insert = item_dividend + 1
                             end
 
-                            rx_inventory = get_inventory_rx(rx[tier].un[un])
+                            rx_inventory = get_inventory_rx(rx.un[un])
                             if rx_inventory then
                                 n_items_insertable = rx_inventory.get_insertable_count(filter)
                                 if n_items_insertable >= n_insert then
@@ -1668,7 +1668,7 @@ local function on_nth_tick(event)
                                 n_remove = item_dividend
                             end
 
-                            tx_inventory = get_inventory(tx[tier].un[un])
+                            tx_inventory = get_inventory(tx.un[un])
                             if tx_inventory then
                                 n_items_removable = tx_inventory.get_item_count(filter)
                                 if n_items_removable >= n_remove then

@@ -52,26 +52,6 @@ script.on_event(defines.events.on_research_finished, lib.on_research_finished)
 script.on_event(defines.events.on_tick, lib.on_tick)
 
 ---------------------------------------------------------------------------
--- Every transmitter/receiver has a unit number `un` and is associated with a
--- circuit network id `net_id`.
--- The variable `text_id` holds the id of the text which displays the `net_id`.
-
-local transmitter_table = {
-    net_id = {},        -- unit number -> circuit network id
-    net_id_and_un = {}, -- circuit network id -> array(unit number)
-    text_id = {},       -- unit number -> text id
-    un = {}             -- unit number -> entity
-}
-
-local receiver_table = {
-    net_id = {},              -- unit number -> circuit network id
-    net_id_and_un = {},       -- circuit network id -> array(unit number)
-    net_id_and_priority = {}, -- unit_number -> item distribution priority
-    text_id = {},             -- unit number -> text id
-    un = {}                   -- unit number -> entity
-}
-
----------------------------------------------------------------------------
 script.on_init(function()
     global.active_nets = {}
     global.cable_connection_update_data = {}
@@ -80,14 +60,27 @@ script.on_init(function()
     global.network_update_data = {}
     global.network_update_scheduled = false
     global.proxies = {}
-    global.receiver = {}
-    global.transmitter = {}
+
+    -- Every transmitter/receiver has a unit number `un` and is associated with a
+    -- circuit network id `net_id`.
+    -- The variable `text_id` holds the id of the text which displays the `net_id`.
+    global.receiver = {
+        net_id = {},              -- unit number -> circuit network id
+        net_id_and_un = {},       -- circuit network id -> array(unit number)
+        net_id_and_priority = {}, -- unit_number -> item distribution priority
+        text_id = {},             -- unit number -> text id
+        un = {}                   -- unit number -> entity
+    }
+    global.transmitter = {
+        net_id = {},        -- unit number -> circuit network id
+        net_id_and_un = {}, -- circuit network id -> array(unit number)
+        text_id = {},       -- unit number -> text id
+        un = {}             -- unit number -> entity
+    }
 
     for tier = 1, lib.n_tiers do
         global.active_nets[tier] = {}
         global.mod_state[tier] = { rate = 0 }
-        global.receiver[tier] = table.deepcopy(receiver_table)
-        global.transmitter[tier] = table.deepcopy(transmitter_table)
     end
 
     -- `rate` is by one `rate_increment` smaller than what the first research grants
