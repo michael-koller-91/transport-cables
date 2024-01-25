@@ -58,7 +58,7 @@ script.on_event(defines.events.on_tick, lib.on_tick)
 
 local transmitter_table = {
     net_id = {},        -- unit number -> circuit network id
-    net_id_and_un = {}, -- circuit network id -> (unit number -> entity)
+    net_id_and_un = {}, -- circuit network id -> array(unit number)
     text_id = {},       -- unit number -> text id
     un = {}             -- unit number -> entity
 }

@@ -15,16 +15,17 @@ local commands = {
     set_rate = prefix .. "set-rate"
 }
 
+local value = false
 local flags = {
     add_debug_commands = true,
     combinator_selectale = false,
     print_connect_proxies = true,
-    print_create_container = true,
+    print_create_container = value,
     print_net_id = true,
-    print_gui = true,
-    print_on_research_finished = true,
-    print_set_rx_filter = true,
-    print_update_receiver_filters = true
+    print_gui = value,
+    print_on_research_finished = value,
+    print_set_rx_filter = value,
+    print_update_receiver_filters = value
 }
 
 local function print_block(t, newline)

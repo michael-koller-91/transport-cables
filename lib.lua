@@ -120,6 +120,26 @@ local function get_inventory(entity)
 end
 
 ---------------------------------------------------------------------------
+-- Get the circuit network_id of `proxy`.
+local function get_net_id(proxy)
+    if not proxy or not proxy.valid then
+        return
+    end
+
+    local net_id
+
+    local circuit_network = proxy.get_circuit_network(wire)
+    if circuit_network then
+        net_id = circuit_network.network_id
+    end
+
+    if dbg.flags.print_net_id then
+        dbg.print("get_net_id(): net_id = " .. tostring(net_id))
+    end
+
+    return net_id
+end
+
 -- Get the proxy associated with `identifier`. The argument `identifier` is
 -- either a unit_number or an entity.
 local function get_proxy(identifier)
@@ -131,14 +151,27 @@ local function get_proxy(identifier)
 end
 
 -- Connect the two proxies associated with `source_entity` and `target_entity`.
-local function connect_proxies(source_entity, target_entity)
+local function connect_proxies(t)
+    local source_entity = t[1] or t.source
+    local target_entity = t[2] or t.target
+    local source_is_rx = t.source_is_rx or false
+    local source_is_tx = t.source_is_tx or false
+
     if not source_entity or (not source_entity.valid or (not target_entity or not target_entity.valid)) then
         return
     end
 
     if source_entity.type ~= "entity-ghost" and target_entity.type ~= "entity-ghost" then
+        local t_net_requires_update = {}
+        local un_add_rx
+        local un_add_tx
+
         local source_proxy = get_proxy(source_entity)
         local target_proxy = get_proxy(target_entity)
+
+        local source_net_id_pre = get_net_id(source_proxy)
+        local target_net_id_pre = get_net_id(target_proxy)
+
         if source_proxy and (source_proxy.valid and (target_proxy and target_proxy.valid)) then
             source_proxy.connect_neighbour {
                 wire = wire,
@@ -146,8 +179,74 @@ local function connect_proxies(source_entity, target_entity)
             }
         end
 
+        local source_net_id_post = get_net_id(source_proxy)
+        local target_net_id_post = get_net_id(target_proxy)
+
+        if source_is_rx then
+            dbg.print("connect_proxies(): source is rx")
+            -- a receiver was not yet part of a network but is now
+            if not source_net_id_pre and source_net_id_post then
+                un_add_rx = source_entity.unit_number
+                dbg.print("un_add_rx = " .. tostring(un_add_rx))
+
+                local net_id = get_net_id(get_proxy(un_add_rx))
+                if net_id then
+                    -- update the displayed text
+                    rx[1].net_id[un_add_rx] = net_id
+                    rendering.set_text(rx[1].text_id[un_add_rx], "ID: " .. tostring(net_id))
+
+                    -- collect all receivers with the same network_id
+                    rx[1].net_id_and_un[net_id] = rx[1].net_id_and_un[net_id] or {}
+                    rx[1].net_id_and_un[net_id][un_add_rx] = true
+
+                    -- number of receivers in network changed: reset priority
+                    rx[1].net_id_and_priority[net_id] = rx[1].net_id_and_priority[net_id] or {}
+                    for un, _ in pairs(rx[1].net_id_and_priority[net_id]) do
+                        rx[1].net_id_and_priority[net_id][un] = 0
+                    end
+                    rx[1].net_id_and_priority[net_id][un_add_rx] = 0
+                else
+                    dbg.print("event.un_add_rx: else part of: if net_id then")
+                    -- update the displayed text
+                    -- rx[event.tier].net_id[event.un_add_rx] = net_id
+                    -- rendering.set_text(rx[event.tier].text_id[event.un_add_rx], "ID: -1")
+                end
+            end
+        end
+        if source_is_tx then
+            dbg.print("connect_proxies(): source is tx")
+            -- a transmitter was not yet part of a network but is now
+            if not source_net_id_pre and source_net_id_post then
+                un_add_tx = source_entity.unit_number
+                dbg.print("un_add_tx = " .. tostring(un_add_tx))
+            end
+        end
+
+        -- two previously not connected networks are now connected
+        if source_net_id_pre and source_net_id_pre ~= source_net_id_post then     -- `source_entity` already had a network_id and got a new one
+            t_net_requires_update[source_net_id_pre] = true                       -- all rx/tx entities with `source_entity`'s previous network_id got/need an update
+        elseif target_net_id_pre and target_net_id_pre ~= target_net_id_post then -- `target_entity` already had a network_id and got a new one
+            t_net_requires_update[target_net_id_pre] = true                       -- all rx/tx entities with `target_entity`'s previous network_id got/need an update
+        end
+
         if dbg.flags.print_connect_proxies then
             dbg.print("connect_proxies(): " .. source_entity.name .. " < == > " .. target_entity.name)
+            if source_net_id_pre and t_net_requires_update[source_net_id_pre] then
+                dbg.print("connect_proxies(): net_id = " ..
+                    tostring(source_net_id_pre) .. " was updated to net_id = " .. tostring(source_net_id_post))
+            end
+            if target_net_id_pre and t_net_requires_update[target_net_id_pre] then
+                dbg.print("connect_proxies(): net_id = " ..
+                    tostring(target_net_id_pre) .. " was updated to net_id = " .. tostring(target_net_id_post))
+            end
+        end
+
+        -- return nil if table is empty
+        local next = next
+        if next(t_net_requires_update) == nil then
+            return nil, un_add_rx, un_add_tx
+        else
+            return t_net_requires_update, un_add_rx, un_add_tx
         end
     end
 end
@@ -250,25 +349,6 @@ local function create_lamp(entity, force, tier)
 end
 
 ---------------------------------------------------------------------------
-local function get_net_id(proxy)
-    if not proxy or not proxy.valid then
-        return
-    end
-
-    local net_id
-
-    local circuit_network = proxy.get_circuit_network(wire)
-    if circuit_network then
-        net_id = circuit_network.network_id
-    end
-
-    if dbg.flags.print_net_id then
-        dbg.print("get_net_id(): net_id = " .. tostring(net_id))
-    end
-
-    return net_id
-end
-
 -- Get what the receiver wants to receive.
 local function get_rx_filter(container, tier)
     if not container or not container.valid then
@@ -341,7 +421,8 @@ local function set_rx_filter_in_same_network_as(container, tier)
     if net_id and net_id > 0 then
         if rx[tier].net_id_and_un[net_id] then -- if there are other receivers in this network
             local filter = get_rx_filter(container, tier)
-            for _, unit_number in ipairs(rx[tier].net_id_and_un[net_id]) do
+            -- for _, unit_number in ipairs(rx[tier].net_id_and_un[net_id]) do
+            for unit_number, _ in ipairs(rx[tier].net_id_and_un[net_id]) do
                 set_rx_filter(rx[tier].un[unit_number], filter)
             end
         end
@@ -368,67 +449,153 @@ local function update_net_id(event)
         end
     end
 
-    -- If an entity has been built, some receivers might have gotten a new network_id and need their filters updated.
-    if event.built then
-        local built_net_id = get_net_id(event.proxy)
-        -- Only if other receivers with network_id = `built_net_id` exist does it make sense to update a filter.
-        if rx[event.tier].net_id_and_un[built_net_id] then
-            -- Get the filter of one of the receivers with network_id = `built_net_id`.
-            filter = get_rx_filter(get_proxy(rx[event.tier].net_id_and_un[built_net_id][1]), event.tier)
-            -- Find all receivers which have a new network_id ...
-            for un, n_id in pairs(rx[event.tier].net_id) do
-                -- Compare a receiver's (potentially old) network_id with its (potentially new) network_id.
-                if n_id ~= built_net_id then
-                    new_net_id = get_net_id(get_proxy(un))
-                    if built_net_id == new_net_id then
-                        -- ... and update their filters if that is the case.
-                        set_rx_filter(rx[event.tier].un[un], filter)
-                    end
+    -- A receiver has been added to an existing network.
+    --if event.un_add_rx then
+    --    net_id = get_net_id(get_proxy(event.un_add_rx))
+    --    dbg.print("event.un_add_rx: net_id = " .. tostring(event.un_add_rx))
+    --    if net_id then
+    --        -- update the displayed text
+    --        rx[event.tier].net_id[event.un_add_rx] = net_id
+    --        rendering.set_text(rx[event.tier].text_id[event.un_add_rx], "ID: " .. tostring(net_id))
+
+    --        -- collect all receivers with the same network_id
+    --        rx[event.tier].net_id_and_un[net_id] = rx[event.tier].net_id_and_un[net_id] or {}
+    --        rx[event.tier].net_id_and_un[net_id][event.un_add_rx] = true
+
+    --        -- number of receivers in network changed: reset priority
+    --        rx[event.tier].net_id_and_priority[net_id] = rx[event.tier].net_id_and_priority[net_id] or {}
+    --        rx[event.tier].net_id_and_priority[net_id][event.un_add_rx] = 0
+    --        for un, _ in pairs(rx[event.tier].net_id_and_priority[net_id]) do
+    --            rx[event.tier].net_id_and_priority[net_id][un] = 0
+    --        end
+    --    else
+    --        dbg.print("event.un_add_rx: else part of: if net_id then")
+    --        -- update the displayed text
+    --        -- rx[event.tier].net_id[event.un_add_rx] = net_id
+    --        -- rendering.set_text(rx[event.tier].text_id[event.un_add_rx], "ID: -1")
+    --    end
+    --end
+
+    -- A transmitter has been added to an existing network.
+    if event.un_add_tx then
+        net_id = get_net_id(get_proxy(event.un_add_tx))
+        dbg.print("event.un_add_tx: net_id = " .. tostring(event.un_add_rx))
+        if net_id then
+            dbg.print("un_add_tx: net_id = " .. tostring(net_id))
+
+            -- update the displayed text
+            tx[event.tier].net_id[event.un_add_tx] = net_id
+            rendering.set_text(tx[event.tier].text_id[event.un_add_tx], "ID: " .. tostring(net_id))
+
+            -- collect all transmitters with the same network_id
+            tx[event.tier].net_id_and_un[net_id] = tx[event.tier].net_id_and_un[net_id] or {}
+            tx[event.tier].net_id_and_un[net_id][event.un_add_tx] = true
+        else
+            dbg.print("event.un_add_tx: else part of: if net_id then")
+            -- update the displayed text
+            -- tx[event.tier].net_id[event.un_add_tx] = net_id
+            -- rendering.set_text(tx[event.tier].text_id[event.un_add_tx], "ID: -1")
+        end
+    end
+
+
+    -- Two existing networks have been connected.
+    local entity
+    local network_id
+    local new_net_ids = {}
+    if event.t_net_requires_update then
+        dbg.print("update_net_id(): event.t_net_requires_update")
+        for k, v in pairs(event.t_net_requires_update) do
+            dbg.print("pairs(event.t_net_requires_update): k = " .. tostring(k) .. ", v = " .. tostring(v))
+        end
+        for net_id_old, _ in pairs(event.t_net_requires_update) do
+            dbg.print("update_net_id(): net_id_old = " .. tostring(net_id_old))
+            dbg.print("update_net_id(): event.tier = " .. tostring(event.tier))
+            dbg.print("update_net_id() 1: rx[event.tier].net_id_and_un[net_id_old] = " ..
+                tostring(rx[event.tier].net_id_and_un[net_id_old]))
+            rx[event.tier].net_id_and_un[net_id_old] = rx[event.tier].net_id_and_un[net_id_old] or {}
+            dbg.print("update_net_id() 2: rx[event.tier].net_id_and_un[net_id_old] = " ..
+                tostring(rx[event.tier].net_id_and_un[net_id_old]))
+            -- if rx[event.tier].net_id_and_un[net_id_old] then
+            for un, _ in pairs(rx[event.tier].net_id_and_un[net_id_old]) do
+                dbg.print("before: rx.net_id_and_un[net_id_old]: un = " .. tostring(un))
+            end
+            -- end
+            -- At this point, the old network no longer exists.
+            -- All its entities are in the new network, so we need to update our variables:
+            for un, _ in pairs(rx[event.tier].net_id_and_un[net_id_old]) do
+                net_id = get_net_id(get_proxy(un))
+                dbg.print("rx: net_id_old = " ..
+                    tostring(net_id_old) .. " | un = " .. tostring(un) .. " | net_id = " .. tostring(net_id))
+                if net_id then
+                    rx[event.tier].net_id_and_un[net_id] = rx[event.tier].net_id_and_un[net_id] or {}
+                    rx[event.tier].net_id_and_un[net_id][un] = true
+
+                    -- rx[event.tier].net_id_and_un[net_id_old][un] = nil
+                    -- rx[event.tier].net_id_and_priority[net_id_old][un] = nil
+                    new_net_ids[net_id] = true
+
+                    -- update the displayed text
+                    dbg.print("updating text rx")
+                    rx[event.tier].net_id[un] = net_id
+                    rendering.set_text(rx[event.tier].text_id[un], "ID: " .. tostring(net_id))
+                else
+                    dbg.print("event.t_net_requires_update: else part of: if net_id then (rx)")
+                end
+            end
+            dbg.print("update_net_id() 1: tx[event.tier].net_id_and_un[net_id_old] = " ..
+                tostring(tx[event.tier].net_id_and_un[net_id_old]))
+            tx[event.tier].net_id_and_un[net_id_old] = tx[event.tier].net_id_and_un[net_id_old] or {}
+            dbg.print("update_net_id() 2: tx[event.tier].net_id_and_un[net_id_old] = " ..
+                tostring(tx[event.tier].net_id_and_un[net_id_old]))
+            -- if tx[event.tier].net_id_and_un[net_id_old] then
+            for un, _ in pairs(tx[event.tier].net_id_and_un[net_id_old]) do
+                dbg.print("before: tx.net_id_and_un[net_id_old]: un = " .. tostring(un))
+            end
+            -- end
+            for un, _ in pairs(tx[event.tier].net_id_and_un[net_id_old]) do
+                net_id = get_net_id(get_proxy(un))
+                dbg.print("tx: net_id_old = " ..
+                    tostring(net_id_old) .. " | un = " .. tostring(un) .. " | net_id = " .. tostring(net_id))
+                if net_id then
+                    tx[event.tier].net_id_and_un[net_id] = tx[event.tier].net_id_and_un[net_id] or {}
+                    tx[event.tier].net_id_and_un[net_id][un] = true
+
+                    tx[event.tier].net_id_and_un[net_id_old][un] = nil
+
+                    -- update the displayed text
+                    dbg.print("updating text tx")
+                    tx[event.tier].net_id[un] = net_id
+                    rendering.set_text(tx[event.tier].text_id[un], "ID: " .. tostring(net_id))
+                else
+                    dbg.print("event.t_net_requires_update: else part of: if net_id then (tx)")
+                end
+            end
+            -- Since the old network no longer exists:
+            rx[event.tier].net_id_and_un[net_id_old] = nil
+            rx[event.tier].net_id_and_priority[net_id_old] = nil
+            tx[event.tier].net_id_and_un[net_id_old] = nil
+
+            -- All networks which are affected by the receiver network change
+            -- might have more receivers: Reset the priorities.
+            for n_id, _ in pairs(new_net_ids) do
+                rx[event.tier].net_id_and_priority[n_id] = rx[event.tier].net_id_and_priority[n_id] or {}
+                for un, _ in pairs(rx[event.tier].net_id_and_priority[n_id]) do
+                    rx[event.tier].net_id_and_priority[n_id][un] = 0
                 end
             end
         end
     end
 
+    -- find transmitters and receivers with the same network_id
     active_nets[event.tier] = {}
-    tx[event.tier].net_id_and_un = {}
-    rx[event.tier].net_id_and_un = {}
-    rx[event.tier].net_id_and_priority = {}
-
-    -- store network_id of all transmitters
-    for unit_number, entity in pairs(tx[event.tier].un) do
-        circuit_network = get_proxy(entity).get_circuit_network(wire)
-        if circuit_network then
-            net_id = circuit_network.network_id
-
-            tx[event.tier].net_id[unit_number] = net_id
-            rendering.set_text(tx[event.tier].text_id[unit_number], "ID: " .. tostring(net_id))
-
-            -- collect all transmitters with the same network_id
-            tx[event.tier].net_id_and_un[net_id] = tx[event.tier].net_id_and_un[net_id] or {}
-            table.insert(tx[event.tier].net_id_and_un[net_id], unit_number)
-        end
-    end
-
-    -- store network_id of all receivers
-    for unit_number, entity in pairs(rx[event.tier].un) do
+    for _, entity in pairs(rx[event.tier].un) do
         local proxy = get_proxy(entity)
         if proxy then
             circuit_network = proxy.get_circuit_network(wire)
             if circuit_network then
                 net_id = circuit_network.network_id
 
-                rx[event.tier].net_id[unit_number] = net_id
-                rendering.set_text(rx[event.tier].text_id[unit_number], "ID: " .. tostring(net_id))
-
-                -- collect all receivers with the same network_id
-                rx[event.tier].net_id_and_un[net_id] = rx[event.tier].net_id_and_un[net_id] or {}
-                table.insert(rx[event.tier].net_id_and_un[net_id], unit_number)
-
-                -- reset the priority
-                rx[event.tier].net_id_and_priority[net_id] = rx[event.tier].net_id_and_priority[net_id] or {}
-                rx[event.tier].net_id_and_priority[net_id][unit_number] = 0
-
-                -- find transmitters and receivers with the same network_id
                 if tx[event.tier].net_id_and_un[net_id] then
                     active_nets[event.tier][net_id] = true
                 end
@@ -464,29 +631,31 @@ local function cable_connect_to_neighbors(entity, tier)
         return
     end
 
+    local t_net_requires_update, un_add_rx, un_add_tx
+
     -- connect to neighboring cables
     for _, val in pairs(entity.belt_neighbours) do
         for _, neighbor in ipairs(val) do
             if neighbor and neighbor.valid then
                 if neighbor.name == tier_to_name.cable[tier] then
                     if entity.direction == neighbor.direction then
-                        connect_proxies(entity, neighbor)
+                        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
                     elseif entity.direction ~= util.oppositedirection(neighbor.direction)
                         and equal_position(move_position(neighbor.position, neighbor.direction), entity.position) -- entity is in front of neighbor
                         and entity.belt_shape ~= "straight" then                                                  -- and curved
-                        connect_proxies(entity, neighbor)
+                        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
                     elseif entity.direction ~= util.oppositedirection(neighbor.direction)
                         and equal_position(move_position(entity.position, entity.direction), neighbor.position) -- neighbor is in front of entity
                         and neighbor.belt_shape ~= "straight" then                                              -- and curved
-                        connect_proxies(entity, neighbor)
+                        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
                     end
                 elseif neighbor.name == tier_to_name.underground_cable[tier] then
                     if entity.direction == neighbor.direction then
-                        connect_proxies(entity, neighbor)
+                        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
                     end
 
                     if entity.belt_shape ~= "straight" and entity.direction ~= util.oppositedirection(neighbor.direction) then
-                        connect_proxies(entity, neighbor)
+                        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
                     end
                 end
             end
@@ -495,33 +664,35 @@ local function cable_connect_to_neighbors(entity, tier)
 
     -- connect to receiver north of cable
     local position = move_position(entity.position, entity.direction, 1)
-    local receiver = game.surfaces[1].find_entity(tier_to_name.receiver[tier], position)
-    if receiver then
-        connect_proxies(entity, receiver)
+    local neighbor = game.surfaces[1].find_entity(tier_to_name.receiver[tier], position)
+    if neighbor then
+        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { source = neighbor, target = entity, source_is_rx = true }
     end
 
     -- connect to node north of cable
     position = move_position(entity.position, entity.direction, 1)
-    local entity_node = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
-    if entity_node then
-        connect_proxies(entity, entity_node)
+    neighbor = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
+    if neighbor then
+        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
     end
 
     if entity.belt_shape == "straight" then
         -- connect to transmitter south of cable
         position = move_position(entity.position, entity.direction, -1)
-        local transmitter = game.surfaces[1].find_entity(tier_to_name.transmitter[tier], position)
-        if transmitter then
-            connect_proxies(entity, transmitter)
+        neighbor = game.surfaces[1].find_entity(tier_to_name.transmitter[tier], position)
+        if neighbor then
+            t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { source = neighbor, target = entity, source_is_tx = true }
         end
 
         -- connect to node south of cable
         position = move_position(entity.position, entity.direction, -1)
-        entity_node = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
-        if entity_node and entity.belt_shape == "straight" then
-            connect_proxies(entity, entity_node)
+        neighbor = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
+        if neighbor and entity.belt_shape == "straight" then
+            t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
         end
     end
+
+    return t_net_requires_update, un_add_rx, un_add_tx
 end
 
 -- Connect an underground cable to suitable neighbors.
@@ -530,68 +701,72 @@ local function underground_cable_connect_to_neighbors(entity, tier)
         return
     end
 
+    local t_net_requires_update, un_add_rx, un_add_tx
+
     -- connect to neighboring underground_cable
     if entity.neighbours then
-        connect_proxies(entity, entity.neighbours)
+        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, entity.neighbor }
     end
 
     -- connect to underground_cable north of underground_cable if it is facing in the same direction
     local position = move_position(entity.position, entity.direction, 1)
-    local entity_cable = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
-    if entity_cable and entity_cable.direction == entity.direction then
-        connect_proxies(entity, entity_cable)
+    local neighbor = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
+    if neighbor and neighbor.direction == entity.direction then
+        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
     end
 
     -- connect to underground_cable south of underground_cable if it is facing in the same direction
     position = move_position(entity.position, entity.direction, -1)
-    entity_cable = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
-    if entity_cable and entity_cable.direction == entity.direction then
-        connect_proxies(entity, entity_cable)
+    neighbor = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
+    if neighbor and neighbor.direction == entity.direction then
+        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
     end
 
     -- connect to cable north of underground_cable if it is not facing towards
     -- the underground_cable
     position = move_position(entity.position, entity.direction, 1)
-    entity_cable = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
-    if entity_cable and entity_cable.direction ~= util.oppositedirection(entity.direction) and entity.belt_to_ground_type == "output" then
-        connect_proxies(entity, entity_cable)
+    neighbor = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
+    if neighbor and neighbor.direction ~= util.oppositedirection(entity.direction) and entity.belt_to_ground_type == "output" then
+        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
     end
 
     -- connect to cable south of underground_cable if it is facing in the
     -- same direction
     position = move_position(entity.position, entity.direction, -1)
-    entity_cable = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
-    if entity_cable and entity_cable.direction == entity.direction then
-        connect_proxies(entity, entity_cable)
+    neighbor = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
+    if neighbor and neighbor.direction == entity.direction then
+        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
     end
 
     -- connect to node north of underground_cable
     position = move_position(entity.position, entity.direction, 1)
-    local entity_node = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
-    if entity_node and entity.belt_to_ground_type == "output" then
-        connect_proxies(entity, entity_node)
+    neighbor = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
+    if neighbor and entity.belt_to_ground_type == "output" then
+        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
     end
 
     -- connect to node south of underground_cable
     position = move_position(entity.position, entity.direction, -1)
-    entity_node = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
-    if entity_node and entity.belt_to_ground_type == "input" then
-        connect_proxies(entity, entity_node)
+    neighbor = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
+    if neighbor and entity.belt_to_ground_type == "input" then
+        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
     end
 
     -- connect to receiver north of underground cable
     position = move_position(entity.position, entity.direction, 1)
-    local receiver = game.surfaces[1].find_entity(tier_to_name.receiver[tier], position)
-    if receiver and entity.belt_to_ground_type == "output" then
-        connect_proxies(entity, receiver)
+    neighbor = game.surfaces[1].find_entity(tier_to_name.receiver[tier], position)
+    if neighbor and entity.belt_to_ground_type == "output" then
+        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { source = neighbor, target = entity, source_is_rx = true }
     end
 
     -- connect to transmitter south of cable
     position = move_position(entity.position, entity.direction, -1)
-    local transmitter = game.surfaces[1].find_entity(tier_to_name.transmitter[tier], position)
-    if transmitter and entity.belt_to_ground_type == "input" then
-        connect_proxies(entity, transmitter)
+    neighbor = game.surfaces[1].find_entity(tier_to_name.transmitter[tier], position)
+    if neighbor and entity.belt_to_ground_type == "input" then
+        t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { source = neighbor, target = entity, source_is_tx = true }
     end
+
+    return t_net_requires_update, un_add_rx, un_add_tx
 end
 
 ---------------------------------------------------------------------------
@@ -664,7 +839,7 @@ local function on_built_entity(event)
         -- A connection to the non-proxy entity can happen with a fast replace
         entity.disconnect_neighbour(wire) -- but we don't want that.
 
-        cable_connect_to_neighbors(entity, tier)
+        local t_net_requires_update, un_add_rx, un_add_tx = cable_connect_to_neighbors(entity, tier)
 
         local belt_neighbors = entity.belt_neighbours
         if belt_neighbors then
@@ -673,7 +848,14 @@ local function on_built_entity(event)
         end
 
         network_update_scheduled = true
-        table.insert(network_update_data, { proxy = proxy, built = true, tier = tier })
+        table.insert(network_update_data, {
+            proxy = proxy,
+            built = true,
+            tier = tier,
+            t_net_requires_update = t_net_requires_update,
+            un_add_rx = un_add_rx,
+            un_add_tx = un_add_tx
+        })
         return
     elseif name_to_tier.node[entity.name] then
         local tier = name_to_tier.node[entity.name]
@@ -686,57 +868,66 @@ local function on_built_entity(event)
         -- A connection to the non-proxy entity can happen with a fast replace
         entity.disconnect_neighbour(wire) -- but we don't want that.
 
-        -- connect to neighboring cables (if they are facing towards or away from the node)
-        -- and connect to neighboring nodes
-        local position
-        local direction
-        local entity_neighbor
-        for i = 0, 6, 2 do
-            -- rotate direction by i / 2 * 90°
-            direction = (entity.direction + i) % 8
-            position = move_position(entity.position, direction, 1)
-
-            -- neighboring cable
-            entity_neighbor = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
-            if entity_neighbor and (entity_neighbor.belt_shape == "straight" and entity_neighbor.direction == direction or entity_neighbor.direction == util.oppositedirection(direction)) then
-                connect_proxies(entity, entity_neighbor)
-            end
-
-            -- neighboring node
-            entity_neighbor = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
-            if entity_neighbor then
-                connect_proxies(entity, entity_neighbor)
-            end
-        end
+        local t_net_requires_update, un_add_rx, un_add_tx
 
         -- connect to neighbors
+        local position
+        local direction
         local neighbor
         for i = 0, 6, 2 do
             -- rotate direction by i / 2 * 90°
             direction = (entity.direction + i) % 8
             position = move_position(entity.position, direction, 1)
 
-            --  node
+            -- cable (if it is straight and facing towards or away from the node)
+            neighbor = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
+            if neighbor and (neighbor.belt_shape == "straight" and (neighbor.direction == direction or neighbor.direction == util.oppositedirection(direction))) then
+                t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
+            end
+
+            -- node
             neighbor = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
-            if neighbor and ((neighbor.direction == direction) or (neighbor.direction == util.oppositedirection(direction))) then
-                connect_proxies(entity, neighbor)
+            if neighbor then
+                t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
             end
 
             -- receiver
             neighbor = game.surfaces[1].find_entity(tier_to_name.receiver[tier], position)
             if neighbor then
-                connect_proxies(entity, neighbor)
+                t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { source = neighbor, target = entity, source_is_rx = true }
             end
 
             -- transmitter
             neighbor = game.surfaces[1].find_entity(tier_to_name.transmitter[tier], position)
             if neighbor then
-                connect_proxies(entity, neighbor)
+                t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { source = neighbor, target = entity, source_is_tx = true }
+            end
+
+            -- underground_cable (input)
+            neighbor = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
+            if neighbor and (neighbor.belt_to_ground_type == "input" and neighbor.direction == direction) then
+                t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
+            end
+
+            -- underground_cable (output)
+            if neighbor and (neighbor.belt_to_ground_type == "output" and neighbor.direction == util.oppositedirection(direction)) then
+                t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { entity, neighbor }
             end
         end
 
+        dbg.print("on_built_entity(): node: t_net_requires_update = " .. tostring(t_net_requires_update))
+        dbg.print("on_built_entity(): node: un_add_rx = " ..
+            tostring(un_add_rx) .. ", un_add_tx = " .. tostring(un_add_tx))
+
         network_update_scheduled = true
-        table.insert(network_update_data, { proxy = proxy, built = true, tier = tier })
+        table.insert(network_update_data, {
+            proxy = proxy,
+            built = true,
+            tier = tier,
+            t_net_requires_update = t_net_requires_update,
+            un_add_rx = un_add_rx,
+            un_add_tx = un_add_tx
+        })
         return
     elseif name_to_tier.receiver[entity.name] then
         local tier = name_to_tier.receiver[entity.name]
@@ -771,6 +962,8 @@ local function on_built_entity(event)
             scale = 0.8
         }
 
+        local t_net_requires_update, un_add_rx, un_add_tx
+
         -- connect to neighbors
         local direction
         local neighbor
@@ -782,24 +975,31 @@ local function on_built_entity(event)
             -- cable north, east, south, west of receiver if it is facing towards the receiver
             neighbor = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
             if neighbor and neighbor.direction == util.oppositedirection(direction) then
-                connect_proxies(entity, neighbor)
+                t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { source = entity, target = neighbor, source_is_rx = true }
             end
 
             -- node
             neighbor = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
             if neighbor then
-                connect_proxies(entity, neighbor)
+                t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { source = entity, target = neighbor, source_is_rx = true }
             end
 
             -- underground cable north, east, south, west of receiver if it is facing towards the receiver and an output
             neighbor = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
             if neighbor and (neighbor.belt_to_ground_type == "output" and neighbor.direction == util.oppositedirection(direction)) then
-                connect_proxies(entity, neighbor)
+                t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { source = entity, target = neighbor, source_is_rx = true }
             end
         end
 
         network_update_scheduled = true
-        table.insert(network_update_data, { proxy = proxy, built = true, tier = tier })
+        table.insert(network_update_data, {
+            proxy = proxy,
+            built = true,
+            tier = tier,
+            t_net_requires_update = t_net_requires_update,
+            un_add_rx = un_add_rx,
+            un_add_tx = un_add_tx
+        })
         return
     elseif name_to_tier.transmitter[entity.name] then
         local tier = name_to_tier.transmitter[entity.name]
@@ -832,6 +1032,8 @@ local function on_built_entity(event)
             scale = 0.8
         }
 
+        local t_net_requires_update, un_add_rx, un_add_tx
+
         -- connect to neighbors
         local position
         local direction
@@ -844,24 +1046,31 @@ local function on_built_entity(event)
             -- cable north, east, south, west of transmitter if it is facing away from the transmitter
             neighbor = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
             if neighbor and neighbor.direction == direction then
-                connect_proxies(entity, neighbor)
+                t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { source = entity, target = neighbor, source_is_tx = true }
             end
 
             -- node
             neighbor = game.surfaces[1].find_entity(tier_to_name.node[tier], position)
             if neighbor then
-                connect_proxies(entity, neighbor)
+                t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { source = entity, target = neighbor, source_is_tx = true }
             end
 
             -- underground cable north, east, south, west of transmitter if it is facing away from the transmitter and an input
             neighbor = game.surfaces[1].find_entity(tier_to_name.underground_cable[tier], position)
             if neighbor and (neighbor.belt_to_ground_type == "input" and neighbor.direction == direction) then
-                connect_proxies(entity, neighbor)
+                t_net_requires_update, un_add_rx, un_add_tx = connect_proxies { source = entity, target = neighbor, source_is_tx = true }
             end
         end
 
         network_update_scheduled = true
-        table.insert(network_update_data, { proxy = proxy, built = true, tier = tier })
+        table.insert(network_update_data, {
+            proxy = proxy,
+            built = true,
+            tier = tier,
+            t_net_requires_update = t_net_requires_update,
+            un_add_rx = un_add_rx,
+            un_add_tx = un_add_tx
+        })
         return
     elseif name_to_tier.underground_cable[entity.name] then
         local tier = name_to_tier.underground_cable[entity.name]
@@ -874,10 +1083,17 @@ local function on_built_entity(event)
         -- A connection to the non-proxy entity can happen with a fast replace
         entity.disconnect_neighbour(wire) -- but we don't want that.
 
-        underground_cable_connect_to_neighbors(entity, tier)
+        local t_net_requires_update, un_add_rx, un_add_tx = underground_cable_connect_to_neighbors(entity, tier)
 
         network_update_scheduled = true
-        table.insert(network_update_data, { proxy = proxy, built = true, tier = tier })
+        table.insert(network_update_data, {
+            proxy = proxy,
+            built = true,
+            tier = tier,
+            t_net_requires_update = t_net_requires_update,
+            un_add_rx = un_add_rx,
+            un_add_tx = un_add_tx
+        })
         return
     end
 end
@@ -1222,9 +1438,17 @@ end
 local function on_tick(event)
     if network_update_scheduled then
         network_update_scheduled = false
-        for _, event in pairs(network_update_data) do
+        for k, event in pairs(network_update_data) do
             if event then
+                if event.proxy then
+                    dbg.print("get_net_id(event.proxy) = " .. tostring(get_net_id(event.proxy)))
+                end
                 update_net_id(event)
+                if event.t_net_requires_update then
+                    for net_id, _ in pairs(event.t_net_requires_update) do
+                        dbg.print("event.t_net_requires_update.net_id = " .. tostring(net_id))
+                    end
+                end
             end
         end
         network_update_data = {}
@@ -1327,7 +1551,32 @@ local item_dividend
 local item_remainder
 local n_insert
 local n_remove
+local tick_counter = 0
 local function on_nth_tick(event)
+    tick_counter = tick_counter + 1
+    if tick_counter == 4 then
+        tick_counter = 0
+        if rx[1].net_id_and_un then
+            dbg.print("RX:")
+            for net_id, _ in pairs(rx[1].net_id_and_un) do
+                dbg.print("on_tick(): rx.net_id = " .. tostring(net_id))
+                for un, _ in pairs(rx[1].net_id_and_un[net_id]) do
+                    dbg.print("on_tick(): un = " .. tostring(un))
+                end
+            end
+        end
+        if tx[1].net_id_and_un then
+            dbg.print("TX:")
+            for net_id, _ in pairs(tx[1].net_id_and_un) do
+                dbg.print("on_tick(): tx.net_id = " .. tostring(net_id))
+                for un, _ in pairs(tx[1].net_id_and_un[net_id]) do
+                    dbg.print("on_tick(): un = " .. tostring(un))
+                end
+            end
+        end
+        dbg.print("")
+    end
+
     -- move items between transmitter-receiver-pairs
     for tier = 1, n_tiers do
         for net_id, _ in pairs(active_nets[tier]) do
@@ -1340,7 +1589,8 @@ local function on_nth_tick(event)
                 n_rx = #rx_un_array
 
                 -- the filter of all receivers with this network_id
-                filter = get_rx_filter(get_proxy(rx_un_array[1]), tier)
+                -- filter = get_rx_filter(get_proxy(rx_un_array[1]), tier)
+                filter = get_rx_filter(get_proxy(next(rx_un_array)), tier)
 
                 if filter then
                     -- all transmitter unit numbers with this network_id
@@ -1350,7 +1600,8 @@ local function on_nth_tick(event)
                     -- Count the total number of items in all transmitters' inventories.
                     n_count_tx = 0
                     count_tx = {}
-                    for _, un in ipairs(tx_un_array) do
+                    -- for _, un in ipairs(tx_un_array) do
+                    for un, _ in pairs(tx_un_array) do
                         count = get_item_count(tx[tier].un[un], filter)
                         count_tx[un] = count
                         n_count_tx = n_count_tx + count

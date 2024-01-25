@@ -26,6 +26,10 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 * When mod entities are destroyed, should only the corresponding circuit network id tables be updated (instead of always calling update_network_ids())?
 * is it necessary to have n_tiers many entries in variables like proxies? can we avoid passing tier to almost every function? store the tier like net_id and use a get_tier function?
 * should cable_connection_update be an array to which updates are appended? multiple tiers for example or simultaneous updates?
+* since most elements of the rx/tx tables are indexed via a `unit_number` which is unique, remove the `[tier]` part from rx/tx tables
+(probably make a new table for `net_id_and_un`)
+(the same net_id should only be available to one of the tiers so `net_id_and_un` also does not need `[tier]`)
+* get rid of `active_nets`
 
 ### TODO if possible
 * If a pair of underground cables is placed onto cables, can the cables between the undergrounds be deleted?
