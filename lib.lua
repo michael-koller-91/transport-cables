@@ -251,6 +251,38 @@ local function connect_proxies(t)
     end
 end
 
+-- Disconnect the circuit connections associated with `entity`'s proxy.
+local function disconnect_proxy(entity)
+    if not entity or not entity.valid then
+        return
+    end
+
+    local t_net_requires_update
+    local proxy = get_proxy(entity)
+    if proxy then
+        -- Remember the neighbors' network IDs before disconnecting from them.
+        local net_id
+        local circuit_connected_entities = proxy.circuit_connected_entities
+        if circuit_connected_entities and circuit_connected_entities[wire_str] then
+            for _, proxy in pairs(circuit_connected_entities[wire_str]) do
+                net_id = get_net_id(proxy)
+                if net_id then
+                    t_net_requires_update = t_net_requires_update or {}
+                    t_net_requires_update[net_id] = true
+                end
+            end
+        end
+
+        proxy.disconnect_neighbour(wire)
+    end
+
+    if dbg.flags.print_connect_proxies then
+        dbg.print("disconnect_proxy(): " .. entity.name)
+    end
+
+    return t_net_requires_update
+end
+
 -- Destroy the proxy associated with `entity`.
 local function destroy_proxy(entity, proxy)
     if not entity or not entity.valid then
@@ -261,38 +293,11 @@ local function destroy_proxy(entity, proxy)
         return
     end
 
-    local net_id
-    local t_net_requires_update
-    local circuit_connected_entities = proxy.circuit_connected_entities
-    if circuit_connected_entities and circuit_connected_entities[wire_str] then
-        for _, proxy in pairs(circuit_connected_entities[wire_str]) do
-            net_id = get_net_id(proxy)
-            if net_id then
-                t_net_requires_update = t_net_requires_update or {}
-                t_net_requires_update[net_id] = true
-            end
-        end
-    end
+    local t_net_requires_update = disconnect_proxy(proxy)
 
     local destroyed = proxy.destroy()
     proxies[entity.unit_number] = nil
     return t_net_requires_update, destroyed
-end
-
--- Disconnect the circuit connections associated with `entity`'s proxy.
-local function disconnect_proxies(entity)
-    if not entity or not entity.valid then
-        return
-    end
-
-    local proxy = get_proxy(entity)
-    if proxy then
-        proxy.disconnect_neighbour(wire)
-    end
-
-    if dbg.flags.print_connect_proxies then
-        dbg.print("disconnect_proxies(): " .. entity.name)
-    end
 end
 
 ---------------------------------------------------------------------------
@@ -1334,30 +1339,35 @@ local function on_rotated_entity(event)
             end
         end
 
-        disconnect_proxies(entity)
-        cable_connect_to_neighbors(entity, tier)
+        local t_net_requires_update = disconnect_proxy(entity)
+        t_net_requires_update = append(t_net_requires_update, cable_connect_to_neighbors(entity, tier))
 
         if belt_neighbors then
             cable_connection_update_scheduled = true
             table.insert(cable_connection_update_data, { belt_neighbors = belt_neighbors, tier = tier })
         end
 
-        network_update_scheduled = true
-        table.insert(network_update_data, { tier = tier })
+        if t_net_requires_update then
+            network_update_scheduled = true
+            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+        end
     elseif name_to_tier.underground_cable[entity.name] then
         local tier = name_to_tier.underground_cable[entity.name]
 
-        disconnect_proxies(entity)
-        underground_cable_connect_to_neighbors(entity, tier)
+        local t_net_requires_update = disconnect_proxy(entity)
+        t_net_requires_update = append(t_net_requires_update, underground_cable_connect_to_neighbors(entity, tier))
 
         -- also make the neighboring underground cable react
         if entity.neighbours then
-            disconnect_proxies(entity.neighbours)
-            underground_cable_connect_to_neighbors(entity.neighbours, tier)
+            t_net_requires_update = append(t_net_requires_update, disconnect_proxy(entity.neighbours))
+            t_net_requires_update = append(t_net_requires_update,
+                underground_cable_connect_to_neighbors(entity.neighbours, tier))
         end
 
-        network_update_scheduled = true
-        table.insert(network_update_data, { tier = tier })
+        if t_net_requires_update then
+            network_update_scheduled = true
+            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+        end
     end
 end
 
@@ -1379,7 +1389,7 @@ local function on_tick(event)
             for _, val in pairs(event.belt_neighbors) do
                 for _, neighbor in ipairs(val) do
                     if neighbor and neighbor.valid then
-                        disconnect_proxies(neighbor)
+                        disconnect_proxy(neighbor)
                         if neighbor.name == tier_to_name.cable[event.tier] then
                             cable_connect_to_neighbors(neighbor, event.tier)
                         elseif neighbor.name == tier_to_name.underground_cable[event.tier] then

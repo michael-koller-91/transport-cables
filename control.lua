@@ -82,7 +82,8 @@ script.on_init(function()
         global.active_nets[tier] = {}
     end
 
-    -- `rate` is by one `rate_increment` smaller than what the first research grants
+    -- One rate per tier.
+    -- Every rate is by one `rate_increment` smaller than what the first research grants.
     global.rates[1] = 4
     global.rates[2] = 30
     global.rates[3] = 75
