@@ -56,10 +56,10 @@ script.on_init(function()
     global.active_nets = {}
     global.cable_connection_update_data = {}
     global.cable_connection_update_scheduled = false
-    global.mod_state = {}
     global.network_update_data = {}
     global.network_update_scheduled = false
     global.proxies = {}
+    global.rates = {}
 
     -- Every transmitter/receiver has a unit number `un` and is associated with a
     -- circuit network id `net_id`.
@@ -80,12 +80,12 @@ script.on_init(function()
 
     for tier = 1, lib.n_tiers do
         global.active_nets[tier] = {}
-        global.mod_state[tier] = { rate = 0 }
     end
 
     -- `rate` is by one `rate_increment` smaller than what the first research grants
-    global.mod_state[2].rate = 4
-    global.mod_state[3].rate = 75
+    global.rates[1] = 4
+    global.rates[2] = 30
+    global.rates[3] = 75
 
     lib.initialize(global)
 end)
