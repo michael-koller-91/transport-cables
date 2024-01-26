@@ -16,6 +16,7 @@ local rate_increment_factor = 2 -- whenever the infinite research is finished, m
 local slot_bar = 2              -- the combinator's slot which stores the state of the inventory bar (TODO)
 local slot_filter = 1           -- the combinator's slot which stores the filter
 local wire = defines.wire_type.red
+local wire_str = "red"
 
 ---------------------------------------------------------------------------
 local prefix = "transport-cables:"
@@ -174,9 +175,7 @@ local function connect_proxies(t)
     end
 
     if source_entity.type ~= "entity-ghost" and target_entity.type ~= "entity-ghost" then
-        local t_net_requires_update = {}
-        local un_add_rx
-        local un_add_tx
+        local t_net_requires_update
 
         local source_proxy = get_proxy(source_entity)
         local target_proxy = get_proxy(target_entity)
@@ -195,72 +194,60 @@ local function connect_proxies(t)
         local target_net_id_post = get_net_id(target_proxy)
 
         if source_is_rx then
-            dbg.print("connect_proxies(): source is rx")
             -- A receiver was not yet part of a network but is now.
             if not source_net_id_pre and source_net_id_post then
-                un_add_rx = source_entity.unit_number
-                dbg.print("un_add_rx = " .. tostring(un_add_rx))
-
                 -- update the displayed text
-                rx.net_id[un_add_rx] = source_net_id_post
-                rendering.set_text(rx.text_id[un_add_rx], "ID: " .. tostring(source_net_id_post))
+                rx.net_id[source_entity.unit_number] = source_net_id_post
+                rendering.set_text(rx.text_id[source_entity.unit_number], "ID: " .. tostring(source_net_id_post))
 
                 -- collect all receivers with the same network_id
                 rx.net_id_and_un[source_net_id_post] = rx.net_id_and_un[source_net_id_post] or {}
-                rx.net_id_and_un[source_net_id_post][un_add_rx] = true
+                rx.net_id_and_un[source_net_id_post][source_entity.unit_number] = true
 
                 -- number of receivers in network changed: reset priority
                 rx.net_id_and_priority[source_net_id_post] = rx.net_id_and_priority[source_net_id_post] or {}
                 for un, _ in pairs(rx.net_id_and_priority[source_net_id_post]) do
                     rx.net_id_and_priority[source_net_id_post][un] = 0
                 end
-                rx.net_id_and_priority[source_net_id_post][un_add_rx] = 0
+                rx.net_id_and_priority[source_net_id_post][source_entity.unit_number] = 0
             end
         end
 
         if source_is_tx then
-            dbg.print("connect_proxies(): source is tx")
             -- A transmitter was not yet part of a network but is now.
             if not source_net_id_pre and source_net_id_post then
-                un_add_tx = source_entity.unit_number
-                dbg.print("un_add_tx = " .. tostring(un_add_tx))
-
                 -- update the displayed text
-                tx.net_id[un_add_tx] = source_net_id_post
-                rendering.set_text(tx.text_id[un_add_tx], "ID: " .. tostring(source_net_id_post))
+                tx.net_id[source_entity.unit_number] = source_net_id_post
+                rendering.set_text(tx.text_id[source_entity.unit_number], "ID: " .. tostring(source_net_id_post))
 
                 -- collect all transmitters with the same network_id
                 tx.net_id_and_un[source_net_id_post] = tx.net_id_and_un[source_net_id_post] or {}
-                tx.net_id_and_un[source_net_id_post][un_add_tx] = true
+                tx.net_id_and_un[source_net_id_post][source_entity.unit_number] = true
             end
         end
 
         -- two previously not connected networks are now connected
         if source_net_id_pre and source_net_id_pre ~= source_net_id_post then     -- `source_entity` already had a network_id and got a new one
+            t_net_requires_update = t_net_requires_update or {}
             t_net_requires_update[source_net_id_pre] = true                       -- all rx/tx entities with `source_entity`'s previous network_id got/need an update
         elseif target_net_id_pre and target_net_id_pre ~= target_net_id_post then -- `target_entity` already had a network_id and got a new one
+            t_net_requires_update = t_net_requires_update or {}
             t_net_requires_update[target_net_id_pre] = true                       -- all rx/tx entities with `target_entity`'s previous network_id got/need an update
         end
 
         if dbg.flags.print_connect_proxies then
             dbg.print("connect_proxies(): " .. source_entity.name .. " < == > " .. target_entity.name)
-            if source_net_id_pre and t_net_requires_update[source_net_id_pre] then
+            if source_net_id_pre and (t_net_requires_update and t_net_requires_update[source_net_id_pre]) then
                 dbg.print("connect_proxies(): net_id = " ..
                     tostring(source_net_id_pre) .. " was updated to net_id = " .. tostring(source_net_id_post))
             end
-            if target_net_id_pre and t_net_requires_update[target_net_id_pre] then
+            if target_net_id_pre and (t_net_requires_update and t_net_requires_update[target_net_id_pre]) then
                 dbg.print("connect_proxies(): net_id = " ..
                     tostring(target_net_id_pre) .. " was updated to net_id = " .. tostring(target_net_id_post))
             end
         end
 
-        -- return nil if table is empty
-        local next = next
-        if next(t_net_requires_update) == nil then
-            return nil
-        else
-            return t_net_requires_update
-        end
+        return t_net_requires_update
     end
 end
 
@@ -274,9 +261,22 @@ local function destroy_proxy(entity, proxy)
         return
     end
 
+    local net_id
+    local t_net_requires_update
+    local circuit_connected_entities = proxy.circuit_connected_entities
+    if circuit_connected_entities and circuit_connected_entities[wire_str] then
+        for _, proxy in pairs(circuit_connected_entities[wire_str]) do
+            net_id = get_net_id(proxy)
+            if net_id then
+                t_net_requires_update = t_net_requires_update or {}
+                t_net_requires_update[net_id] = true
+            end
+        end
+    end
+
     local destroyed = proxy.destroy()
     proxies[entity.unit_number] = nil
-    return destroyed
+    return t_net_requires_update, destroyed
 end
 
 -- Disconnect the circuit connections associated with `entity`'s proxy.
@@ -446,9 +446,7 @@ end
 -- transmitters and receivers with the same circuit network id.
 local function update_net_id(event)
     local circuit_network
-    local filter
     local net_id
-    local new_net_id
 
     if dbg.flags.print_net_id then
         dbg.print("update_net_id(): rx.un =", true)
@@ -481,7 +479,11 @@ local function update_net_id(event)
                     rx.net_id[un] = net_id
                     rendering.set_text(rx.text_id[un], "ID: " .. tostring(net_id))
                 else
-                    dbg.print("event.t_net_requires_update: else part of: if net_id then (rx)")
+                    if rx.net_id[un] then
+                        -- update the displayed text
+                        rx.net_id[un] = -1
+                        rendering.set_text(rx.text_id[un], "ID: -1")
+                    end
                 end
             end
 
@@ -498,7 +500,11 @@ local function update_net_id(event)
                     tx.net_id[un] = net_id
                     rendering.set_text(tx.text_id[un], "ID: " .. tostring(net_id))
                 else
-                    dbg.print("event.t_net_requires_update: else part of: if net_id then (tx)")
+                    if tx.net_id[un] then
+                        -- update the displayed text
+                        tx.net_id[un] = -1
+                        rendering.set_text(tx.text_id[un], "ID: -1")
+                    end
                 end
             end
             -- Since the old network no longer exists:
@@ -783,10 +789,7 @@ local function on_built_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, {
-                tier = tier,
-                t_net_requires_update = t_net_requires_update
-            })
+            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
         end
         return
     elseif name_to_tier.node[entity.name] then
@@ -851,10 +854,7 @@ local function on_built_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, {
-                tier = tier,
-                t_net_requires_update = t_net_requires_update
-            })
+            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
         end
         return
     elseif name_to_tier.receiver[entity.name] then
@@ -924,10 +924,7 @@ local function on_built_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, {
-                tier = tier,
-                t_net_requires_update = t_net_requires_update
-            })
+            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
         end
         return
     elseif name_to_tier.transmitter[entity.name] then
@@ -996,10 +993,7 @@ local function on_built_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, {
-                tier = tier,
-                t_net_requires_update = t_net_requires_update
-            })
+            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
         end
         return
     elseif name_to_tier.underground_cable[entity.name] then
@@ -1017,10 +1011,7 @@ local function on_built_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, {
-                tier = tier,
-                t_net_requires_update = t_net_requires_update
-            })
+            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
         end
         return
     end
@@ -1183,29 +1174,34 @@ local function on_mined_entity(event)
             table.insert(cable_connection_update_data, { belt_neighbors = belt_neighbors, tier = tier })
         end
 
-        destroy_proxy(entity, proxy)
+        local t_net_requires_update = destroy_proxy(entity, proxy)
 
-        network_update_scheduled = true
-        table.insert(network_update_data, { tier = tier })
+        if t_net_requires_update then
+            network_update_scheduled = true
+            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+        end
     elseif name_to_tier.node[entity.name] then
         local tier = name_to_tier.node[entity.name]
 
         local proxy = get_proxy(entity)
 
-        destroy_proxy(entity, proxy)
+        local t_net_requires_update = destroy_proxy(entity, proxy)
 
-        network_update_scheduled = true
-        table.insert(network_update_data, { tier = tier })
+        if t_net_requires_update then
+            network_update_scheduled = true
+            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+        end
     elseif name_to_tier.receiver[entity.name] then
         local tier = name_to_tier.receiver[entity.name]
 
         local proxy = get_proxy(entity)
+        local t_net_requires_update
         if entity.to_be_upgraded() then
             -- Keep the container if the entity is to be upgraded but remove
             -- the reference to the container as it will be destroyed soon.
             proxies[entity.unit_number] = nil
         else
-            destroy_proxy(entity, proxy)
+            t_net_requires_update = destroy_proxy(entity, proxy)
         end
 
         rx.un[entity.unit_number] = nil
@@ -1217,14 +1213,16 @@ local function on_mined_entity(event)
         -- and the ID
         rx.net_id[entity.unit_number] = nil
 
-        network_update_scheduled = true
-        table.insert(network_update_data, { tier = tier })
+        if t_net_requires_update then
+            network_update_scheduled = true
+            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+        end
     elseif name_to_tier.transmitter[entity.name] then
         local tier = name_to_tier.transmitter[entity.name]
 
         local proxy = get_proxy(entity)
 
-        destroy_proxy(entity, proxy)
+        local t_net_requires_update = destroy_proxy(entity, proxy)
 
         tx.un[entity.unit_number] = nil
 
@@ -1235,23 +1233,22 @@ local function on_mined_entity(event)
         -- and the ID
         tx.net_id[entity.unit_number] = nil
 
-        network_update_scheduled = true
-        table.insert(network_update_data, { tier = tier })
+        if t_net_requires_update then
+            network_update_scheduled = true
+            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+        end
     elseif name_to_tier.underground_cable[entity.name] then
         local tier = name_to_tier.underground_cable[entity.name]
 
         local proxy = get_proxy(entity)
 
-        destroy_proxy(entity, proxy)
+        local t_net_requires_update = destroy_proxy(entity, proxy)
 
-        network_update_scheduled = true
-        table.insert(network_update_data, { tier = tier })
+        if t_net_requires_update then
+            network_update_scheduled = true
+            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+        end
     end
-
-    -- Note:
-    -- After `entity` is destroyed, the circuit network is updated. At this
-    -- point, we want to call update_net_id. That's why the update is only
-    -- scheduled here.
 end
 
 ---------------------------------------------------------------------------
@@ -1370,15 +1367,7 @@ local function on_tick(event)
         network_update_scheduled = false
         for _, event in pairs(network_update_data) do
             if event then
-                --if event.proxy then
-                --    dbg.print("get_net_id(event.proxy) = " .. tostring(get_net_id(event.proxy)))
-                --end
                 update_net_id(event)
-                --if event.t_net_requires_update then
-                --    for net_id, _ in pairs(event.t_net_requires_update) do
-                --        dbg.print("event.t_net_requires_update.net_id = " .. tostring(net_id))
-                --    end
-                --end
             end
         end
         network_update_data = {}
@@ -1481,32 +1470,7 @@ local item_dividend
 local item_remainder
 local n_insert
 local n_remove
-local tick_counter = 0
 local function on_nth_tick(event)
-    --tick_counter = tick_counter + 1
-    --if tick_counter == 4 then
-    --    tick_counter = 0
-    --    if rx.net_id_and_un then
-    --        dbg.print("RX:")
-    --        for net_id, _ in pairs(rx.net_id_and_un) do
-    --            dbg.print("on_tick(): rx.net_id = " .. tostring(net_id))
-    --            for un, _ in pairs(rx.net_id_and_un[net_id]) do
-    --                dbg.print("on_tick(): un = " .. tostring(un))
-    --            end
-    --        end
-    --    end
-    --    if tx.net_id_and_un then
-    --        dbg.print("TX:")
-    --        for net_id, _ in pairs(tx.net_id_and_un) do
-    --            dbg.print("on_tick(): tx.net_id = " .. tostring(net_id))
-    --            for un, _ in pairs(tx.net_id_and_un[net_id]) do
-    --                dbg.print("on_tick(): un = " .. tostring(un))
-    --            end
-    --        end
-    --    end
-    --    dbg.print("")
-    --end
-
     -- move items between transmitter-receiver-pairs
     for tier = 1, n_tiers do
         active_nets[tier] = {}
