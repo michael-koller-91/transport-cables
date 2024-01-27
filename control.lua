@@ -59,7 +59,14 @@ script.on_init(function()
     global.network_update_data = {}
     global.network_update_scheduled = false
     global.proxies = {}
-    global.rates = {}
+
+    -- One rate per tier.
+    -- Every rate is by one `rate_increment` smaller than what the first research grants.
+    global.rates = {
+        [1] = 0,
+        [2] = 30,
+        [3] = 75
+    }
 
     -- Every transmitter/receiver has a unit number `un` and is associated with a
     -- circuit network id `net_id`.
@@ -77,16 +84,6 @@ script.on_init(function()
         text_id = {},       -- unit number -> text id
         un = {}             -- unit number -> entity
     }
-
-    for tier = 1, lib.n_tiers do
-        global.active_nets[tier] = {}
-    end
-
-    -- One rate per tier.
-    -- Every rate is by one `rate_increment` smaller than what the first research grants.
-    global.rates[1] = 4
-    global.rates[2] = 30
-    global.rates[3] = 75
 
     lib.initialize(global)
 end)

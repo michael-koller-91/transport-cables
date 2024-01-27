@@ -21,19 +21,12 @@ local flags = {
     combinator_selectale = false,
     print_connect_proxies = value,
     print_create_container = value,
-    print_net_id = value,
+    print_net_id = true,
     print_gui = value,
     print_on_research_finished = value,
     print_set_rx_filter = value,
     print_update_receiver_filters = value
 }
-
-local function print_block(t, newline)
-    if newline then
-        print()
-    end
-    print(serpent.block(t))
-end
 
 local function print_to_console(s, newline)
     if newline then
@@ -42,9 +35,19 @@ local function print_to_console(s, newline)
     print(s)
 end
 
-return {
-    block = print_block,
-    commands = commands,
-    flags = flags,
-    print = print_to_console,
-}
+local function dont_print_to_console(...)
+end
+
+if flags.add_debug_commands then
+    return {
+        commands = commands,
+        flags = flags,
+        print = print_to_console,
+    }
+else
+    return {
+        commands = commands,
+        flags = flags,
+        print = dont_print_to_console,
+    }
+end
