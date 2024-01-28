@@ -674,7 +674,7 @@ local function underground_cable_connect_to_neighbors(entity, tier)
 
     -- connect to neighboring underground_cable
     if entity.neighbours then
-        t_net_requires_update = append(t_net_requires_update, connect_proxies { entity, entity.neighbor })
+        t_net_requires_update = append(t_net_requires_update, connect_proxies { entity, entity.neighbours })
     end
 
     -- connect to underground_cable north of underground_cable if it is facing in the same direction
@@ -1526,99 +1526,106 @@ local function on_nth_tick(event)
             if t_rx_un then
                 -- Get the filter setting of all receivers with the current network ID.
                 container = get_proxy(next(t_rx_un))
-                tier = name_to_tier.container[container.name]
-                filter = get_rx_filter(container, tier)
-                if filter then
-                    -- Count the number of receivers.
-                    n_rx = 0
-                    for _ in pairs(t_rx_un) do
-                        n_rx = n_rx + 1
-                    end
-                    if n_rx > 0 then
-                        t_tx_un = tx.net_id_and_un[net_id]
-                        if t_tx_un then
-                            -- Count the total number of items in all transmitters' inventories and the number of transmitters.
-                            n_tx = 0
-                            t_item_count_tx = {}
-                            total_item_count_tx = 0
-                            for un, _ in pairs(t_tx_un) do
-                                n_tx = n_tx + 1
-                                item_count_tx = get_item_count(tx.un[un], filter)
-                                t_item_count_tx[un] = item_count_tx
-                                total_item_count_tx = total_item_count_tx + item_count_tx
-                            end
-                            if n_tx > 0 then
-                                -- Try to move `rate` many items unless there are not enough items in all transmitters combined.
-                                n_items_to_move = math.min(rates[tier], total_item_count_tx)
-                                if n_items_to_move > 0 then
-                                    -- On average, insert this many items into every receiver.
-                                    n_items_per_rx = n_items_to_move / n_rx
+                if container then
+                    tier = name_to_tier.container[container.name]
+                    filter = get_rx_filter(container, tier)
+                    if filter then
+                        -- Count the number of receivers.
+                        n_rx = 0
+                        for _ in pairs(t_rx_un) do
+                            n_rx = n_rx + 1
+                        end
+                        if n_rx > 0 then
+                            t_tx_un = tx.net_id_and_un[net_id]
+                            if t_tx_un then
+                                -- Count the total number of items in all transmitters' inventories and the number of transmitters.
+                                n_tx = 0
+                                t_item_count_tx = {}
+                                total_item_count_tx = 0
+                                for un, _ in pairs(t_tx_un) do
+                                    n_tx = n_tx + 1
+                                    item_count_tx = get_item_count(tx.un[un], filter)
+                                    if item_count_tx then
+                                        t_item_count_tx[un] = item_count_tx
+                                        total_item_count_tx = total_item_count_tx + item_count_tx
+                                    end
+                                end
+                                if n_tx > 0 then
+                                    -- Try to move `rate` many items unless there are not enough items in all transmitters combined.
+                                    n_items_to_move = math.min(rates[tier], total_item_count_tx)
+                                    if n_items_to_move > 0 then
+                                        -- On average, insert this many items into every receiver.
+                                        n_items_per_rx = n_items_to_move / n_rx
 
-                                    item_dividend = math.floor(n_items_per_rx)
-                                    item_remainder = n_items_to_move % n_rx
-                                    i = -1
+                                        item_dividend = math.floor(n_items_per_rx)
+                                        item_remainder = n_items_to_move % n_rx
+                                        i = -1
 
-                                    n_items_inserted = 0
-                                    -- Try to give every receiver the necessary amount of items ...
-                                    for un, _ in pairs_by_descending_value(t_rx_priority) do
-                                        i = i + 1
-                                        n_insert = item_dividend
-                                        if i < item_remainder then
-                                            n_insert = item_dividend + 1
-                                        end
+                                        n_items_inserted = 0
+                                        -- Try to give every receiver the necessary amount of items ...
+                                        for un, _ in pairs_by_descending_value(t_rx_priority) do
+                                            i = i + 1
+                                            n_insert = item_dividend
+                                            if i < item_remainder then
+                                                n_insert = item_dividend + 1
+                                            end
 
-                                        rx_inventory = get_inventory_rx(rx.un[un])
-                                        if rx_inventory then
-                                            n_items_insertable = rx_inventory.get_insertable_count(filter)
-                                            if n_items_insertable >= n_insert then
-                                                -- ... if enough items can be inserted ...
-                                                if n_insert > 0 then
-                                                    rx_inventory.insert({ name = filter, count = n_insert })
-                                                    n_items_inserted = n_items_inserted + n_insert
-                                                end
-                                            else
-                                                -- ... and otherwise insert as many as possible.
-                                                if n_items_insertable > 0 then
-                                                    rx_inventory.insert({ name = filter, count = n_items_insertable })
-                                                    n_items_inserted = n_items_inserted + n_items_insertable
+                                            rx_inventory = get_inventory_rx(rx.un[un])
+                                            if rx_inventory then
+                                                n_items_insertable = rx_inventory.get_insertable_count(filter)
+                                                if n_items_insertable >= n_insert then
+                                                    -- ... if enough items can be inserted ...
+                                                    if n_insert > 0 then
+                                                        rx_inventory.insert({ name = filter, count = n_insert })
+                                                        n_items_inserted = n_items_inserted + n_insert
+                                                    end
+                                                else
+                                                    -- ... and otherwise insert as many as possible.
+                                                    if n_items_insertable > 0 then
+                                                        rx_inventory.insert({ name = filter, count = n_items_insertable })
+                                                        n_items_inserted = n_items_inserted + n_items_insertable
+                                                    end
                                                 end
                                             end
-                                        end
-                                        -- Update the receiver priority.
-                                        t_rx_priority[un] = t_rx_priority[un] - n_insert + n_items_per_rx
-                                    end
-
-                                    -- On average, remove this many items from every transmitter.
-                                    n_items_per_tx = n_items_inserted / n_tx
-
-                                    item_dividend = math.floor(n_items_per_tx)
-                                    item_remainder = n_items_inserted % n_tx
-                                    i = -1
-
-                                    n_items_to_remove = n_items_inserted
-                                    -- Remove as many items as have been inserted from the transmitters ...
-                                    for un, _ in pairs_by_ascending_value(t_item_count_tx) do
-                                        i = i + 1
-                                        if i < item_remainder then
-                                            n_remove = item_dividend + 1
-                                        else
-                                            n_remove = item_dividend
+                                            -- Update the receiver priority.
+                                            t_rx_priority[un] = t_rx_priority[un] - n_insert + n_items_per_rx
                                         end
 
-                                        tx_inventory = get_inventory(tx.un[un])
-                                        if tx_inventory then
-                                            n_items_removable = tx_inventory.get_item_count(filter)
-                                            if n_items_removable >= n_remove then
-                                                -- ... if enough items can be removed ...
-                                                if n_remove > 0 then
-                                                    tx_inventory.remove({ name = filter, count = n_remove })
-                                                    n_items_to_remove = n_items_to_remove - n_remove
-                                                end
+                                        -- On average, remove this many items from every transmitter.
+                                        n_items_per_tx = n_items_inserted / n_tx
+
+                                        item_dividend = math.floor(n_items_per_tx)
+                                        item_remainder = n_items_inserted % n_tx
+                                        i = -1
+
+                                        n_items_to_remove = n_items_inserted
+                                        -- Remove as many items as have been inserted from the transmitters ...
+                                        for un, _ in pairs_by_ascending_value(t_item_count_tx) do
+                                            i = i + 1
+                                            if i < item_remainder then
+                                                n_remove = item_dividend + 1
                                             else
-                                                -- ... and otherwise remove as many as possible.
-                                                if n_items_removable > 0 then
-                                                    tx_inventory.remove({ name = filter, count = n_items_removable })
-                                                    n_items_to_remove = n_items_to_remove - n_items_removable
+                                                n_remove = item_dividend
+                                            end
+
+                                            tx_inventory = get_inventory(tx.un[un])
+                                            if tx_inventory then
+                                                n_items_removable = tx_inventory.get_item_count(filter)
+                                                if n_items_removable then
+                                                    if n_items_removable >= n_remove then
+                                                        -- ... if enough items can be removed ...
+                                                        if n_remove > 0 then
+                                                            tx_inventory.remove({ name = filter, count = n_remove })
+                                                            n_items_to_remove = n_items_to_remove - n_remove
+                                                        end
+                                                    else
+                                                        -- ... and otherwise remove as many as possible.
+                                                        if n_items_removable > 0 then
+                                                            tx_inventory.remove({ name = filter, count =
+                                                            n_items_removable })
+                                                            n_items_to_remove = n_items_to_remove - n_items_removable
+                                                        end
+                                                    end
                                                 end
                                             end
                                         end
