@@ -23,8 +23,6 @@ After starting Factorio, you will find the Transport Cables mod in the mods menu
 
 * Write the how it works section.
 * Introduce container bars and store their status in a combinator slot.
-* is the network_update in `on_player_created` still needed?
-* avoid counting the number of receivers by maintaining a corresponding list?
 
 ### TODO if possible
 * If a pair of underground cables is placed onto cables, can the cables between the undergrounds be deleted?

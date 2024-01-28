@@ -7,6 +7,7 @@
 * The item distribution algorithm has been rewritten.
 * The item descriptions explain what transport cable entities can be connected to one another.
 * Sprite colors are more subtle.
+* Significant performance improvements when many entities already exist and many are built or mined at the same time.
 
 ## v0.1.3
 * Every level of the infinite research doubles the rate (up from times 1.1).
