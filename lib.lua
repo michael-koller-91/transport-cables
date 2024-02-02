@@ -260,6 +260,14 @@ local function connect_proxies(t)
                 dbg.print("connect_proxies(): net_id = " ..
                     tostring(target_net_id_pre) .. " was updated to net_id = " .. tostring(target_net_id_post))
             end
+            if active_nets then
+                print("connect_proxies(): active_nets = ")
+                local s = ""
+                for net_id, _ in pairs(active_nets) do
+                    s = s .. tostring(net_id) .. ", "
+                end
+                print(s)
+            end
         end
 
         return t_net_requires_update
@@ -565,12 +573,18 @@ local function update_net_id(event)
     if dbg.flags.print_net_id then
         dbg.print("update_net_id(): rx.net_id =")
         for unit_number, net_id in pairs(rx.net_id) do
-            dbg.print("\tun = " .. tostring(unit_number) .. " | net_id = " .. tostring(net_id))
+            dbg.print("\tun = " ..
+                tostring(unit_number) ..
+                " | net_id = " ..
+                tostring(net_id) .. " | get_net_id(un) = " .. tostring(get_net_id(get_proxy(unit_number))))
         end
 
         dbg.print("update_net_id(): tx.net_id =")
         for unit_number, net_id in pairs(tx.net_id) do
-            dbg.print("\tun = " .. tostring(unit_number) .. " | net_id = " .. tostring(net_id))
+            dbg.print("\tun = " ..
+                tostring(unit_number) ..
+                " | net_id = " ..
+                tostring(net_id) .. " | get_net_id(un) = " .. tostring(get_net_id(get_proxy(unit_number))))
         end
 
         dbg.print("update_net_id(): active_nets =")
@@ -820,7 +834,7 @@ local function on_built_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+            table.insert(network_update_data, { t_net_requires_update = t_net_requires_update })
         end
         return
     elseif name_to_tier.node[entity.name] then
@@ -885,7 +899,7 @@ local function on_built_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+            table.insert(network_update_data, { t_net_requires_update = t_net_requires_update })
         end
         return
     elseif name_to_tier.receiver[entity.name] then
@@ -955,7 +969,7 @@ local function on_built_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+            table.insert(network_update_data, { t_net_requires_update = t_net_requires_update })
         end
         return
     elseif name_to_tier.transmitter[entity.name] then
@@ -1024,7 +1038,7 @@ local function on_built_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+            table.insert(network_update_data, { t_net_requires_update = t_net_requires_update })
         end
         return
     elseif name_to_tier.underground_cable[entity.name] then
@@ -1042,7 +1056,7 @@ local function on_built_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+            table.insert(network_update_data, { t_net_requires_update = t_net_requires_update })
         end
         return
     end
@@ -1209,7 +1223,7 @@ local function on_mined_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+            table.insert(network_update_data, { t_net_requires_update = t_net_requires_update })
         end
     elseif name_to_tier.node[entity.name] then
         local tier = name_to_tier.node[entity.name]
@@ -1220,7 +1234,7 @@ local function on_mined_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+            table.insert(network_update_data, { t_net_requires_update = t_net_requires_update })
         end
     elseif name_to_tier.receiver[entity.name] then
         local tier = name_to_tier.receiver[entity.name]
@@ -1246,7 +1260,7 @@ local function on_mined_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+            table.insert(network_update_data, { t_net_requires_update = t_net_requires_update })
         end
     elseif name_to_tier.transmitter[entity.name] then
         local tier = name_to_tier.transmitter[entity.name]
@@ -1266,7 +1280,7 @@ local function on_mined_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+            table.insert(network_update_data, { t_net_requires_update = t_net_requires_update })
         end
     elseif name_to_tier.underground_cable[entity.name] then
         local tier = name_to_tier.underground_cable[entity.name]
@@ -1277,7 +1291,7 @@ local function on_mined_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+            table.insert(network_update_data, { t_net_requires_update = t_net_requires_update })
         end
     end
 end
@@ -1367,7 +1381,7 @@ local function on_rotated_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+            table.insert(network_update_data, { t_net_requires_update = t_net_requires_update })
         end
     elseif name_to_tier.underground_cable[entity.name] then
         local tier = name_to_tier.underground_cable[entity.name]
@@ -1384,12 +1398,13 @@ local function on_rotated_entity(event)
 
         if t_net_requires_update then
             network_update_scheduled = true
-            table.insert(network_update_data, { tier = tier, t_net_requires_update = t_net_requires_update })
+            table.insert(network_update_data, { t_net_requires_update = t_net_requires_update })
         end
     end
 end
 
 ---------------------------------------------------------------------------
+local t_net_requires_update = disconnect_entity(neighbor)
 local function on_tick(event)
     if cable_connection_update_scheduled then
         cable_connection_update_scheduled = false
@@ -1397,11 +1412,19 @@ local function on_tick(event)
             for _, val in pairs(event.belt_neighbors) do
                 for _, neighbor in pairs(val) do
                     if neighbor and neighbor.valid then
-                        disconnect_entity(neighbor)
+                        -- disconnect_entity(neighbor)
+                        t_net_requires_update = append(t_net_requires_update, disconnect_entity(neighbor))
                         if neighbor.name == tier_to_name.cable[event.tier] then
-                            cable_connect_to_neighbors(neighbor, event.tier)
+                            -- cable_connect_to_neighbors(neighbor, event.tier)
+                            t_net_requires_update = append(t_net_requires_update,
+                                cable_connect_to_neighbors(neighbor, event.tier))
                         elseif neighbor.name == tier_to_name.underground_cable[event.tier] then
-                            underground_cable_connect_to_neighbors(neighbor, event.tier)
+                            -- underground_cable_connect_to_neighbors(neighbor, event.tier)
+                            t_net_requires_update = append(t_net_requires_update,
+                                underground_cable_connect_to_neighbors(neighbor, event.tier))
+                        end
+                        if t_net_requires_update then
+                            update_net_id({ t_net_requires_update = t_net_requires_update })
                         end
                     end
                 end
@@ -1621,8 +1644,10 @@ local function on_nth_tick(event)
                                                     else
                                                         -- ... and otherwise remove as many as possible.
                                                         if n_items_removable > 0 then
-                                                            tx_inventory.remove({ name = filter, count =
-                                                            n_items_removable })
+                                                            tx_inventory.remove({
+                                                                name = filter,
+                                                                count = n_items_removable
+                                                            })
                                                             n_items_to_remove = n_items_to_remove - n_items_removable
                                                         end
                                                     end

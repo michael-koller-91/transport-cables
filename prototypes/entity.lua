@@ -216,7 +216,7 @@ for tier = 1, tiers do
     }
     entity.speed = speed
     entity.animation_speed_coefficient = animation_speed_coefficient[tier]
-    -- entity.fast_replaceable_group = "transport-cables"
+    entity.fast_replaceable_group = "transport-cables"
     entity.related_underground_belt = prefix .. "underground-cable-t" .. tostring(tier)
     if tier < tiers then
         entity.next_upgrade = prefix .. "cable-t" .. tostring(tier + 1)
@@ -243,7 +243,7 @@ for tier = 1, tiers do
     entity.energy_source = { type = "void" }
     entity.circuit_wire_max_distance = lamp_circuit_wire_max_distance + 1
     entity.rotatable = false
-    -- entity.fast_replaceable_group = "transport-cables"
+    entity.fast_replaceable_group = "transport-cables"
     if tier < tiers then
         entity.next_upgrade = prefix .. "node-t" .. tostring(tier + 1)
     end
@@ -316,7 +316,7 @@ for tier = 1, tiers do
     entity.name = entity_name
     entity.rotatable = false
     entity.item_slot_count = 2
-    -- entity.fast_replaceable_group = "transport-cables"
+    entity.fast_replaceable_group = "transport-cables"
     if tier < tiers then
         entity.next_upgrade = prefix .. "receiver-t" .. tostring(tier + 1)
     end
@@ -378,7 +378,7 @@ for tier = 1, tiers do
     }
     entity.inventory_size = inventory_size.transmitter[tier]
     entity.rotatable = false
-    -- entity.fast_replaceable_group = "transport-cables"
+    entity.fast_replaceable_group = "transport-cables"
     if tier < tiers then
         entity.next_upgrade = prefix .. "transmitter-t" .. tostring(tier + 1)
     end
@@ -442,7 +442,7 @@ for tier = 1, tiers do
     entity.animation_speed_coefficient = animation_speed_coefficient[tier]
     entity.belt_animation_set = get_belt_animation_set(1)
     entity.max_distance = max_distance[tier]
-    -- entity.fast_replaceable_group = "transport-cables"
+    entity.fast_replaceable_group = "transport-cables"
     if tier < tiers then
         entity.next_upgrade = prefix .. "underground-cable-t" .. tostring(tier + 1)
     end
@@ -574,7 +574,7 @@ for tier = 1, tiers do
     entity.operable = false
     entity.enable_inventory_bar = false
     entity.inventory_size = inventory_size.receiver[tier]
-    -- entity.fast_replaceable_group = "transport-cables"
+    entity.fast_replaceable_group = "transport-cables"
     entity.circuit_wire_connection_point = nil
     entity.circuit_connector_sprites = nil
     entity.draw_circuit_wires = true
@@ -635,7 +635,7 @@ for tier = 1, tiers do
     entity.destructible = false
     entity.minable = nil
     entity.operable = false
-    -- entity.fast_replaceable_group = "transport-cables"
+    entity.fast_replaceable_group = "transport-cables"
     entity.energy_source = { type = "void" }
     entity.picture_off =
     {
