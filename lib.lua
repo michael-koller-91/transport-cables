@@ -705,11 +705,18 @@ local function underground_cable_connect_to_neighbors(entity, tier)
         t_net_requires_update = append(t_net_requires_update, connect_proxies { entity, neighbor })
     end
 
-    -- connect to cable north of underground_cable if it is not facing towards
+    -- connect to curved cable north of underground_cable if it is not facing towards
     -- the underground_cable
     position = move_position(entity.position, entity.direction, 1)
     neighbor = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
-    if neighbor and neighbor.direction ~= util.oppositedirection(entity.direction) and entity.belt_to_ground_type == "output" then
+    if neighbor and (entity.belt_to_ground_type == "output" and (neighbor.direction ~= util.oppositedirection(entity.direction) and neighbor.belt_shape ~= "straight")) then
+        t_net_requires_update = append(t_net_requires_update, connect_proxies { entity, neighbor })
+    end
+
+    -- connect to cable north of underground_cable if it is facing in the same direction
+    position = move_position(entity.position, entity.direction, 1)
+    neighbor = game.surfaces[1].find_entity(tier_to_name.cable[tier], position)
+    if neighbor and (entity.belt_to_ground_type == "output" and entity.direction == neighbor.direction) then
         t_net_requires_update = append(t_net_requires_update, connect_proxies { entity, neighbor })
     end
 
