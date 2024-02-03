@@ -15,7 +15,7 @@ local commands = {
     set_rate = prefix .. "set-rate"
 }
 
-local value = true
+local value = false
 local flags = {
     add_debug_commands = true,
     combinator_selectale = false,

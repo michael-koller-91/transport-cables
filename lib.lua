@@ -1419,14 +1419,11 @@ local function on_tick(event)
             for _, val in pairs(event.belt_neighbors) do
                 for _, neighbor in pairs(val) do
                     if neighbor and neighbor.valid then
-                        -- disconnect_entity(neighbor)
                         t_net_requires_update = append(t_net_requires_update, disconnect_entity(neighbor))
                         if neighbor.name == tier_to_name.cable[event.tier] then
-                            -- cable_connect_to_neighbors(neighbor, event.tier)
                             t_net_requires_update = append(t_net_requires_update,
                                 cable_connect_to_neighbors(neighbor, event.tier))
                         elseif neighbor.name == tier_to_name.underground_cable[event.tier] then
-                            -- underground_cable_connect_to_neighbors(neighbor, event.tier)
                             t_net_requires_update = append(t_net_requires_update,
                                 underground_cable_connect_to_neighbors(neighbor, event.tier))
                         end

@@ -574,7 +574,7 @@ for tier = 1, tiers do
     entity.operable = false
     entity.enable_inventory_bar = false
     entity.inventory_size = inventory_size.receiver[tier]
-    entity.fast_replaceable_group = "transport-cables"
+    entity.fast_replaceable_group = "transport-cables-hidden"
     entity.circuit_wire_connection_point = nil
     entity.circuit_connector_sprites = nil
     entity.draw_circuit_wires = true
@@ -635,7 +635,7 @@ for tier = 1, tiers do
     entity.destructible = false
     entity.minable = nil
     entity.operable = false
-    entity.fast_replaceable_group = "transport-cables"
+    entity.fast_replaceable_group = "transport-cables-hidden"
     entity.energy_source = { type = "void" }
     entity.picture_off =
     {
